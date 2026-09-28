@@ -1016,13 +1016,6 @@ const mcoScreeningExtracts = SQLa.tableDefinition("mco_screening_extracts", {
 }, {
   isIdempotent: true,
   sqlNS: screeningExtractsSchema,
-  constraints: (props, tableName) => {
-    const c = SQLa.tableConstraints(tableName, props);
-
-    return [
-      c.unique("mco_screening_id"),
-    ];
-  },
 });
 
 const mcoScreeningExtractsDetails = SQLa.tableDefinition(
@@ -1051,13 +1044,6 @@ const mcoScreeningExtractsDetails = SQLa.tableDefinition(
   {
     isIdempotent: true,
     sqlNS: screeningExtractsSchema,
-    constraints: (props, tableName) => {
-      const c = SQLa.tableConstraints(tableName, props);
-
-      return [
-        c.unique("mco_screening_extracts_details_id"),
-      ];
-    },
   },
 );
 
@@ -2575,6 +2561,18 @@ const migrateSP = pgSQLa.storedProcedure(
               UNIQUE (resource_type_name);
       END IF;
 
+      IF EXISTS (
+          SELECT 1
+          FROM information_schema.columns
+          WHERE table_schema = 'screening_extracts'
+            AND table_name = 'resource_types'
+            AND column_name = 'is_active'
+            AND is_nullable = 'NO'
+      ) THEN
+          ALTER TABLE screening_extracts.resource_types
+              ALTER COLUMN is_active DROP NOT NULL;
+      END IF;
+
       ${screeningErrorTypes}
       DO $$
       DECLARE
@@ -2660,6 +2658,18 @@ const migrateSP = pgSQLa.storedProcedure(
           ALTER TABLE screening_extracts.screening_error_types
               ADD CONSTRAINT screening_error_types_error_type_name_unqky
               UNIQUE (screening_error_type_name);
+      END IF;
+
+      IF EXISTS (
+          SELECT 1
+          FROM information_schema.columns
+          WHERE table_schema = 'screening_extracts'
+            AND table_name = 'screening_error_types'
+            AND column_name = 'is_active'
+            AND is_nullable = 'NO'
+      ) THEN
+          ALTER TABLE screening_extracts.screening_error_types
+              ALTER COLUMN is_active DROP NOT NULL;
       END IF;
 
       ${mcoScreeningExtracts}
@@ -2772,6 +2782,42 @@ const migrateSP = pgSQLa.storedProcedure(
               REFERENCES techbd_udi_ingress.tenants(tenant_id);
       END IF;
 
+      IF EXISTS (
+          SELECT 1
+          FROM information_schema.columns
+          WHERE table_schema = 'screening_extracts'
+            AND table_name = 'mco_screening_extracts'
+            AND column_name = 'resource_type_id'
+            AND data_type <> 'bigint'
+      ) THEN
+          ALTER TABLE screening_extracts.mco_screening_extracts
+              ALTER COLUMN resource_type_id TYPE bigint;
+      END IF;
+
+      IF EXISTS (
+          SELECT 1
+          FROM information_schema.columns
+          WHERE table_schema = 'screening_extracts'
+            AND table_name = 'mco_screening_extracts'
+            AND column_name = 'resource_type_id'
+            AND is_nullable = 'NO'
+      ) THEN
+          ALTER TABLE screening_extracts.mco_screening_extracts
+              ALTER COLUMN resource_type_id DROP NOT NULL;
+      END IF;
+
+      IF EXISTS (
+          SELECT 1
+          FROM information_schema.columns
+          WHERE table_schema = 'screening_extracts'
+            AND table_name = 'mco_screening_extracts'
+            AND column_name = 'is_active'
+            AND is_nullable = 'NO'
+      ) THEN
+          ALTER TABLE screening_extracts.mco_screening_extracts
+              ALTER COLUMN is_active DROP NOT NULL;
+      END IF;
+
       ${mcoScreeningExtractsDetails}
       DO $$
       DECLARE
@@ -2834,6 +2880,18 @@ const migrateSP = pgSQLa.storedProcedure(
               FROM information_schema.columns
               WHERE table_schema = 'screening_extracts'
                 AND table_name = 'mco_screening_extracts_details'
+                AND column_name = 'reprocess_count'
+                AND is_nullable = 'NO'
+          ) THEN
+              ALTER TABLE screening_extracts.mco_screening_extracts_details
+                  ALTER COLUMN reprocess_count DROP NOT NULL;
+          END IF;
+
+          IF EXISTS (
+              SELECT 1
+              FROM information_schema.columns
+              WHERE table_schema = 'screening_extracts'
+                AND table_name = 'mco_screening_extracts_details'
                 AND column_name = 'resource_type_id'
                 AND data_type <> 'bigint'
           ) THEN
@@ -2851,6 +2909,18 @@ const migrateSP = pgSQLa.storedProcedure(
           ) THEN
               ALTER TABLE screening_extracts.mco_screening_extracts_details
                   ALTER COLUMN record_count TYPE bigint;
+          END IF;
+
+          IF EXISTS (
+              SELECT 1
+              FROM information_schema.columns
+              WHERE table_schema = 'screening_extracts'
+                AND table_name = 'mco_screening_extracts_details'
+                AND column_name = 'record_count'
+                AND is_nullable = 'NO'
+          ) THEN
+              ALTER TABLE screening_extracts.mco_screening_extracts_details
+                  ALTER COLUMN record_count DROP NOT NULL;
           END IF;
 
           ALTER TABLE screening_extracts.mco_screening_extracts_details
@@ -2933,6 +3003,47 @@ const migrateSP = pgSQLa.storedProcedure(
               mco_screening_extracts_details_resource_type_id_fkey
               FOREIGN KEY (resource_type_id)
               REFERENCES screening_extracts.resource_types(resource_type_id);
+      END IF;
+
+      -- mco_screening_id nullable
+      IF EXISTS (
+          SELECT 1
+          FROM information_schema.columns
+          WHERE table_schema = 'screening_extracts'
+            AND table_name = 'mco_screening_extracts_details'
+            AND column_name = 'mco_screening_id'
+            AND is_nullable = 'NO'
+      ) THEN
+          ALTER TABLE screening_extracts.mco_screening_extracts_details
+              ALTER COLUMN mco_screening_id DROP NOT NULL;
+      END IF;
+
+
+      -- resource_type_id nullable
+      IF EXISTS (
+          SELECT 1
+          FROM information_schema.columns
+          WHERE table_schema = 'screening_extracts'
+            AND table_name = 'mco_screening_extracts_details'
+            AND column_name = 'resource_type_id'
+            AND is_nullable = 'NO'
+      ) THEN
+          ALTER TABLE screening_extracts.mco_screening_extracts_details
+              ALTER COLUMN resource_type_id DROP NOT NULL;
+      END IF;
+
+
+      -- is_active nullable
+      IF EXISTS (
+          SELECT 1
+          FROM information_schema.columns
+          WHERE table_schema = 'screening_extracts'
+            AND table_name = 'mco_screening_extracts_details'
+            AND column_name = 'is_active'
+            AND is_nullable = 'NO'
+      ) THEN
+          ALTER TABLE screening_extracts.mco_screening_extracts_details
+              ALTER COLUMN is_active DROP NOT NULL;
       END IF;
 
       ${mcoScreeningExtractsErrorLogs}
@@ -3050,6 +3161,116 @@ const migrateSP = pgSQLa.storedProcedure(
               );
           END IF;
       END $$;
+
+      IF EXISTS (
+          SELECT 1
+          FROM information_schema.columns
+          WHERE table_schema = 'screening_extracts'
+            AND table_name = 'mco_screening_extracts_error_logs'
+            AND column_name = 'mco_screening_id'
+            AND is_nullable = 'NO'
+      ) THEN
+          ALTER TABLE screening_extracts.mco_screening_extracts_error_logs
+              ALTER COLUMN mco_screening_id DROP NOT NULL;
+      END IF;
+
+      IF EXISTS (
+          SELECT 1
+          FROM information_schema.columns
+          WHERE table_schema = 'screening_extracts'
+            AND table_name = 'mco_screening_extracts_error_logs'
+            AND column_name = 'mco_screening_extracts_details_id'
+            AND is_nullable = 'NO'
+      ) THEN
+          ALTER TABLE screening_extracts.mco_screening_extracts_error_logs
+              ALTER COLUMN mco_screening_extracts_details_id DROP NOT NULL;
+      END IF;
+
+      IF EXISTS (
+          SELECT 1
+          FROM information_schema.columns
+          WHERE table_schema = 'screening_extracts'
+            AND table_name = 'mco_screening_extracts_error_logs'
+            AND column_name = 'screening_error_type_id'
+            AND is_nullable = 'NO'
+      ) THEN
+          ALTER TABLE screening_extracts.mco_screening_extracts_error_logs
+              ALTER COLUMN screening_error_type_id DROP NOT NULL;
+      END IF;
+
+      IF EXISTS (
+          SELECT 1
+          FROM information_schema.columns
+          WHERE table_schema = 'screening_extracts'
+            AND table_name = 'mco_screening_extracts_error_logs'
+            AND column_name = 'is_active'
+            AND is_nullable = 'NO'
+      ) THEN
+          ALTER TABLE screening_extracts.mco_screening_extracts_error_logs
+              ALTER COLUMN is_active DROP NOT NULL;
+      END IF;
+
+      IF NOT EXISTS (
+          SELECT 1
+          FROM pg_constraint
+          WHERE conname =
+              'mco_screening_extract_error_logs_mco_screening_extracts_details'
+            AND conrelid =
+                'screening_extracts.mco_screening_extracts_error_logs'::regclass
+      ) THEN
+          ALTER TABLE screening_extracts.mco_screening_extracts_error_logs
+              ADD CONSTRAINT
+              mco_screening_extract_error_logs_mco_screening_extracts_details
+              FOREIGN KEY (mco_screening_extracts_details_id)
+              REFERENCES screening_extracts.mco_screening_extracts_details(
+                  mco_screening_extracts_details_id
+              );
+      END IF;
+
+      IF NOT EXISTS (
+          SELECT 1
+          FROM pg_constraint
+          WHERE conname = 'mco_screening_extract_error_logs_mco_screening_id_fkey'
+            AND conrelid =
+                'screening_extracts.mco_screening_extracts_error_logs'::regclass
+      ) THEN
+          ALTER TABLE screening_extracts.mco_screening_extracts_error_logs
+              ADD CONSTRAINT
+              mco_screening_extract_error_logs_mco_screening_id_fkey
+              FOREIGN KEY (mco_screening_id)
+              REFERENCES screening_extracts.mco_screening_extracts(
+                  mco_screening_id
+              );
+      END IF;
+
+      IF NOT EXISTS (
+          SELECT 1
+          FROM pg_constraint
+          WHERE conname =
+              'mco_screening_extracts_screening_error_type_id_fkey'
+            AND conrelid =
+                'screening_extracts.mco_screening_extracts_error_logs'::regclass
+      ) THEN
+          ALTER TABLE screening_extracts.mco_screening_extracts_error_logs
+              ADD CONSTRAINT
+              mco_screening_extracts_screening_error_type_id_fkey
+              FOREIGN KEY (screening_error_type_id)
+              REFERENCES screening_extracts.screening_error_types(
+                  screening_error_type_id
+              );
+      END IF;
+
+      IF NOT EXISTS (
+          SELECT 1
+          FROM pg_constraint
+          WHERE conname = 'mco_screening_extact_error_log_guid_pkey'
+            AND conrelid =
+                'screening_extracts.mco_screening_extracts_error_logs'::regclass
+      ) THEN
+          ALTER TABLE screening_extracts.mco_screening_extracts_error_logs
+              ADD CONSTRAINT mco_screening_extact_error_log_guid_pkey
+              PRIMARY KEY (mco_screening_extracts_error_log_guid);
+      END IF;
 
       ${mcoScreeningPreferences}
       DO $$
@@ -3181,6 +3402,20 @@ const migrateSP = pgSQLa.storedProcedure(
               UNIQUE (tenant_id);
       END IF;
 
+      /*IF EXISTS (
+          SELECT 1
+          FROM information_schema.columns
+          WHERE table_schema = 'screening_extracts'
+            AND table_name = 'mco_screening_preferences'
+            AND column_name = 'deactivated_on_utc'
+            AND data_type = 'timestamp with time zone'
+      ) THEN
+          ALTER TABLE screening_extracts.mco_screening_preferences
+              ALTER COLUMN deactivated_on_utc
+              TYPE timestamp
+              USING deactivated_on_utc::timestamp;
+      END IF;*/
+      
       ${dependenciesSQL}
 
       /* Call function to create RLS SELECT/INSERT Policies for tables.*/
