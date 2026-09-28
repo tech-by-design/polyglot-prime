@@ -298,4 +298,18 @@ public class FHIRUtil {
             return false;
         }
     }
+
+    public static boolean isIg2OrLater(final String igVersion) {
+        if (igVersion == null || igVersion.isBlank()) {
+            return false;
+        }
+
+        try {
+            int major = Integer.parseInt(igVersion.split("\\.")[0]);
+            return major >= 2;
+        } catch (NumberFormatException e) {
+            LOG.warn("Unable to parse IG version: {}", igVersion);
+            return false;
+        }
+    }
 }

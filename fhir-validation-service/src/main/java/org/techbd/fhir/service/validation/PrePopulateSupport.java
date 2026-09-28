@@ -13,6 +13,7 @@ import org.hl7.fhir.r4.model.ValueSet;
 import org.techbd.corelib.util.AppLogger;
 import org.techbd.corelib.util.TemplateLogger;
 import org.techbd.fhir.util.ConceptReaderUtils;
+import org.techbd.fhir.util.FHIRUtil;
 import org.techbd.fhir.util.FileUtils;
 
 import ca.uhn.fhir.context.FhirContext;
@@ -55,13 +56,13 @@ public class PrePopulateSupport {
     }
 
     public void addCodeSystems(ValidationSupportChain validationSupportChain,
-            PrePopulatedValidationSupport prePopulatedValidationSupport) {
+            PrePopulatedValidationSupport prePopulatedValidationSupport, String igVersion) {
         Span span = tracer.spanBuilder("PrePopulateSupport.addCodeSystems").startSpan();
         try {
             addSnomedCodes(validationSupportChain, prePopulatedValidationSupport);
             addICD10Codes(validationSupportChain, prePopulatedValidationSupport);
             addCPTCodes(validationSupportChain, prePopulatedValidationSupport);
-            addHCPCSCodes(validationSupportChain, prePopulatedValidationSupport);
+            addHCPCSCodes(validationSupportChain, prePopulatedValidationSupport, igVersion);
             addLoincCodes(validationSupportChain, prePopulatedValidationSupport);
             addLanguageCodes(prePopulatedValidationSupport);
         } finally {
@@ -90,42 +91,25 @@ public class PrePopulateSupport {
     }
 
     private void addHCPCSCodes(ValidationSupportChain validationSupportChain,
-            PrePopulatedValidationSupport prePopulatedValidationSupport) {
+            PrePopulatedValidationSupport prePopulatedValidationSupport, String igVersion) {
         LOG.info("PrePopulateSupport:addHCPCSCodes - BEGIN");
 
-        String newHcpcsSystem = "http://www.cms.gov/Medicare/Coding/HCPCSReleaseCodeSets";
+        String hcpcsSystem = FHIRUtil.isIg2OrLater(igVersion)
+                ? "http://www.cms.gov/Medicare/Coding/HCPCSReleaseCodeSets"
+                : "urn:oid:2.16.840.1.113883.6.285";
 
-        String oldHcpcsSystem = "urn:oid:2.16.840.1.113883.6.285";
-        // New HCPCS system
-        CodeSystem existingNewHCPCS = (CodeSystem) validationSupportChain.fetchCodeSystem(newHcpcsSystem);
+        CodeSystem existingHCPCS = (CodeSystem) validationSupportChain.fetchCodeSystem(hcpcsSystem);
 
-        if (existingNewHCPCS == null) {
-            CodeSystem newHCPCS = new CodeSystem();
-            newHCPCS.setUrl(newHcpcsSystem);
-            newHCPCS.setConcept(new ArrayList<>(hcpcsConcepts));
-            newHCPCS.setContent(CodeSystem.CodeSystemContentMode.COMPLETE);
-            prePopulatedValidationSupport.addCodeSystem(newHCPCS);
+        if (existingHCPCS == null) {
+            CodeSystem hcpcs = new CodeSystem();
+            hcpcs.setUrl(hcpcsSystem);
+            hcpcs.setConcept(new ArrayList<>(hcpcsConcepts));
+            hcpcs.setContent(CodeSystem.CodeSystemContentMode.COMPLETE);
+            prePopulatedValidationSupport.addCodeSystem(hcpcs);
         } else {
-            existingNewHCPCS.setContent(CodeSystem.CodeSystemContentMode.COMPLETE);
-            if (existingNewHCPCS.getConcept().isEmpty()) {
-                existingNewHCPCS.getConcept().addAll(
-                        new ArrayList<>(hcpcsConcepts));
-            }
-        }
-        // Old HCPCS OID - backward compatibility
-        CodeSystem existingOldHCPCS = (CodeSystem) validationSupportChain.fetchCodeSystem(oldHcpcsSystem);
-
-        if (existingOldHCPCS == null) {
-            CodeSystem oldHCPCS = new CodeSystem();
-            oldHCPCS.setUrl(oldHcpcsSystem);
-            oldHCPCS.setConcept(new ArrayList<>(hcpcsConcepts));
-            oldHCPCS.setContent(CodeSystem.CodeSystemContentMode.COMPLETE);
-
-            prePopulatedValidationSupport.addCodeSystem(oldHCPCS);
-        } else {
-            existingOldHCPCS.setContent(CodeSystem.CodeSystemContentMode.COMPLETE);
-            if (existingOldHCPCS.getConcept().isEmpty()) {
-                existingOldHCPCS.getConcept().addAll(
+            existingHCPCS.setContent(CodeSystem.CodeSystemContentMode.COMPLETE);
+            if (existingHCPCS.getConcept().isEmpty()) {
+                existingHCPCS.getConcept().addAll(
                         new ArrayList<>(hcpcsConcepts));
             }
         }
