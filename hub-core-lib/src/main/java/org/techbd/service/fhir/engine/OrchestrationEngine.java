@@ -417,7 +417,7 @@ public class OrchestrationEngine {
                 supportChain.addValidationSupport(raceEthnicitySupport);
                 final var prePopulateSupport = new PrePopulateSupport(tracer, appLogger);
                 var prePopulatedValidationSupport = prePopulateSupport.build(fhirContext);
-                prePopulateSupport.addCodeSystems(supportChain, prePopulatedValidationSupport);
+                prePopulateSupport.addCodeSystems(supportChain, prePopulatedValidationSupport, igVersion);
                 supportChain.addValidationSupport(prePopulatedValidationSupport);
                 supportChain.addValidationSupport(npmPackageValidationSupport);
                 supportChain.addValidationSupport(defaultSupport);
@@ -452,7 +452,7 @@ public class OrchestrationEngine {
 
                 prePopulatedValidationSupport = null;
                 final var postPopulateSupport = new PostPopulateSupport(tracer, appLogger);
-                postPopulateSupport.update(supportChain,profileBaseUrl);
+                postPopulateSupport.update(supportChain,profileBaseUrl, igVersion);
                 final var cache = new CachingValidationSupport(supportChain);
                 final var instanceValidator = new FhirInstanceValidator(cache);
                 

@@ -8,6 +8,7 @@ import org.hl7.fhir.r4.model.ValueSet;
 import org.techbd.corelib.util.AppLogger;
 import org.techbd.corelib.util.TemplateLogger;
 import org.techbd.fhir.util.ConceptReaderUtils;
+import org.techbd.fhir.util.FHIRUtil;
 
 import io.opentelemetry.api.trace.Span;
 import io.opentelemetry.api.trace.Tracer;
@@ -42,13 +43,13 @@ public class PostPopulateSupport {
         this.languageConcepts = ConceptReaderUtils.getValueSetConcepts_wCode(referenceCodesPath.concat("language-subtags.psv"));
     }
 
-    public void update(final ValidationSupportChain validationSupportChain,final String profileBaseUrl) {
+    public void update(final ValidationSupportChain validationSupportChain,final String profileBaseUrl, final String igVersion) {
         Span span = tracer.spanBuilder("PostPopulateSupport.update").startSpan();
         try {
             addObservationLoincCodes(validationSupportChain, profileBaseUrl);
             addUsCoreSurveyCodes(validationSupportChain, profileBaseUrl);
             addUsCoreConditionCodes(validationSupportChain);
-            addUsCoreProcedureCodes(validationSupportChain);
+            addUsCoreProcedureCodes(validationSupportChain, igVersion);
             addLanguageSubTags(validationSupportChain);
         } finally {
             span.end();
@@ -136,39 +137,32 @@ public class PostPopulateSupport {
         }
     }
 
-    private void addUsCoreProcedureCodes(final ValidationSupportChain validationSupportChain) {
+    private void addUsCoreProcedureCodes( final ValidationSupportChain validationSupportChain, final String igVersion) {
 
         ValueSet procedureValueSet = (ValueSet) validationSupportChain.fetchValueSet(
-                        "http://hl7.org/fhir/us/core/ValueSet/us-core-procedure-code");
+                "http://hl7.org/fhir/us/core/ValueSet/us-core-procedure-code");
 
         if (procedureValueSet != null) {
 
-            // New HCPCS CodeSystem URL
+            //HCPCS CodeSystem
+            String hcpcsSystem = FHIRUtil.isIg2OrLater(igVersion)
+                    ? "http://www.cms.gov/Medicare/Coding/HCPCSReleaseCodeSets"
+                    : "urn:oid:2.16.840.1.113883.6.285";
+
             procedureValueSet.getCompose().addInclude(
                     new ValueSet.ConceptSetComponent()
                             .setConcept(new ArrayList<>(hcpcsConcepts))
-                            .setSystem(
-                                    "http://www.cms.gov/Medicare/Coding/HCPCSReleaseCodeSets"));
-
-            // Old HCPCS OID - backward compatibility
-            procedureValueSet.getCompose().addInclude(
-                    new ValueSet.ConceptSetComponent()
-                            .setConcept(new ArrayList<>(hcpcsConcepts))
-                            .setSystem("urn:oid:2.16.840.1.113883.6.285"));
-
+                            .setSystem(hcpcsSystem));
             // ICD-10
             procedureValueSet.getCompose().addInclude(
                     new ValueSet.ConceptSetComponent()
                             .setConcept(new ArrayList<>(icd10Concepts))
-                            .setSystem(
-                                    "http://www.cms.gov/Medicare/Coding/ICD10"));
-
+                            .setSystem("http://www.cms.gov/Medicare/Coding/ICD10"));
             // SNOMED
             procedureValueSet.getCompose().addInclude(
                     new ValueSet.ConceptSetComponent()
                             .setConcept(new ArrayList<>(snomedConcepts))
                             .setSystem("http://snomed.info/sct"));
-
             // LOINC
             procedureValueSet.getCompose().addInclude(
                     new ValueSet.ConceptSetComponent()
