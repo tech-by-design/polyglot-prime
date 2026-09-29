@@ -2290,6 +2290,29 @@ const migrateSP = pgSQLa.storedProcedure(
           ) STORED;
       END IF;
 
+      IF NOT EXISTS (
+        SELECT 1
+        FROM pg_indexes
+        WHERE schemaname = 'mco_data'
+          AND tablename = 'mco_records'
+          AND indexname = 'idx_mco_records_reporting_month_date'
+      ) THEN
+        CREATE INDEX IF NOT EXISTS idx_mco_records_reporting_month_date
+        ON mco_data.mco_records (reporting_month_date);
+      END IF;
+
+
+      IF NOT EXISTS (
+        SELECT 1
+        FROM pg_indexes
+        WHERE schemaname = 'mco_data'
+          AND tablename = 'mco_records'
+          AND indexname = 'idx_mco_records_tenant_reporting_month'
+      ) THEN
+        CREATE INDEX IF NOT EXISTS idx_mco_records_tenant_reporting_month
+        ON mco_data.mco_records (tenant_id, reporting_month_date);
+      END IF;      
+
       ${mcoRecordDetails}
         DO $$
         DECLARE
@@ -2388,6 +2411,17 @@ const migrateSP = pgSQLa.storedProcedure(
             AND is_nullable = 'NO'
       ) THEN
           EXECUTE 'ALTER TABLE mco_data.mco_record_details ALTER COLUMN errored_count DROP NOT NULL';
+      END IF;
+
+      IF NOT EXISTS (
+        SELECT 1
+        FROM pg_indexes
+        WHERE schemaname = 'mco_data'
+          AND tablename = 'mco_record_details'
+          AND indexname = 'idx_mco_record_details_created_on_utc'
+      ) THEN
+        CREATE INDEX IF NOT EXISTS idx_mco_record_details_created_on_utc
+        ON mco_data.mco_record_details (created_on_utc DESC);
       END IF;
 
       ${mcoErrorTypes}
