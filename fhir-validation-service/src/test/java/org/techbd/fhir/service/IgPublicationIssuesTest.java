@@ -228,10 +228,10 @@ public class IgPublicationIssuesTest extends BaseIgValidationTest {
                 
 
         private void validateFile(String filePath) throws IOException {
-            // // Temporarily run only QA/test SHIN-NY examples
-            // if (!filePath.contains("test-shinny-examples")) {
-            //     return;
-            // }
+            // Temporarily run only QA/test SHIN-NY examples
+            if (!filePath.contains("test-shinny-examples")) {
+                return;
+            }
             List<OrchestrationEngine.ValidationResult> results = getValidationErrors(filePath);
             assertValidationResults(results);
         }

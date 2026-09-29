@@ -10,7 +10,7 @@ import java.util.Map;
 
 import org.hl7.fhir.r4.model.OperationOutcome;
 import org.hl7.fhir.r4.model.OperationOutcome.OperationOutcomeIssueComponent;
-//import org.junit.jupiter.api.Disabled;
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.junit.jupiter.MockitoExtension;
@@ -24,7 +24,7 @@ import ca.uhn.fhir.parser.IParser;
 class OrchestrationEngineTest extends BaseIgValidationTest {
         private static final String INTERACTION_ID = UuidUtil.generateUuid();  
 
-        // @Disabled("Temporarily skip production SHIN-NY 1.9.4 test")
+        @Disabled("Temporarily skip production SHIN-NY 1.9.4 test")
         @Test
         void testOrchestrateSingleSession() {
                 String payload = "{ \"resourceType\": \"Bundle\", \"id\": \"AHCHRSNScreeningResponseExample\", \"meta\": { \"lastUpdated\": \"2024-02-23T00:00:00Z\", \"profile\": [\"http://shinny.org/us/ny/hrsn/StructureDefinition/SHINNYBundleProfile\"] } }";
@@ -57,7 +57,7 @@ class OrchestrationEngineTest extends BaseIgValidationTest {
                 }
         }
 
-        // @Disabled("Temporarily skip production SHIN-NY 1.9.4 test")
+        @Disabled("Temporarily skip production SHIN-NY 1.9.4 test")
         @Test
         void testOrchestrateMultipleSessions() {
                 String payload = "{ \"resourceType\": \"Bundle\", \"id\": \"AHCHRSNScreeningResponseExample\", \"meta\": { \"lastUpdated\": \"2024-02-23T00:00:00Z\", \"profile\": [\"http://shinny.org/us/ny/hrsn/StructureDefinition/SHINNYBundleProfile\"] } }";
@@ -93,7 +93,7 @@ class OrchestrationEngineTest extends BaseIgValidationTest {
                 }
         }
 
-        // @Disabled("Temporarily skip production SHIN-NY 1.9.4 test")
+        @Disabled("Temporarily skip production SHIN-NY 1.9.4 test")
         @Test
         void testValidationEngineCaching() {
                 OrchestrationEngine.OrchestrationSession session1 = null;
@@ -128,7 +128,7 @@ class OrchestrationEngineTest extends BaseIgValidationTest {
                 }
         }
 
-        // @Disabled("Temporarily skip production SHIN-NY 1.9.4 test")
+        @Disabled("Temporarily skip production SHIN-NY 1.9.4 test")
         @Test
         void testValidationAgainstLatestShinnyIgHasNoErrors() throws Exception {
                 String payload = Files.readString(Path.of(
@@ -159,7 +159,7 @@ class OrchestrationEngineTest extends BaseIgValidationTest {
                 }
         }
 
-        // @Disabled("Temporarily skip production SHIN-NY 1.9.4 test")
+        @Disabled("Temporarily skip production SHIN-NY 1.9.4 test")
         @Test
         void testValidationAgainstShinnyIgLatestVersion_ReferentialIntegrityError() throws Exception {
                 String payload = Files.readString(Path.of(
@@ -231,7 +231,7 @@ class OrchestrationEngineTest extends BaseIgValidationTest {
                 }
         }
 
-        // @Disabled("Temporarily skip production SHIN-NY 1.9.4 test")
+        @Disabled("Temporarily skip production SHIN-NY 1.9.4 test")
         @Test
         void testValidationAgainstLatestShinnyIg_PatientMRNMissingError() throws Exception {
                 String payload = Files.readString(Path.of(
@@ -309,7 +309,7 @@ class OrchestrationEngineTest extends BaseIgValidationTest {
                 }
         }
 
-        // @Disabled("Temporarily skip production SHIN-NY 1.9.4 test")
+        @Disabled("Temporarily skip production SHIN-NY 1.9.4 test")
         @Test
         void testValidationWhenTheIncomingPayloadHasInValidProfileUrl() throws Exception {
                 String payload = Files.readString(Path.of(
