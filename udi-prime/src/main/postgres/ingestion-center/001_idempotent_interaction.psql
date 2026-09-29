@@ -1403,7 +1403,7 @@ BEGIN
 		            ) #>> '{}',
 		            ''
 		        ),
-		        '^Organization/', ''
+		        '^.*Organization/', ''
 		    )
 		INTO v_patient_id,
 			 v_patient_mrn,
