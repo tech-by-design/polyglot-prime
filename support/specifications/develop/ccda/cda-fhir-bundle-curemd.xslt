@@ -1192,7 +1192,6 @@
                         or ccda:code/@code='100698-0'
                         or ccda:code/@code='93025-5'
                         or ccda:code/@code='NYSAHCHRSN'
-                        or ccda:code/@code='NYS-AHC-HRSN'
                     ]"/>
 
         <xsl:if test="string($categoryCode)">
@@ -1568,7 +1567,6 @@
                 or ccda:code/@code='100698-0'
                 or ccda:code/@code='93025-5'
                 or ccda:code/@code='NYSAHCHRSN'
-                or ccda:code/@code='NYS-AHC-HRSN'
             ]"/>
     <xsl:variable name="screeningCode">
       <xsl:choose>
