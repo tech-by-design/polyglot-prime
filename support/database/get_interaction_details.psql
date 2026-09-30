@@ -1,0 +1,7 @@
+/* To get all the InteractIonID and BundleIDs for a given date range */
+
+SELECT hub_interaction_id, bundle_id, created_at
+FROM techbd_udi_ingress.sat_interaction_fhir_request 
+WHERE nature = 'Original FHIR Payload' 
+AND created_at >= '<start_date>' AND created_at < '<end_date>'
+ORDER BY created_at DESC;
