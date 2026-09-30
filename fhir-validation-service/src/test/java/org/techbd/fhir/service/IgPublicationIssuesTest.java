@@ -228,10 +228,10 @@ public class IgPublicationIssuesTest extends BaseIgValidationTest {
                 
 
         private void validateFile(String filePath) throws IOException {
-            // Temporarily run only QA/test SHIN-NY examples
-            if (!filePath.contains("test-shinny-examples")) {
-                return;
-            }
+            // // Temporarily run only QA/test SHIN-NY examples
+            // if (!filePath.contains("test-shinny-examples")) {
+            //     return;
+            // }
             List<OrchestrationEngine.ValidationResult> results = getValidationErrors(filePath);
             assertValidationResults(results);
         }
@@ -260,21 +260,24 @@ public class IgPublicationIssuesTest extends BaseIgValidationTest {
 
         private List<OrchestrationEngine.ValidationResult> getValidationErrors(final String exampleFileName)
                         throws IOException {
+                printHeapUsage("Before validation: " + exampleFileName);
                 List<ValidationResult> results = new ArrayList<>();
                 final var payload = Files.readString(Path.of(
                                 "src/test/resources/org/techbd/ig-examples/" + exampleFileName));
                 OrchestrationEngine.OrchestrationSession session = engine.session()
                                 .withPayloads(List.of(payload))
-                                .withSessionId(UuidUtil.generateUuid())
+                                .withSessionId(UUID.randomUUID().toString())
                                 .withTracer(tracer)
                                 .addHapiValidationEngine()
                                 .build();
                 try {
                         engine.orchestrate(session);
+                        printHeapUsage("After validation: " + exampleFileName);
                         results = engine.getSessions().get(session.getSessionId()).getValidationResults();
 
                 } finally {
                         engine.clear(session);
+                         printHeapUsageAfterGc("After clear + GC: " + exampleFileName);
                 }
                 return results;
         }
