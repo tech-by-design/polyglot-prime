@@ -103,7 +103,7 @@
       "channel": "configuration_map_export.properties",
       "version": "",
       "editedby": "anoopvarma-2000-p",
-      "date": "2026-09-18"
+      "date": "2026-09-30"
     },
     {
       "type": "AwsSqsFifoQueueListener",
@@ -281,6 +281,32 @@
       "version": "0.1.16",
       "editedby": "anoopvarma-2000-p",
       "date": "2026-09-18"
+    },
+    {
+      "type": "MCO",
+      "channel": "01-pick-up-hrsn-flat-files-from-nyec.xml",
+      "version": "0.1.0",
+      "editedby": "anoopvarma-2000-p",
+      "date": "2026-09-30"
+    },    {
+      "type": "MCO",
+      "channel": "02-deliver-flat-files-to-mcos.xml",
+      "version": "0.1.0",
+      "editedby": "anoopvarma-2000-p",
+      "date": "2026-09-30"
+    },    {
+      "type": "MCO",
+      "channel": "deliver-fhir-bundles-to-mcos.xml",
+      "version": "0.1.0",
+      "editedby": "anoopvarma-2000-p",
+      "date": "2026-09-30"
+    },
+    {
+      "type": "Channel Group",
+      "channel": "mco-ob-from-shin-ny.xml",
+      "version": "",
+      "editedby": "anoopvarma-2000-p",
+      "date": "2026-09-30"
     },
     {
       "type": "Channel Group",
