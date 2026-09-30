@@ -387,8 +387,7 @@ const CLI = new Command()
         const defaultTargetDirs = [
           "../nexus-core-lib/lib",
           "../csv-service/lib",
-          "../fhir-validation-service/lib",
-          "../hub-core-lib/lib"
+          "../fhir-validation-service/lib" 
         ];
 
         const targetDirs = options.targets
