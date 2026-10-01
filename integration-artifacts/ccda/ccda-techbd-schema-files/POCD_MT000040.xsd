@@ -954,7 +954,7 @@ StaticMifToXsd.xsl version 2.0</xs:documentation>
 			<xs:element name="ethnicGroupCode" type="CE" minOccurs="0"/>
 			<!-- <xs:element name="deceasedInd" type="xs:boolean" minOccurs="0" xmlns:sdtc="urn:hl7-org:sdtc"/> -->
 			<xs:element ref="sdtc:deceasedInd" minOccurs="0"/>
-			⁠<xs:element ref="sdtc:deceasedTime" minOccurs="0"/>
+			<xs:element ref="sdtc:deceasedTime" minOccurs="0"/>
 			<xs:element ref="sdtc:raceCode" minOccurs="0"/>
         	<xs:element ref="sdtc:ethnicGroupCode" minOccurs="0"/>
 
