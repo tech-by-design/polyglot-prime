@@ -5,6 +5,7 @@ import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpSession;
 import lib.aide.tabular.JooqRowsSupplier;
 import org.jooq.DSLContext;
+import org.jooq.impl.DSL;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.oauth2.client.authentication.OAuth2AuthenticationToken;
@@ -109,6 +110,18 @@ public class SettingsController {
         if (!Boolean.TRUE.equals(configAccess)) {
             return "redirect:/settings/fhir-rules";
         }
+
+        final var resourceTypesTable = JooqRowsSupplier.TypableTable.fromTablesRegistry(
+            Tables.class,
+            "screening_extracts",
+            "mco_resource_types");
+        model.addAttribute("mcoResourceTypes", getDsl()
+            .select(
+                DSL.field(resourceTypesTable.column("resource_type_id")),
+                DSL.field(resourceTypesTable.column("resource_type_name")))
+            .from(resourceTypesTable.table())
+            .fetch()
+            .intoMaps());
 
         return presentation.populateModel("page/settings/tenants", model, request);
     }

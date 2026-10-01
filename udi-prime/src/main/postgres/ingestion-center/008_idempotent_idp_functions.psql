@@ -524,14 +524,27 @@ $function$;
 DROP VIEW IF EXISTS techbd_udi_ingress.active_tenants CASCADE;
 CREATE OR REPLACE VIEW techbd_udi_ingress.active_tenants AS
 SELECT
-    tenant_id,
-    tenant_name,
-    tenant_displayname, 
-    tenant_short_code,
-    tenant_type
-FROM techbd_udi_ingress.tenants
-WHERE is_active = TRUE
-ORDER BY tenant_displayname ASC;
+    t.tenant_id,
+    t.tenant_name,
+    t.tenant_displayname, 
+    t.tenant_short_code,
+    t.tenant_type,
+    msp.resource_type_id
+FROM techbd_udi_ingress.tenants t
+left join  screening_extracts.mco_screening_preferences msp 
+on t.tenant_id = msp.tenant_id
+WHERE t.is_active = TRUE
+ORDER BY t.tenant_displayname ASC;
+ 
+
+
+DROP VIEW IF EXISTS screening_extracts.mco_resource_types CASCADE;
+CREATE OR REPLACE VIEW screening_extracts.mco_resource_types AS
+SELECT
+rt.resource_type_id,
+rt.resource_type_name
+FROM screening_extracts.resource_types rt
+WHERE rt.is_active = true;
 
 
 DROP VIEW IF EXISTS techbd_udi_ingress.qe_most_recent_transactions CASCADE;

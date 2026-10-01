@@ -327,7 +327,7 @@
                             </div>
 
                             <!-- Row 2: Editable Tenant Display Name -->
-                            <div class="form-group full-width">
+                            <div class="form-group">
                                 <label class="form-label" for="displayName">Tenant Display Name</label>
                                 <div class="input-wrapper">
                                     <input type="text" id="displayName" class="form-control"
@@ -340,6 +340,8 @@
                                     </span>
                                 </div>
                             </div>
+
+
 
                             <!-- Row 3: Read-only Tenant Name -->
                             <div class="form-group">
@@ -386,6 +388,16 @@
                                     </span> -->
                                 </div>
                             </div>
+                            <!-- Row 2: Editable MCO File Type -->
+                            <div class="form-group">
+                                <label class="form-label" for="mcoFileType">MCO File Format Preference</label>
+                                <select id="mcoFileType" class="form-control" onchange="checkDirtyState()">
+                                    <option value="" disabled selected hidden>Choose file type</option>
+                                    <option th:each="resourceType : ${mcoResourceTypes}"
+                                        th:value="${resourceType['resource_type_id']}"
+                                        th:text="${resourceType['resource_type_name']}"></option>
+                                </select>
+                            </div>
                         </div>
 
                         <!-- Action Buttons -->
@@ -407,6 +419,7 @@
             const selectedTenantTextEl = document.getElementById('selectedTenantText');
             const tenantOptionsEl = document.getElementById('tenantOptions');
             const displayNameEl = document.getElementById('displayName');
+            const mcoFileTypeEl = document.getElementById('mcoFileType');
             const tenantNameEl = document.getElementById('tenantName');
             const tenantTypeEl = document.getElementById('tenantType');
             const tenantIdEl = document.getElementById('tenantId');
@@ -433,6 +446,7 @@
                         tenantName: item.tenant_name,
                         tenantType: item.tenant_type,
                         shortCode: item.tenant_short_code,
+                        resourceTypeId: item.resource_type_id,
                         createdAt: item.created_at
                     }));
 
@@ -539,13 +553,18 @@
                 tenantTypeEl.value = tenant.tenantType;
                 tenantIdEl.value = tenant.tenantId;
                 shortCodeEl.value = tenant.shortCode;
+                mcoFileTypeEl.value = tenant.resourceTypeId == null ? '' : String(tenant.resourceTypeId);
                 saveBtnEl.disabled = true;
             }
 
             function checkDirtyState() {
                 if (!tenantsList[currentTenantIndex]) return;
                 const originalName = tenantsList[currentTenantIndex].displayName;
-                saveBtnEl.disabled = (displayNameEl.value.trim() === originalName);
+                const originalResourceTypeId = tenantsList[currentTenantIndex].resourceTypeId == null
+                    ? ''
+                    : String(tenantsList[currentTenantIndex].resourceTypeId);
+                saveBtnEl.disabled = displayNameEl.value.trim() === originalName
+                    && mcoFileTypeEl.value === originalResourceTypeId;
             }
 
             function setSaveLoading(isLoading) {
@@ -565,6 +584,7 @@
                 const tenantId = tenantsList[currentTenantIndex].tenantId;
                 const newDisplayName = displayNameEl.value.trim();
                 const oldDisplayName = tenantsList[currentTenantIndex].displayName;
+                const newResourceTypeId = mcoFileTypeEl.value;
 
                 if (newDisplayName.length === 0) {
                     showToast('Tenant display name cannot be empty.', true);
@@ -572,7 +592,16 @@
                     return;
                 }
 
-                if (newDisplayName === oldDisplayName) {
+                if (!newResourceTypeId) {
+                    showToast('MCO file type must be selected.', true);
+                    return;
+                }
+
+                const oldResourceTypeId = tenantsList[currentTenantIndex].resourceTypeId == null
+                    ? ''
+                    : String(tenantsList[currentTenantIndex].resourceTypeId);
+
+                if (newDisplayName === oldDisplayName && newResourceTypeId === oldResourceTypeId) {
                     saveBtnEl.disabled = true;
                     return;
                 }
@@ -589,7 +618,10 @@
                         headers: {
                             'Content-Type': 'application/json'
                         },
-                        body: JSON.stringify({ tenant_displayname: newDisplayName })
+                        body: JSON.stringify({
+                            tenant_displayname: newDisplayName,
+                            resource_type_id: Number(newResourceTypeId)
+                        })
                     });
 
                     if (!response.ok) {
@@ -598,6 +630,7 @@
                     }
 
                     tenantsList[currentTenantIndex].displayName = newDisplayName;
+                    tenantsList[currentTenantIndex].resourceTypeId = Number(newResourceTypeId);
                     setSaveLoading(false);
                     saveBtnEl.disabled = true;
                     showToast(`Tenant display name updated successfully to "${newDisplayName}"`);

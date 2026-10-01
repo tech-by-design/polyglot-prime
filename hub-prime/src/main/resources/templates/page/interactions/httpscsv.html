@@ -282,10 +282,14 @@
                         <em>Processing Inprogress</em>, <em>Processing Completed</em>, <em>Processing Failed</em>
                         <!-- <em>Received</em>--> etc.), helping
                         users understand where the file stands in the processing pipeline.<br>
-                        <strong>CSV Validation Status:</strong> Highlights whether the FHIR conversion from the
-                        submitted CSV
-                        failed. If a Failure/Partial Success occurred, a direct link is provided to the
-                        <a href="/data-quality/csv-validations/data-integrity" class="text-blue-600 underline"
+                        <strong>CSV Validation Status:</strong> Indicates the validation result of the CSV files in the submitted ZIP file:
+                        <ul>
+                            <li><em>Success:</em> All CSV files passed validation successfully.</li>
+                            <li><em>Failed:</em> CSV file validation failed in the ZIP file due to issues such as missing files, incorrect file name issues etc.</li>
+                            <li><em>Partial Success:</em> Some groups of CSV files in the ZIP file were validated successfully, while other groups failed CSV validation due to data integrity issues such as missing files, invalid data, or other validation errors.</li>
+                        </ul>
+                        If a <em>Failure</em> or <em>Partial Success</em> occurred, a direct link is provided to the
+                        <a href="/data-quality/csv-validations/csv-issue-details" class="text-blue-600 underline"
                             target="_blank">CSV Data Quality page</a> for detailed error insights. You can use the
                         Interaction ID to filter errors on that page.<br>
                         <strong>Total File Count:</strong> Shows the total number of files received within the ZIP
