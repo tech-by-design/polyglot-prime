@@ -2,13 +2,9 @@
   <id>281247c5-fb87-4b56-9691-190174cc834f</id>
   <nextMetaDataId>17</nextMetaDataId>
   <name>Fidelis</name>
-  <description>Version: 0.1.17
-Fixed success and file rejection receipt destination.
-&quot;Stream file to SFTP&quot; now authenticates with SSH keys (MCO_SFTP_PRIVATE_KEY /
-MCO_DESTINATION_SFTP_PRIVATE_KEY from the Config-sensitive Lookup Manager group) instead
-of a username/password, and reads sftpUserName/destinationSftpUserName from the
-configuration map instead of a hardcoded per-MCO username.</description>
-  <revision>5</revision>
+  <description>Version: 0.1.18
+Update file transfer to S3 via FUSE and SFTP via SSH keys, and fix bigint input validation</description>
+  <revision>10</revision>
   <sourceConnector version="26.6.0">
     <metaDataId>0</metaDataId>
     <name>sourceConnector</name>
@@ -98,8 +94,8 @@ configuration map instead of a hardcoded per-MCO username.</description>
           <enabled>true</enabled>
           <script>function setMcoInfoInGlobalMap() {
     globalChannelMap.put(&quot;mco_code&quot;, &quot;FID&quot;);
-    globalChannelMap.put(&quot;root_sftp_folder&quot;, &quot;/lza-prod-esmf&quot;);
-    globalChannelMap.put(&quot;mco_sftp_folder&quot;, &quot;mco-fidelis&quot;);
+globalChannelMap.put(&quot;root_sftp_folder&quot;, &quot;/opt/bridgelink/mco-sftp&quot;);
+globalChannelMap.put(&quot;mco_sftp_folder&quot;, &quot;mco-sftp-fidelis&quot;);
     // Usernames used to be hardcoded here (source_sftp_username/destination_sftp_username),
     // out of step with every other SFTP connection detail (sftpIp/sftpPort/destinationSftpIp/
     // destinationSftpPort), which all come from the configuration map and can be changed
@@ -3318,21 +3314,15 @@ function thresholdExceecedFunction(limit, totalRecords, errorRecords) {
 }
 
 var username = configurationMap.get(&quot;sftpUserName&quot;);
-// SSH key auth (see sftpFileTransfer below) replaces the password previously read here via
-// configurationMap.get(&quot;sftpPassword&quot;) - the private key/passphrase now come from globalMap,
-// populated in the deploy script from the Config-sensitive Lookup Manager group.
-var privateKeyPem = globalMap.get(&quot;mcoSftpPrivateKeyPem&quot;);
-var keyPassphrase = globalMap.get(&quot;mcoSftpKeyPassphrase&quot;);
+var password = configurationMap.get(&quot;sftpPassword&quot;);
 var ip = configurationMap.get(&quot;sftpIp&quot;);
 var port = configurationMap.get(&quot;sftpPort&quot;);
 
-var destinationUsername = configurationMap.get(&quot;destinationSftpUserName&quot;);
-// Same SSH key auth switch as above, for the downstream datalake SFTP leg - replaces
-// configurationMap.get(&quot;destinationSftpPassword&quot;).
-var destinationPrivateKeyPem = globalMap.get(&quot;mcoDestinationSftpPrivateKeyPem&quot;);
-var destinationKeyPassphrase = globalMap.get(&quot;mcoDestinationSftpKeyPassphrase&quot;);
-var destinationIp = configurationMap.get(&quot;destinationSftpIp&quot;);
-var destinationPort = configurationMap.get(&quot;destinationSftpPort&quot;);
+var destinationUsername = configurationMap.get(&quot;nyecSftpUsername&quot;);  
+var destinationPassword = configurationMap.get(&quot;nyecSftpPassphrase&quot;);
+var destinationIp = configurationMap.get(&quot;nyecSftpDns&quot;);
+var destinationPort = parseInt(configurationMap.get(&quot;nyecSftpPort&quot;));
+var destinationPrivateKeyPath = configurationMap.get(&quot;nyecSftpPrivateKey&quot;);
 
 //SMTP
 var smtpHostname = configurationMap.get(&quot;smtpHostName&quot;);
@@ -3356,8 +3346,7 @@ function sftpFileTransfer(
 	destinationServerName,
 	destinationPort,
 	destinationUsername,
-	destinationPrivateKeyPem,
-	destinationKeyPassphrase,
+	destinationPassword,
 	sourceFileName,
 	destinationFileName,
 	fileDestination,
@@ -3366,40 +3355,28 @@ function sftpFileTransfer(
 ) {
 	try {
 
-		//Success Data/Error Data destinations write the file content to S3, not to local disk, so it is
-		//pulled from the globalChannelMap where those steps already staged it earlier in this same message
-		//(&apos;validContent&apos; / &apos;errorContent&apos;) instead of re-reading it from the internal processed-file share.
-		var content = String(sourceFileName.indexOf(&quot;Error_&quot;) === 0 ? $(&apos;errorContent&apos;) : $(&apos;validContent&apos;));
-		logger.info(&quot;Streaming in-memory content for : &quot; + sourceFileName);
+		logger.info(&apos;OG Filename: &apos; + $(&quot;originalFilename&quot;));
+
+		
+		
+		var fileName = &apos;mco-sftp/bridgelink-inbound/mco-sftp-fidelis/mirth_processed/&apos; + String(sourceFileName.indexOf(&quot;Error_&quot;) === 0 ? &apos;Error_&apos; + $(&quot;originalFilename&quot;) : &apos;Success_&apos; + $(&quot;originalFilename&quot;));
+		logger.info(&apos;Filename parsed: &apos; + sourceFileName);
+
+		var file = java.io.File(fileName);
+		logger.info(&apos;File: &apos; + file);
 
 		if (isSftp) {
-			var fileToStream = new java.io.ByteArrayInputStream(java.lang.String(content).getBytes(&quot;UTF-8&quot;));
+			var fileToStream = new FileInputStream(file);
 			var jsch = new JSch();
+			
+			if (destinationPassword) {
+				jsch.addIdentity(destinationPrivateKeyPath, destinationPassword);
+			} else {
+				jsch.addIdentity(destinationPrivateKeyPath);
+			}
+			
 			var fileTransferred = false;
 			var session2 = null;
-			var hasPassphrase = false;
-
-			if (!destinationPrivateKeyPem) {
-				// Fail loudly and specifically here rather than letting this fall through to
-				// jsch.getSession()/connect() with zero identities registered - with
-				// PreferredAuthentications forced to publickey below, that produces a generic
-				// &quot;Auth fail for methods 'publickey'&quot; from the server, which looks like a bad
-				// key/passphrase and sends whoever is debugging it looking in the wrong place,
-				// when the real problem is that the Config-sensitive Lookup Manager entry
-				// (MCO_SFTP_PRIVATE_KEY / MCO_DESTINATION_SFTP_PRIVATE_KEY) is missing or empty.
-				throw {
-					message: &quot;No SFTP private key configured for &quot; + destinationServerName + &quot; - check the MCO_SFTP_PRIVATE_KEY/MCO_DESTINATION_SFTP_PRIVATE_KEY entry in the Config-sensitive Lookup Manager group&quot;
-				};
-			}
-
-			// Loaded in-memory from Secrets Manager (via Config-sensitive) - never written to
-			// disk. Config-sensitive does not allow a blank value, so an unprotected key is
-			// registered there as the literal string &quot;NONE&quot; - treat that sentinel as &quot;no
-			// passphrase&quot;, same convention used by the Aetna SFTP Bridge channel.
-			hasPassphrase = destinationKeyPassphrase &amp;&amp; destinationKeyPassphrase.toString().trim() !== &apos;&apos; &amp;&amp; destinationKeyPassphrase.toString().trim().toUpperCase() !== &apos;NONE&apos;;
-			var privateKeyBytes = java.lang.String(destinationPrivateKeyPem).getBytes(&quot;UTF-8&quot;);
-			var passphraseBytes = hasPassphrase ? java.lang.String(destinationKeyPassphrase).getBytes(&quot;UTF-8&quot;) : null;
-			jsch.addIdentity(&quot;mco-sftp-key&quot;, privateKeyBytes, null, passphraseBytes);
 
 			session2 = jsch.getSession(
 				destinationUsername,
@@ -3407,18 +3384,11 @@ function sftpFileTransfer(
 				destinationPort
 			);
 
-			session2.setConfig(&quot;StrictHostKeyChecking&quot;, &quot;no&quot;);
-			// Key-only login - safe to force now that an identity is guaranteed to be
-			// registered above (the empty-key case throws before reaching here). Forcing this
-			// unconditionally regardless of whether a key was actually loaded was the original
-			// bug: with zero identities to offer, JSch still attempts 'publickey' because
-			// PreferredAuthentications allows nothing else, and the server rejects it with the
-			// same generic &quot;Auth fail for methods 'publickey'&quot; as a genuinely bad key would
-			// produce - masking a missing Config-sensitive entry as an auth/credentials problem.
-			session2.setConfig(&quot;PreferredAuthentications&quot;, &quot;publickey&quot;);
+			//      if (destinationPassword) {
+			//      session2.setPassword(destinationPassword);
+			//    }
 
-			// Diagnostic - safe fields only, never logs the key/passphrase values themselves
-			logger.info(&quot;Streaming to &quot; + destinationServerName + &quot;:&quot; + destinationPort + &quot; as \&quot;&quot; + destinationUsername + &quot;\&quot; (privateKey=present, passphrase=&quot; + (hasPassphrase ? &quot;present&quot; : &quot;none&quot;) + &quot;)&quot;);
+			session2.setConfig(&quot;StrictHostKeyChecking&quot;, &quot;no&quot;);
 
 			session2.connect();
 			// Create an SFTP channel
@@ -3481,13 +3451,24 @@ function sftpFileTransfer(
 
 			return true; // Return true if the file was transferred successfully
 		} else {
-			org.apache.commons.io.FileUtils.writeStringToFile(
-				java.io.File(fileDestination + destinationFileName),
-				content,
-				&quot;UTF-8&quot;
-			);
-			fileTransferred = true;
-			return fileTransferred;
+			if (isCopy == true) {
+				org.apache.commons.io.FileUtils.copyFile(
+					file,
+					java.io.File(fileDestination + destinationFileName),
+					false,
+					java.nio.file.StandardCopyOption.REPLACE_EXISTING
+				);
+				fileTransferred = true;
+				return fileTransferred;
+			} else {
+				org.apache.commons.io.FileUtils.moveFile(
+					file,
+					java.io.File(fileDestination + destinationFileName),
+					java.nio.file.StandardCopyOption.REPLACE_EXISTING
+				);
+				fileTransferred = true;
+				return fileTransferred;
+			}
 		}
 	} catch (err) {
 		logger.info(&quot;Failed sftp transfer file : &quot; + sourceFileName);
@@ -3523,8 +3504,7 @@ try {
 	//This case will never hit since threshold is 100 now
 	if (thresholdExceeded) {
 		logger.info(&quot;Inside failed case&quot;);
-		var failedCaseFolder = &apos;/esmf/outbound/error/&apos;;
-		//var failedCaseFolder = $(&apos;root_sftp_folder&apos;) + &apos;/&apos; + $(&apos;mco_sftp_folder&apos;) + &apos;/esmf/outbound/error/&apos;;
+		var failedCaseFolder = $(&apos;root_sftp_folder&apos;) + &apos;/&apos; + $(&apos;mco_sftp_folder&apos;) + &apos;/esmf/outbound/error/&apos;;
 		var failedCaseArchiveFolder = $(&apos;root_sftp_folder&apos;) + &apos;/archive/&apos; + $(&apos;mco_sftp_folder&apos;) + &apos;/prod/mco_error/&apos;
 
 		//Move error file to mco outbound folder
@@ -3532,12 +3512,11 @@ try {
 			ip,
 			port,
 			username,
-			privateKeyPem,
-			keyPassphrase,
+			password,
 			errorFileName,
 			errorFileName,
 			failedCaseFolder,
-			true,
+			false,
 			true
 		);
 
@@ -3546,8 +3525,7 @@ try {
 			ip,
 			port,
 			username,
-			privateKeyPem,
-			keyPassphrase,
+			password,
 			errorFileName,
 			errorFileName,
 			failedCaseArchiveFolder,
@@ -3564,9 +3542,8 @@ try {
 			[$(&quot;batch_details_id&quot;)]
 		);
 	} else if (!thresholdExceeded &amp;&amp; $(&quot;totalErrors&quot;) &gt; 0) {
-		var datalakeFolder = &apos;/esmf/inbound/&apos;;
-		var failedCaseFolder = &apos;/esmf/outbound/error/&apos;;
-		//var failedCaseFolder = $(&apos;root_sftp_folder&apos;) + &apos;/&apos; + $(&apos;mco_sftp_folder&apos;) + &apos;/esmf/outbound/error/&apos;;
+		var datalakeFolder = &apos;/inbound/esmf/&apos;;
+		var failedCaseFolder = $(&apos;root_sftp_folder&apos;) + &apos;/&apos; + $(&apos;mco_sftp_folder&apos;) + &apos;/esmf/outbound/error/&apos;;
 		var datalakeArchiveFolder = $(&apos;root_sftp_folder&apos;) + &apos;/archive/&apos; + $(&apos;mco_sftp_folder&apos;) + &apos;/prod/nyec_processed/&apos;
 		var failedCaseArchiveFolder = $(&apos;root_sftp_folder&apos;) + &apos;/archive/&apos; + $(&apos;mco_sftp_folder&apos;) + &apos;/prod/mco_error/&apos;
 
@@ -3577,12 +3554,11 @@ try {
 			ip,
 			port,
 			username,
-			privateKeyPem,
-			keyPassphrase,
+			password,
 			errorFileName,
 			errorFileName,
 			failedCaseFolder,
-			true,
+			false,
 			true
 		);
 
@@ -3591,8 +3567,7 @@ try {
 			ip,
 			port,
 			username,
-			privateKeyPem,
-			keyPassphrase,
+			password,
 			errorFileName,
 			errorFileName,
 			failedCaseArchiveFolder,
@@ -3605,8 +3580,7 @@ try {
 			destinationIp,
 			destinationPort,
 			destinationUsername,
-			destinationPrivateKeyPem,
-			destinationKeyPassphrase,
+			destinationPassword,
 			successFileName,
 			originalFileName,
 			datalakeFolder,
@@ -3619,8 +3593,7 @@ try {
 			destinationIp,
 			destinationPort,
 			destinationUsername,
-			destinationPrivateKeyPem,
-			destinationKeyPassphrase,
+			destinationPassword,
 			successFileName,
 			originalFileName,
 			datalakeArchiveFolder,
@@ -3638,7 +3611,7 @@ try {
 			[$(&quot;batch_details_id&quot;)]
 		);
 	} else {
-		var datalakeFolder = &apos;/esmf/inbound/&apos;;
+		var datalakeFolder = &apos;/inbound/esmf/&apos;;
 		var datalakeArchiveFolder = $(&apos;root_sftp_folder&apos;) + &apos;/archive/&apos; + $(&apos;mco_sftp_folder&apos;) + &apos;/prod/nyec_processed/&apos;
 
 		logger.info(&quot;Inside success case&quot;);
@@ -3647,8 +3620,7 @@ try {
 			destinationIp,
 			destinationPort,
 			destinationUsername,
-			destinationPrivateKeyPem,
-			destinationKeyPassphrase,
+			destinationPassword,
 			successFileName,
 			originalFileName,
 			datalakeFolder,
@@ -3660,15 +3632,13 @@ try {
 			destinationIp,
 			destinationPort,
 			destinationUsername,
-			destinationPrivateKeyPem,
-			destinationKeyPassphrase,
+			destinationPassword,
 			successFileName,
 			originalFileName,
 			datalakeArchiveFolder,
 			false,
 			false
 		);
-
 		var batch_update = dbConn.executeUpdate(
 			&quot;update mco_data.mco_records set sent_to_datalake_time=current_timestamp,updated_on_utc=current_timestamp where batch_id = ?::bigint&quot;,
 			[$(&quot;batch_id&quot;)]
@@ -3688,10 +3658,13 @@ try {
 				dbPassword
 			);
 		}
+		//$(&apos;batch_id&apos;)/$(&apos;mcoId&apos;) resolve to &quot;&quot; (not null) when unset, which fails the ?::bigint cast below
+		var mirthBatchId = $(&quot;batch_id&quot;) || null;
+		var mirthMcoId = $(&quot;mcoId&quot;) || null;
 		//Insert initial entries to the mco_record_details table with the batch_id we received from the previous call
 		batch_details_insert = dbConn.executeCachedQuery(
 			&quot;insert into mco_data.mco_record_details(current_file_name, file_size_in_kb, total_records, created_on_utc, updated_on_utc, is_active, status, batch_id, reporting_month, tenant_id) VALUES (?, ?, ?, current_timestamp, current_timestamp, &apos;1&apos;, &apos;MIRTH_INTERNAL_ERROR&apos;, ?::bigint, null, ?) returning batch_details_id&quot;,
-			[$(&quot;originalFilename&quot;), 0, 0, $(&quot;batch_id&quot;), $(&quot;mcoId&quot;)]
+			[$(&quot;originalFilename&quot;), 0, 0, mirthBatchId, mirthMcoId]
 		);
 		var new_batch_details_id = batch_details_insert.next()
 			? batch_details_insert.getInt(&quot;batch_details_id&quot;)
@@ -3708,11 +3681,11 @@ try {
 		var error_log_insert = dbConn.executeUpdate(
 			&quot;insert into mco_data.mco_record_error_logs (batch_id, error_json, created_on_utc, updated_on_utc, batch_details_id, is_active, error_type_id,tenant_id) values (?::bigint, ?::json, current_timestamp, current_timestamp, ?::bigint, &apos;1&apos;, ?,?)&quot;,
 			[
-				$(&quot;batch_id&quot;),
+				mirthBatchId,
 				JSON.stringify(errorDetails),
 				new_batch_details_id,
 				errorTypes[&quot;MIRTH_INTERNAL_ERROR&quot;][&quot;error_type_id&quot;],
-				$(&quot;mcoId&quot;)
+				mirthMcoId,
 			]
 		);
 		throw err;
@@ -3734,7 +3707,6 @@ finally {
 		dbConn.close();
 	}
 }
-
 </script>
       </properties>
       <transformer version="26.6.0">
@@ -3847,9 +3819,13 @@ var smtpUsername = configurationMap.get(&quot;smtpUsername&quot;);
 var smtpPassword = configurationMap.get(&quot;smtpPassword&quot;);
 var fromEmail = configurationMap.get(&quot;smtpFromEmail&quot;);
 
-var batch_id = $(&quot;batch_id&quot;);
-var batch_details_id = $(&quot;batch_details_id&quot;);
-var mcoId = $(&quot;mcoId&quot;);
+var batch_id = $(&quot;batch_id&quot;) || null;
+var batch_details_id = $(&quot;batch_details_id&quot;) || null;
+
+var totalProcess = $(&quot;totalProcess&quot;) || 0;
+var totalErrors  = $(&quot;totalErrors&quot;)  || 0;
+var recordsCount = $(&quot;recordsCount&quot;) || 0;
+var mirthMcoId   = $(&quot;mcoId&quot;) || null;
 
 var errorTypesString = configurationMap.get(&quot;errorTypes&quot;);
 var errorTypes = JSON.parse(errorTypesString);
@@ -3883,46 +3859,46 @@ try {
 		);
 		if (!$(&quot;isResubmission&quot;)) {
 			var batch_update = dbConn.executeUpdate(
-				&quot;update mco_data.mco_records set status = ?, qa_completed_time = current_timestamp,processed_count=?,errored_count=?,total_records=?,file_size_in_kb=?,updated_on_utc=current_timestamp where batch_id = ?::bigint&quot;,
+				&quot;update mco_data.mco_records set status = ?, qa_completed_time = current_timestamp,processed_count=?::bigint,errored_count=?::bigint,total_records=?::bigint,file_size_in_kb=?,updated_on_utc=current_timestamp where batch_id = ?::bigint&quot;,
 				[
 					status,
-					$(&quot;totalProcess&quot;),
-					$(&quot;totalErrors&quot;),
-					$(&quot;recordsCount&quot;),
+					totalProcess,
+					totalErrors,
+					recordsCount,
 					$(&quot;totalFileSize&quot;),
-					$(&quot;batch_id&quot;),
+					batch_id,
 				]
 			);
 		}
 
 		var batch_details_update = dbConn.executeUpdate(
-			&quot;update mco_data.mco_record_details set status = ?, qa_completed_time = current_timestamp,processed_count=?,errored_count=?,total_records=?,file_size_in_kb=?,updated_on_utc=current_timestamp where batch_details_id = ?::bigint&quot;,
+			&quot;update mco_data.mco_record_details set status = ?, qa_completed_time = current_timestamp,processed_count=?::bigint,errored_count=?::bigint,total_records=?::bigint,file_size_in_kb=?,updated_on_utc=current_timestamp where batch_details_id = ?::bigint&quot;,
 			[
 				status,
-				$(&quot;totalProcess&quot;),
-				$(&quot;totalErrors&quot;),
-				$(&quot;recordsCount&quot;),
+				totalProcess,
+				totalErrors,
+				recordsCount,
 				$(&quot;totalFileSize&quot;),
-				$(&quot;batch_details_id&quot;),
+				batch_details_id,
 			]
 		);
 
-		if ($(&quot;totalErrors&quot;) &amp;&amp; $(&quot;totalErrors&quot;) != 0) {
+		if (totalErrors &amp;&amp; totalErrors != 0) {
 			var error_log_insert = dbConn.executeUpdate(
-				&quot;insert into mco_data.mco_record_error_logs (batch_id, error_json, created_on_utc, updated_on_utc, batch_details_id, is_active, error_type_id,tenant_id) values (?::bigint, ?::json, current_timestamp, current_timestamp, ?::bigint, &apos;1&apos;, ?,?)&quot;,
+				&quot;insert into mco_data.mco_record_error_logs (batch_id, error_json, created_on_utc, updated_on_utc, batch_details_id, is_active, error_type_id, tenant_id) values (?::bigint, ?::json, current_timestamp, current_timestamp, ?::bigint, &apos;1&apos;, ?, ?)&quot;,
 				[
-					$(&quot;batch_id&quot;),
+					batch_id,
 					JSON.stringify($(&quot;errorJson&quot;)),
-					$(&quot;batch_details_id&quot;),
+					batch_details_id,
 					errorTypes[&quot;FIELD_VALIDATION_ERROR&quot;][&quot;error_type_id&quot;],
-					mcoId,
+					mirthMcoId
 				]
 			);
 		}
 
 		var last_error_count = dbConn.executeCachedQuery(
       &quot;select errored_count from mco_data.mco_record_details where batch_details_id = ?::bigint and status != &apos;FILE_REJECTED&apos; and is_active = &apos;1&apos; &quot;,
-			[$(&quot;batch_details_id&quot;)]
+			[batch_details_id]
 		);
 		while (last_error_count.next()) {
 			error_count = last_error_count.getString(1);
@@ -3930,24 +3906,24 @@ try {
 
 		if (status == &apos;ERRORED&apos; &amp;&amp; $(&quot;isResubmission&quot;)) {
 			var batch_update = dbConn.executeUpdate(
-        &quot;update mco_data.mco_records set processed_count = ((select total_records from mco_data.mco_records where batch_id = ?::bigint and is_active = &apos;1&apos;)-(select errored_count from mco_data.mco_record_details where batch_details_id = ?::bigint and is_active = &apos;1&apos;)), errored_count = ?, qa_completed_time = current_timestamp where batch_id = ?::bigint&quot;,
+        &quot;update mco_data.mco_records set processed_count = ((select total_records from mco_data.mco_records where batch_id = ?::bigint and is_active = &apos;1&apos;)-(select errored_count from mco_data.mco_record_details where batch_details_id = ?::bigint and is_active = &apos;1&apos;)), errored_count = ?::bigint, qa_completed_time = current_timestamp where batch_id = ?::bigint&quot;,
 				[
-					$(&quot;batch_id&quot;),
-					$(&quot;batch_details_id&quot;),
-					$(&quot;totalErrors&quot;),
-					$(&quot;batch_id&quot;),
+					batch_id,
+					batch_details_id,
+					totalErrors,
+					batch_id,
 				]
 			);
 		}
 		else {
 			var batch_update = dbConn.executeUpdate(
-        &quot;update mco_data.mco_records set status=?, processed_count = ((select total_records from mco_data.mco_records where batch_id = ?::bigint and is_active = &apos;1&apos; )-(select errored_count from mco_data.mco_record_details where batch_details_id = ?::bigint and is_active = &apos;1&apos;)), errored_count = ?, qa_completed_time = current_timestamp where batch_id = ?::bigint&quot;,
+        &quot;update mco_data.mco_records set status=?, processed_count = ((select total_records from mco_data.mco_records where batch_id = ?::bigint and is_active = &apos;1&apos; )-(select errored_count from mco_data.mco_record_details where batch_details_id = ?::bigint and is_active = &apos;1&apos;)), errored_count = ?::bigint, qa_completed_time = current_timestamp where batch_id = ?::bigint&quot;,
 				[
 					status,
-					$(&quot;batch_id&quot;),
-					$(&quot;batch_details_id&quot;),
-					$(&quot;totalErrors&quot;),
-					$(&quot;batch_id&quot;),
+					batch_id,
+					batch_details_id,
+					totalErrors,
+					batch_id,
 				]
 			);
 		}
@@ -3969,7 +3945,7 @@ try {
 		//Insert initial entries to the mco_record_details table with the batch_id we received from the previous call
 		batch_details_insert = dbConn.executeCachedQuery(
 			&quot;insert into mco_data.mco_record_details(current_file_name, file_size_in_kb, total_records, created_on_utc, updated_on_utc, is_active, status, batch_id, reporting_month, tenant_id) VALUES (?, ?, ?, current_timestamp, current_timestamp, &apos;1&apos;, &apos;MIRTH_INTERNAL_ERROR&apos;, ?::bigint, null, ?) returning batch_details_id&quot;,
-			[$(&apos;originalFilename&apos;), 0, 0, $(&apos;batch_id&apos;), $(&apos;mcoId&apos;)]
+			[$(&apos;originalFilename&apos;), 0, 0, batch_id, mirthMcoId]
 		);
 		var new_batch_details_id = batch_details_insert.next()
 			? batch_details_insert.getInt(&quot;batch_details_id&quot;)
@@ -3984,13 +3960,13 @@ try {
 			    lineNumber: err.lineNumber
 			};
 		var error_log_insert = dbConn.executeUpdate(
-			&quot;insert into mco_data.mco_record_error_logs (batch_id, error_json, created_on_utc, updated_on_utc, batch_details_id, is_active, error_type_id,tenant_id) values (?::bigint, ?::json, current_timestamp, current_timestamp, ?::bigint, &apos;1&apos;, ?,?)&quot;,
+			&quot;insert into mco_data.mco_record_error_logs (batch_id, error_json, created_on_utc, updated_on_utc, batch_details_id, is_active, error_type_id, tenant_id) values (?::bigint, ?::json, current_timestamp, current_timestamp, ?::bigint, &apos;1&apos;, ?, ?)&quot;,
 			[
-				$(&quot;batch_id&quot;),
+				batch_id,
 				JSON.stringify(errorDetails),
 				new_batch_details_id,
 				errorTypes[&quot;MIRTH_INTERNAL_ERROR&quot;][&quot;error_type_id&quot;],
-				$(&apos;mcoId&apos;)
+				mirthMcoId
 			]
 		);
 		throw err;
@@ -6215,30 +6191,28 @@ return;</undeployScript>
     <metadata>
       <enabled>true</enabled>
       <lastModified>
-        <time>1789711976617</time>
+        <time>1790758327200</time>
         <timezone>Asia/Calcutta</timezone>
       </lastModified>
       <pruningSettings>
         <archiveEnabled>true</archiveEnabled>
         <pruneErroredMessages>false</pruneErroredMessages>
       </pruningSettings>
-      <userId>6</userId>
+      <userId>10</userId>
     </metadata>
     <channelTags>
       <channelTag>
-        <id>7fe23fd3-5679-4ccf-bd02-b24f62a2bbf8</id>
-        <name>0_1_16</name>
+        <id>5a73058d-b93a-46dd-b157-9fbc440fc625</id>
+        <name>0_1_18</name>
         <channelIds>
           <string>281247c5-fb87-4b56-9691-190174cc834f</string>
-          <string>07df4a64-66aa-455c-9f47-5ae9bb0c4a7c</string>
-          <string>66faf132-8acc-4843-88e7-8324198c7117</string>
           <string>a8630d07-6ac1-46f8-8d95-01a70ac59206</string>
           <string>ecb5ad78-09f4-4206-81a1-7d9383871580</string>
-          <string>32e85d63-896d-4455-bf9e-0b2294eb2d08</string>
+          <string>be60d481-5755-4ad7-81ed-246e4af4d86a</string>
           <string>47283a5e-090c-41d7-8b5d-14994d64d395</string>
         </channelIds>
         <backgroundColor>
-          <red>255</red>
+          <red>128</red>
           <green>0</green>
           <blue>0</blue>
           <alpha>255</alpha>
