@@ -1,0 +1,1242 @@
+<channel version="26.6.0">
+  <id>8231df95-a7fa-4367-bd07-a3f892d9cd51</id>
+  <nextMetaDataId>3</nextMetaDataId>
+  <name>02 - Deliver Flat Files to MCOs</name>
+  <description>v 0.1.0</description>
+  <revision>3</revision>
+  <sourceConnector version="26.6.0">
+    <metaDataId>0</metaDataId>
+    <name>sourceConnector</name>
+    <properties class="com.mirth.connect.connectors.vm.VmReceiverProperties" version="26.6.0">
+      <pluginProperties/>
+      <sourceConnectorProperties version="26.6.0">
+        <responseVariable>None</responseVariable>
+        <respondAfterProcessing>true</respondAfterProcessing>
+        <processBatch>false</processBatch>
+        <firstResponse>false</firstResponse>
+        <processingThreads>1</processingThreads>
+        <resourceIds class="linked-hash-map">
+          <entry>
+            <string>Default Resource</string>
+            <string>[Default Resource]</string>
+          </entry>
+        </resourceIds>
+        <queueBufferSize>1000</queueBufferSize>
+      </sourceConnectorProperties>
+    </properties>
+    <transformer version="26.6.0">
+      <elements>
+        <com.mirth.connect.plugins.javascriptstep.JavaScriptStep version="26.6.0">
+          <sequenceNumber>0</sequenceNumber>
+          <enabled>true</enabled>
+          <script>//Get DB information
+var jdbdcDriver = configurationMap.get(&quot;jdbdcDriver&quot;);
+var jbdcUrl = configurationMap.get(&quot;jbdcUrl&quot;);
+var dbName = configurationMap.get(&quot;dbName&quot;);
+var dbPassword = configurationMap.get(&quot;dbPassword&quot;);
+var emptyRecord = channelMap.get(&quot;noRecords&quot;);
+var username = configurationMap.get(&quot;sftpUserName&quot;);
+var password = configurationMap.get(&quot;sftpPassword&quot;);
+var ip = configurationMap.get(&quot;sftpIp&quot;);
+var port = configurationMap.get(&quot;sftpPort&quot;);
+var screeningPath = configurationMap.get(&quot;screeningLocation&quot;);
+var screeningLocation = JSON.parse(screeningPath);
+var mcoCode = globalChannelMap.get(&quot;mcoCode&quot;);
+var errorCodeString = configurationMap.get(&quot;screeningErrorCodes&quot;)
+var errorCodes = JSON.parse(errorCodeString);
+var errorTypeMap = globalChannelMap.get(&quot;errorTypeMap&quot;);
+logger.info(&quot;erroMap&quot; + errorTypeMap)
+var errorsToAppend = [];
+var fileNames = [];
+var originalFileName = msg.toString();
+logger.info(originalFileName)
+channelMap.put(&quot;controlFileName&quot;, originalFileName)
+var controlFileHeader = String(configurationMap.get(&quot;controlFileHeader&quot;));
+var patientFileHeader = String(configurationMap.get(&quot;patientFileHeader&quot;));
+var screeningFileHeader = String(configurationMap.get(&quot;screnningFileHeader&quot;));
+var screeningResponseFileHeader = String(configurationMap.get(&quot;screeningResponseFileHeader&quot;));
+var consentFileHeader = String(configurationMap.get(&quot;consentFileHeader&quot;));
+var referralFileHeader = String(configurationMap.get(&quot;referralFileHeader&quot;));
+var assessmentFileHeader = String(configurationMap.get(&quot;assessmentFileHeader&quot;));
+logger.info(&quot;assementHeader&quot; + assessmentFileHeader)
+var splittedFileName = originalFileName.split(&quot;_&quot;);
+var mcoCode = splittedFileName[0].toUpperCase();
+globalChannelMap.put(&quot;mcoCode&quot;, mcoCode);
+var dbConn;
+var File = Packages.java.io.File;
+var FileInputStream = Packages.java.io.FileInputStream;
+var FileOutputStream = Packages.java.io.FileOutputStream;
+var BufferedReader = Packages.java.io.BufferedReader;
+var InputStreamReader = Packages.java.io.InputStreamReader;
+var FileReader = Packages.java.io.FileReader;
+var fileNameScreeningDetailIdMap = sourceMap.get(&quot;fileNameScreeningDetailIdMap&quot;);
+
+logger.info(mcoCode)
+
+
+logger.info(screeningLocation)
+try {
+
+    //  Initialize validation flag and error messages array
+    var validated = true;
+    var header = controlFileHeader.split(&quot;|&quot;).map(function (h) {
+        return h.trim().toUpperCase();
+    });
+    logger.info(header)
+    // logger.info(patienFileHeader)
+       var patientHeader = patientFileHeader.split(&quot;|&quot;).map(function (h) {
+           return h.trim().toUpperCase();
+       })
+       var screnningHeader = screeningFileHeader.split(&quot;|&quot;).map(function (h) {
+           return h.trim().toUpperCase();
+       })
+    
+       var screeningResponseHeader = screeningResponseFileHeader.split(&quot;|&quot;).map(function (h) {
+           return h.trim().toUpperCase();
+       })
+    
+       var consentHeader = consentFileHeader.split(&quot;|&quot;).map(function (h) {
+           return h.trim().toUpperCase();
+       })
+       var referralHeader = referralFileHeader.split(&quot;|&quot;).map(function (h) {
+           return h.trim().toUpperCase();
+       })
+    
+       var assessmentHeader = assessmentFileHeader.split(&quot;|&quot;).map(function (h) {
+           return h.trim().toUpperCase();
+       })
+
+    //  Define the key-value pairs for files and their expected headers
+    var fileHeaders = {
+        &quot;patient&quot;: patientFileHeader,
+        &quot;consent&quot;: consentFileHeader,
+        &quot;screening&quot;: screeningFileHeader,
+        &quot;screeningresponse&quot;: screeningResponseFileHeader,
+        &quot;referral&quot;: referralFileHeader,
+        &quot;assessment&quot;: assessmentFileHeader,
+        &quot;control&quot;: controlFileHeader
+    };
+
+    //  Define the list of files to process (file names must match the keys in the fileHeaders map)
+    try {
+        dbConn = DatabaseConnectionFactory.createDatabaseConnection(
+            jdbdcDriver,
+            jbdcUrl,
+            dbName,
+            dbPassword
+        );
+        logger.info(originalFileName)
+
+        var fileNameResult = dbConn.executeCachedQuery(
+            &quot;select mco_screening_id FROM screening_extracts.mco_screening_extracts where control_file_name = ? and is_active = &apos;1&apos;&quot;,
+            [originalFileName]
+        );
+        mco_screening_id = fileNameResult.next()
+            ? fileNameResult.getInt(&quot;mco_screening_id&quot;)
+            : null;
+        logger.info(mco_screening_id)
+        channelMap.put(&quot;screeningId&quot;, mco_screening_id)
+
+        //        // var fileNameResult = dbConn.executeCachedQuery(
+        //        //     &quot;select mco_screening_id FROM screening_extracts.mco_screening_extracts where control_file_name = ? and is_active = &apos;1&apos;&quot;,
+        //        //     [originalFileName]
+        //        // );
+        //        // mco_screening_id = fileNameResult.next()
+        //        //     ? fileNameResult.getInt(&quot;mco_screening_id&quot;)
+        //        //     : null;
+        // logger.info(mco_screening_id)
+        // channelMap.put(&quot;screeningId&quot;, mco_screening_id)
+        // var fileResult = dbConn.executeCachedQuery(
+        //     &quot;SELECT file_name FROM screening_extracts.mco_screening_extracts_details WHERE mco_screening_id = ? AND LOWER(file_name) NOT LIKE &apos;%_control_%&apos; and is_active=&apos;1&apos; and record_count &gt;0&quot;,
+        //     // &quot;SELECT file_name FROM screening_extracts.mco_screening_extracts_details WHERE mco_screening_id = ?  and is_active=&apos;1&apos; and record_count &gt;0&quot;,
+        //     [mco_screening_id]
+        // );
+        // logger.info(fileResult)
+
+        // while (fileResult.next()) {
+        //     logger.info(fileResult.getString(&quot;file_name&quot;));
+        //     fileNames.push(fileResult.getString(&quot;file_name&quot;));
+        // }
+        fileNames = sourceMap.get(&quot;fileInformation&quot;)
+        var screeningDetailsId = fileNameScreeningDetailIdMap[originalFileName]
+        channelMap.put(&quot;screeningDetailsId&quot;, screeningDetailsId);
+        logger.info(&quot;got file information&quot; + fileNames)
+
+    }
+    catch (err) {
+        logger.info(err);
+        throw {
+            errorType: &quot;POSTGRES ERROR&quot;,
+            description: &quot;Unable to connect to db&quot;,
+            rawError: err,
+            stackTrace: err.stack,
+            msg: err.message
+        };
+    }
+
+    // Initialize the global validated flag
+    var allFilesValid = true;
+    // This will track whether all files pass validation
+    logger.info(&quot;all files valid before validation&quot;+allFilesValid)
+
+    // Establish the SFTP connection
+    try {
+
+
+        // Loop through each file to fetch and validate
+        for (var fileIndex = 0; fileIndex &lt; fileNames.length; fileIndex++) {
+            var filename = fileNames[fileIndex][&apos;fileName&apos;];
+            logger.info(&quot;fileName&quot; + filename)
+            var fi = fileNames[fileIndex];
+            if (fi.skipFile) continue;
+            //            var skipFile=fileNames[fileIndex][&apos;skipfile&apos;];
+            //            if (skipFile){
+            //            continue;
+            //            }
+
+            // Determine the file type from the file name (you can extract the key from the file name)
+            var fileType = filename.split(&apos;_&apos;)[1];
+            logger.info(fileType)
+            var path = screeningLocation[mcoCode][&quot;temp&quot;]
+            var filePath = path + &quot;/&quot; + filename;
+            // var inputStream = sftpChannel.get(filePath);
+            // var fileContent = new java.io.InputStreamReader(inputStream);
+            // var bufferedReader = new java.io.BufferedReader(fileContent);
+            var file = File(filePath)
+            var reader = new FileReader(file)
+            var readBuffer = BufferedReader(reader)
+
+            // Read the content of the file into a variable
+            //var fileContent = &quot;&quot;;
+            var headerLine = &quot;&quot;;
+            var fileLineCounter = 0;
+            var oneRecordFound = false;
+            var line;
+            while ((line = readBuffer.readLine()) != null) {
+                logger.info(line.toString())
+                if (fileLineCounter == 0) {
+                    headerLine = line;
+                }
+                else {
+                    logger.info(&quot;inside line&quot; + line.toString().trim())
+                    logger.info(&quot;inside line length&quot; + line.toString().trim().length())
+                    if (line.toString().trim().length() &gt; 0) {
+                        oneRecordFound = true;
+                        logger.info(&quot;inside one record found&quot;)
+                        readBuffer.close();
+                        break;
+                    }
+                    else {
+                        logger.info(&quot;inside else&quot;)
+                    }
+                }
+                fileLineCounter++;
+            }
+
+            //If not a single valid record is found, the buffer will still be open, so we should close it manually
+
+            // Close the SFTP connection
+            if (oneRecordFound == false) {
+                readBuffer.close();
+            }
+
+
+            //            //  Split the file into lines and validate
+            //            var lines = fileContent.split(&quot;\n&quot;).map(function (line) {
+            //                logger.info(line)
+            //                return line.trim();
+            //            }).filter(function (line) {
+            //                return line.length &gt; 0;  // Remove any empty lines
+            //            });
+            //
+            //            // Validate if the file is empty
+            //            logger.info(&quot;144&quot; + lines)
+
+            // Get the expected header for this file type
+            var expectedHeader = fileHeaders[fileType.toLowerCase()];
+            var header = expectedHeader
+
+            // Validate the header of the file
+            //            var actualHeader = String(headerLine).split(&apos;|&apos;);
+            var actualHeader = String(headerLine);
+            var invalidDelimiterRegex = /[,\t; ]/;
+            function isValidHeaderField(value) {
+                return !invalidDelimiterRegex.test(value);
+            }
+            function arraysEqual(a1, a2) {
+                logger.info(&quot;a1&quot; + a1)
+                logger.info(&quot;a2&quot; + a2)
+                if (a1.length !== a2.length) {
+                    logger.info(&quot;Header length mismatch. Expected: &quot; + a1.length + &quot;, Actual: &quot; + a2.length);
+                    return false;
+                }
+                if (a2.length &lt;= 1) return false;
+                for (var i = 0; i &lt; a1.length; i++) {
+                    var val1 = a1[i].trim().toLowerCase();
+                    var val2 = a2[i].trim().toLowerCase();
+
+                    // Reject if any field contains a invalid delimeter— indicating mixed delimiters
+                    if (!isValidHeaderField(val1) || !isValidHeaderField(val2)) {
+                        logger.info(&quot;Invalid character in header field: &quot; + a2[i]);
+                        return false;
+                    }
+
+                    if (val1 !== val2) {
+                        return false;
+                    }
+                }
+                return true;
+            }
+
+            function headerEquals(expected, actual) {
+
+                // // Remove BOM
+                // expected = expected.replace(/^\uFEFF/, &apos;&apos;);
+                // actual = actual.replace(/^\uFEFF/, &apos;&apos;);
+
+                // // Remove carriage returns
+                // expected = expected.replace(/\r/g, &apos;&apos;);
+                // actual = actual.replace(/\r/g, &apos;&apos;);
+
+                // // Remove zero-width and bidi characters
+                // expected = expected.replace(/[\u200B-\u200F\u202A-\u202E]/g, &apos;&apos;);
+                // actual = actual.replace(/[\u200B-\u200F\u202A-\u202E]/g, &apos;&apos;);
+
+                // // Normalize NBSP and other unicode spaces
+                // expected = expected.replace(/\u00A0/g, &apos; &apos;);
+                // actual = actual.replace(/\u00A0/g, &apos; &apos;);
+
+                // Trim outer whitespace
+                logger.info(&quot;Expected: [&quot; + expected + &quot;]&quot;);
+                logger.info(&quot;Actual:   [&quot; + actual + &quot;]&quot;);
+                expected = expected.trim();
+                actual = actual.trim();
+
+                // // Collapse multiple spaces
+                // expected = expected.replace(/\s+/g, &apos; &apos;);
+                // actual = actual.replace(/\s+/g, &apos; &apos;);
+
+
+
+                logger.info(expected.toLowerCase() == actual.toLowerCase())
+
+                return expected.toLowerCase() == actual.toLowerCase();
+            }
+
+
+
+            logger.info(&quot;after length&quot;);
+
+            if (!headerEquals(header, actualHeader)) {
+                logger.info(&quot;inside invalid header&quot;)
+                errorsToAppend.push({
+                    code: errorCodes[&quot;EC003&quot;][&quot;code&quot;],
+                    description: errorCodes[&quot;EC003&quot;][&quot;description&quot;],
+                    fileName: filename,
+                    status: &quot;ERROR&quot;
+
+                });
+                allFilesValid = false;
+                continue;
+            }
+            logger.info(&quot;all files valid after header validation&quot;+allFilesValid)
+            if (oneRecordFound == false) {
+                logger.info(&quot;inside one record found&quot;)
+                errorsToAppend.push({
+                    code: errorCodes[&quot;EC004&quot;][&quot;code&quot;],
+                    description: errorCodes[&quot;EC004&quot;][&quot;description&quot;],
+                    fileName: filename,
+                    status: &quot;ERROR&quot;
+
+                });
+                allFilesValid = false;
+                continue;
+            }
+            logger.info(&quot;all files valid after one record found&quot; + allFilesValid)
+
+            //  If any validation failed, mark the file as invalid
+            if (!allFilesValid) {
+                logger.info(&quot;inside file invalid case&quot;)
+                // try {
+                //     if (!dbConn) {
+                //         dbConn = DatabaseConnectionFactory.createDatabaseConnection(
+                //             jdbdcDriver,
+                //             jbdcUrl,
+                //             dbName,
+                //             dbPassword
+                //         );
+                //     }
+                //     var fileResult = dbConn.executeCachedQuery(
+                //         &quot;UPDATE screening_extracts.mco_screening_extracts_details SET status =&apos;ERROR&apos; WHERE file_name=?  returning *&quot;,
+                //         [filename]
+                //     );
+                //     logger.info(&quot;logged success fully in db&quot;)
+
+                // }
+                // catch (err) {
+                //     throw {
+                //         errorType: &quot;POSTGRES ERROR&quot;,
+                //         description: &quot;Unable to connect to db&quot;,
+                //         rawError: err,
+                //         stackTrace: err.stack,
+                //         msg: err.message
+                //     };
+                // }
+                logger.error(&quot;File validation failed for: &quot; + filename);
+            } else {
+                logger.info(&quot;File &quot; + filename + &quot; has been validated successfully.&quot;);
+
+                // try {
+                //     if (!dbConn) {
+                //         dbConn = DatabaseConnectionFactory.createDatabaseConnection(
+                //             jdbdcDriver,
+                //             jbdcUrl,
+                //             dbName,
+                //             dbPassword
+                //         );
+
+                //     }
+                //     var fileResult = dbConn.executeCachedQuery(
+                //         &quot;UPDATE screening_extracts.mco_screening_extracts_details SET status =&apos;VALIDATED&apos; WHERE file_name=?  returning *&quot;,
+                //         [filename]
+                //     );
+
+                // }
+                // catch (err) {
+                //     throw {
+                //         errorType: &quot;POSTGRES ERROR&quot;,
+                //         description: &quot;Unable to connect to db&quot;,
+                //         rawError: err,
+                //         stackTrace: err.stack,
+                //         msg: err.message
+                //     };
+                // }
+            }
+        }
+    }
+    catch (err) {
+        logger.info(err)
+        throw {
+            errorType: &quot;SFTP&quot;,
+            description: &quot;Unable to copy or move file&quot;,
+            rawError: err,
+            stackTrace: err.stack,
+            msg: err.message
+        }
+    }
+
+    logger.info(&quot;all files valid&quot; + allFilesValid)
+
+    //  After processing all files, set global validated flag
+    if (allFilesValid) {
+        try {
+            if (!dbConn) {
+                dbConn = DatabaseConnectionFactory.createDatabaseConnection(
+                    jdbdcDriver,
+                    jbdcUrl,
+                    dbName,
+                    dbPassword
+                );
+
+            }
+            for (var file = 0; file &lt; fileNames.length; file++) {
+                var fname = fileNames[file][&apos;fileName&apos;]
+                var fileResults = dbConn.executeCachedQuery(
+                    &quot;UPDATE screening_extracts.mco_screening_extracts_details SET status =&apos;VALIDATED&apos;,updated_on_utc=NOW() WHERE file_name=? and is_active =&apos;1&apos; returning *&quot;,
+                    [fname]
+                );
+            }
+            var fileResult = dbConn.executeCachedQuery(
+                &quot;UPDATE screening_extracts.mco_screening_extracts SET status =&apos;VALIDATED&apos;,updated_on_utc=NOW() WHERE control_file_name=? and is_active =&apos;1&apos;  returning *&quot;,
+                [originalFileName]
+            );
+            logger.info(&quot;All files have been successfully validated.&quot;);
+        }
+        catch (err) {
+            throw {
+                errorType: &quot;POSTGRES ERROR&quot;,
+                description: &quot;Unable to connect to db&quot;,
+                rawError: err,
+                stackTrace: err.stack,
+                msg: err.message
+            };
+        }
+
+        channelMap.put(&quot;sentToMco&quot;, allFilesValid)
+    } else {
+        try {
+            if (!dbConn) {
+                dbConn = DatabaseConnectionFactory.createDatabaseConnection(
+                    jdbdcDriver,
+                    jbdcUrl,
+                    dbName,
+                    dbPassword
+                );
+
+            }
+            for (var file = 0; file &lt; fileNames.length; file++) {
+                var fname = fileNames[file][&apos;fileName&apos;]
+                var fileResults = dbConn.executeCachedQuery(
+                    &quot;UPDATE screening_extracts.mco_screening_extracts_details SET status =&apos;ERROR&apos;,updated_on_utc =NOW() WHERE file_name=? and is_active =&apos;1&apos; returning *&quot;,
+                    [fname]
+                );
+            }
+            var fileResult = dbConn.executeCachedQuery(
+                &quot;UPDATE screening_extracts.mco_screening_extracts SET status =&apos;ERROR&apos;,updated_on_utc=NOW() WHERE control_file_name=? and is_active =&apos;1&apos; returning *&quot;,
+                [originalFileName]
+            );
+            logger.info(&quot;All files have been successfully validated.&quot;);
+        }
+        catch (err) {
+            throw {
+                errorType: &quot;POSTGRES ERROR&quot;,
+                description: &quot;Unable to connect to db&quot;,
+                rawError: err,
+                stackTrace: err.stack,
+                msg: err.message
+            };
+        }
+
+        channelMap.put(&quot;sentToMco&quot;, allFilesValid)
+    }
+
+
+    // Set the global validated status in globalChannelMap
+    globalChannelMap.put(&quot;validated&quot;, allFilesValid);
+    globalChannelMap.put(&quot;error&quot;, errorsToAppend);
+    globalChannelMap.put(&quot;fileNames&quot;, fileNames);
+
+    // Disconnect from SFTP after all files have been processed
+
+}
+catch (err) {
+    logger.info(&quot;error in inserting db&quot; + err)
+    try {
+        if (!dbConn) {
+            dbConn = DatabaseConnectionFactory.createDatabaseConnection(
+                jdbdcDriver,
+                jbdcUrl,
+                dbName,
+                dbPassword
+            );
+        }
+        var error_type_id = errorTypeMap[&quot;MIRTH_INTERNAL_ERROR&quot;]
+        var screening_id = channelMap.get(&quot;screeningId&quot;);
+        var fallbackErrJson = {
+            errorType: err.errorType ? err.errorType : &quot;SFTP ERROR&quot;,
+            description: &quot;Error While copy or moving&quot; + file + &quot;to&quot; + path,
+            stack: err.stack,
+            msg: err.msg ? err.msg : err.message,
+            rawError: err.rawError ? err.rawError : &quot;SFTP ERROR&quot;,
+        };
+        var fileResult = dbConn.executeCachedQuery(
+            &quot;INSERT INTO screening_extracts.mco_screening_extracts_error_logs(mco_screening_id,mco_screening_extracts_details_id,error_json, created_on_utc, updated_on_utc, is_active, screening_error_type_id) VALUES (?,?,?::json, NOW(),NOW(),&apos;1&apos;,?) returning *&quot;,
+            [screening_id,
+                screeningDetailsId,
+                JSON.stringify(fallbackErrJson),
+                error_type_id]
+
+        );
+
+    }
+    catch (err) {
+        throw {
+            errorType: &quot;POSTGRES ERROR&quot;,
+            description: &quot;Unable to connect to db&quot;,
+            rawError: err,
+            stackTrace: err.stack,
+            msg: err.message
+        };
+    }
+    logger.info(err)
+    throw err;
+} finally {
+    if (dbConn) {
+        dbConn.close();
+    }
+}</script>
+        </com.mirth.connect.plugins.javascriptstep.JavaScriptStep>
+      </elements>
+      <inboundTemplate encoding="base64"></inboundTemplate>
+      <outboundTemplate encoding="base64"></outboundTemplate>
+      <inboundDataType>RAW</inboundDataType>
+      <outboundDataType>RAW</outboundDataType>
+      <inboundProperties class="com.mirth.connect.plugins.datatypes.raw.RawDataTypeProperties" version="26.6.0">
+        <batchProperties class="com.mirth.connect.plugins.datatypes.raw.RawBatchProperties" version="26.6.0">
+          <splitType>JavaScript</splitType>
+          <batchScript></batchScript>
+        </batchProperties>
+      </inboundProperties>
+      <outboundProperties class="com.mirth.connect.plugins.datatypes.raw.RawDataTypeProperties" version="26.6.0">
+        <batchProperties class="com.mirth.connect.plugins.datatypes.raw.RawBatchProperties" version="26.6.0">
+          <splitType>JavaScript</splitType>
+          <batchScript></batchScript>
+        </batchProperties>
+      </outboundProperties>
+    </transformer>
+    <filter version="26.6.0">
+      <elements/>
+    </filter>
+    <transportName>Channel Reader</transportName>
+    <mode>SOURCE</mode>
+    <enabled>true</enabled>
+    <waitForPrevious>true</waitForPrevious>
+  </sourceConnector>
+  <destinationConnectors>
+    <connector version="26.6.0">
+      <metaDataId>1</metaDataId>
+      <name>Destination 1</name>
+      <properties class="com.mirth.connect.connectors.js.JavaScriptDispatcherProperties" version="26.6.0">
+        <pluginProperties/>
+        <destinationConnectorProperties version="26.6.0">
+          <queueEnabled>false</queueEnabled>
+          <sendFirst>false</sendFirst>
+          <retryIntervalMillis>10000</retryIntervalMillis>
+          <regenerateTemplate>false</regenerateTemplate>
+          <retryCount>0</retryCount>
+          <rotate>false</rotate>
+          <includeFilterTransformer>false</includeFilterTransformer>
+          <threadCount>1</threadCount>
+          <threadAssignmentVariable></threadAssignmentVariable>
+          <validateResponse>false</validateResponse>
+          <resourceIds class="linked-hash-map">
+            <entry>
+              <string>Default Resource</string>
+              <string>[Default Resource]</string>
+            </entry>
+          </resourceIds>
+          <queueBufferSize>1000</queueBufferSize>
+          <reattachAttachments>true</reattachAttachments>
+        </destinationConnectorProperties>
+        <script>try {
+	var jdbdcDriver = configurationMap.get(&quot;jdbdcDriver&quot;);
+	var jbdcUrl = configurationMap.get(&quot;jbdcUrl&quot;);
+	var dbName = configurationMap.get(&quot;dbName&quot;);
+	var dbPassword = configurationMap.get(&quot;dbPassword&quot;);
+	var screeningPath = configurationMap.get(&quot;screeningLocation&quot;);
+	var screeningLocation = JSON.parse(screeningPath);
+	var mcoCode = globalChannelMap.get(&quot;mcoCode&quot;);
+	logger.info(&quot;mco code: &quot; + mcoCode);
+
+	var outputFolder = screeningLocation[mcoCode][&quot;dailyFiles&quot;];
+	var tempFolder = screeningLocation[mcoCode][&quot;temp&quot;];
+	var backupFolder = screeningLocation[mcoCode][&quot;processFiles&quot;];
+	var expectedFiles = globalChannelMap.get(&quot;fileNames&quot;); // This should be an array
+	var errorTypeMap = globalChannelMap.get(&quot;errorTypeMap&quot;);
+	var screeningId = channelMap.get(&quot;screeningId&quot;);
+
+	var username = configurationMap.get(&quot;sftpUserName&quot;);
+	var password = configurationMap.get(&quot;sftpPassword&quot;);
+	var ip = configurationMap.get(&quot;sftpIp&quot;);
+	var port = configurationMap.get(&quot;sftpPort&quot;);
+	var dbConn;
+
+	var isSuccess = false;
+
+	// Import Java classes
+
+	var File = java.io.File;
+	var FileInputStream = java.io.FileInputStream;
+	var FileOutputStream = java.io.FileOutputStream;
+	var ZipOutputStream = java.util.zip.ZipOutputStream;
+	var ZipEntry = java.util.zip.ZipEntry;
+	var SimpleDateFormat = java.text.SimpleDateFormat;
+	var Date = java.util.Date;
+	var Files = java.nio.file.Files;
+	var Paths = java.nio.file.Paths;
+	var StandardCopyOption = java.nio.file.StandardCopyOption;
+	var ArrayList = java.util.ArrayList;
+	var HashMap = java.util.HashMap;
+
+	var directory = new File(tempFolder);
+	var files = directory.listFiles();
+	var availableFilesMap = new java.util.HashMap();
+	if (files != null) {
+		for (var i = 0; i &lt; files.length; i++) {
+			if (files[i].isFile()) {
+				var fname = files[i].getName().trim();
+				var size = files[i].length();
+				if (size &gt; 0) {
+					availableFilesMap.put(fname, files[i].getAbsolutePath());
+				} else {
+					logger.warn(&quot;Skipping empty file: &quot; + fname);
+				}
+			}
+		}
+	} else {
+		logger.error(&quot;Directory does not exist or cannot be read: &quot; + tempFolder);
+		return;
+	}
+
+	// --- Check and Collect Files ---
+	var filesToZip = [];
+	var allExist = true;
+	logger.info(&quot;expected files&quot; + expectedFiles)
+	for (var fname = 0; fname &lt; expectedFiles.length; fname++) {
+		logger.info(&quot;logging fname&quot; + expectedFiles[fname][&apos;fileName&apos;])
+		var requestedFile = expectedFiles[fname][&apos;fileName&apos;].toString().trim();
+		var actualFile = availableFilesMap.get(requestedFile);
+		var skipfile=expectedFiles[fname][&apos;skipFile&apos;]
+		if(skipfile){
+			continue;
+			}
+
+		if (actualFile == null) {
+			logger.warn(&quot;Missing or empty file in source: &quot; + requestedFile);
+			allExist = false;
+		} else {
+			filesToZip.push(actualFile); // use actualFile from SFTP list
+		}
+	}
+
+	if (!allExist) {
+		logger.warn(&quot;Not all expected files found. Skipping zip.&quot;);
+		return;
+	}
+
+	// --- ZIP Files ---
+	var splittedFileName = $(&apos;controlFileName&apos;).split(&quot;_&quot;);
+	var parts = String(splittedFileName[2]).split(&quot;.&quot;);
+	var dateFormat = parts[0];
+	var sdf = new java.text.SimpleDateFormat(&quot;yyyyMMdd&quot;);
+	var todayStr = sdf.format(new java.util.Date());
+	var date = dateFormat ? dateFormat : todayStr;
+	var zipFileName = mcoCode + &quot;_hrsnob_screenings_&quot; + date + &quot;.zip&quot;;
+	var zipFilePath = outputFolder + &quot;/&quot; + zipFileName;
+	var backupZipPath = backupFolder + &quot;/&quot; + zipFileName;
+
+	var fos = new FileOutputStream(zipFilePath);
+	var zos = new ZipOutputStream(fos);
+
+for each (var fullPath in filesToZip) {
+	var fileToZip = new File(fullPath);
+	var fis = new FileInputStream(fileToZip);
+	var entry = new ZipEntry(fileToZip.getName());
+	zos.putNextEntry(entry);
+
+	var buffer = java.lang.reflect.Array.newInstance(java.lang.Byte.TYPE, 1024);
+	var len;
+	while ((len = fis.read(buffer)) &gt; 0) {
+		zos.write(buffer, 0, len);
+	}
+	fis.close();
+	zos.closeEntry();
+}
+	zos.close();
+	fos.close();
+	logger.info(&quot;ZIP created successfully: &quot; + zipFilePath);
+	logger.info(backupZipPath)
+	Files.copy(
+		Paths.get(zipFilePath),
+		Paths.get(backupZipPath),
+		StandardCopyOption.REPLACE_EXISTING
+	);
+	logger.info(&quot;ZIP copied to backup location: &quot; + backupZipPath);
+	isSuccess = true;
+	channelMap.put(&quot;success&quot;, isSuccess);
+
+	// --- Clean up temp files from SFTP ---
+	for each (var filePath in filesToZip) {
+    var fileToDelete = new File(filePath);
+
+    if (fileToDelete.exists() &amp;&amp; fileToDelete.isFile()) {
+        org.apache.commons.io.FileUtils.deleteQuietly(fileToDelete);
+    } else if (fileToDelete.exists() &amp;&amp; fileToDelete.isDirectory()) {
+        logger.warn(&quot;Skipping deletion, found directory: &quot; + fileToDelete.getAbsolutePath());
+    } else {
+        logger.warn(&quot;File not found for deletion: &quot; + fileToDelete.getAbsolutePath());
+    }
+}
+	if (isSuccess) {
+		logger.info(&quot;logging completed status in db&quot; + isSuccess )
+		var controlFileName = channelMap.get(&apos;controlFileName&apos;);
+		var file;
+		try {
+			if (!dbConn) {
+				dbConn = DatabaseConnectionFactory.createDatabaseConnection(
+					jdbdcDriver,
+					jbdcUrl,
+					dbName,
+					dbPassword
+				);
+			}
+				for (var j = 0; j &lt; expectedFiles.length; j++) {
+					var file=expectedFiles[j][&apos;fileName&apos;]
+				var fileResult = dbConn.executeCachedQuery(
+					&quot;UPDATE screening_extracts.mco_screening_extracts_details SET status =&apos;COMPLETED&apos;, updated_on_utc = NOW() WHERE file_name=? and is_active =&apos;1&apos;  returning *&quot;,
+					[file]
+				);
+			}
+			file = dbConn.executeCachedQuery(
+		        &quot;UPDATE screening_extracts.mco_screening_extracts SET status =&apos;COMPLETED&apos;, sent_file_name = ?, updated_on_utc = NOW(), sent_to_mco = NOW() WHERE control_file_name = ? AND is_active = &apos;1&apos; RETURNING *&quot;,
+		        [ zipFileName.toString(), $(&apos;controlFileName&apos;) ]
+		    );
+		}
+		catch (err) {
+			throw {
+				errorType: &quot;POSTGRES ERROR&quot;,
+				description: &quot;Unable to connect to db&quot;,
+				rawError: err,
+				stackTrace: err.stack,
+				msg: err.message
+			};
+		}
+	}
+} catch (err) {
+	logger.error(&quot;Error during zip and clean process: &quot; + err);
+
+	try {
+		dbConn = DatabaseConnectionFactory.createDatabaseConnection(
+			jdbdcDriver,
+			jbdcUrl,
+			dbName,
+			dbPassword
+		);
+		var error_type_id = errorTypeMap[&quot;MIRTH_INTERNAL_ERROR&quot;];
+		var fallbackErrJson = {
+			errorType: err.errorType ? err.errorType : &quot;MIRTH INTERNAL ERROR&quot;,
+			description: &quot;Error While copy or moving&quot; + file,
+			stack: err.stack,
+			msg: err.msg ? err.msg : err.message,
+			rawError: err.rawError ? err.rawError : &quot;SFTP ERROR&quot;,
+		};
+		 var mco_screening_details_id = channelMap.get(&quot;screeningDetailsId&quot;);
+
+		dbConn.executeCachedQuery(
+			&quot;INSERT INTO screening_extracts.mco_screening_extracts_error_logs(mco_screening_id,mco_screening_extracts_details_id,error_json, created_on_utc, updated_on_utc, is_active, screening_error_type_id) VALUES (?, ?::json, NOW(),NOW(),&apos;1&apos;,?) returning *&quot;,
+			[screeningId,mco_screening_details_id,JSON.stringify(fallbackErrJson), error_type_id]
+		);
+	} catch (logErr) {
+		logger.error(&quot;Failed to log error to DB: &quot; + logErr);
+	}
+	throw {
+		errorType: &quot;POSTGRES ERROR&quot;,
+		description: &quot;Unable to connect to db&quot;,
+		rawError: err,
+		stackTrace: err.stack,
+		msg: err.message
+	};
+} finally {
+
+	if (dbConn) dbConn.close();
+}
+</script>
+      </properties>
+      <transformer version="26.6.0">
+        <elements/>
+        <inboundTemplate encoding="base64"></inboundTemplate>
+        <inboundDataType>RAW</inboundDataType>
+        <outboundDataType>RAW</outboundDataType>
+        <inboundProperties class="com.mirth.connect.plugins.datatypes.raw.RawDataTypeProperties" version="26.6.0">
+          <batchProperties class="com.mirth.connect.plugins.datatypes.raw.RawBatchProperties" version="26.6.0">
+            <splitType>JavaScript</splitType>
+            <batchScript></batchScript>
+          </batchProperties>
+        </inboundProperties>
+        <outboundProperties class="com.mirth.connect.plugins.datatypes.raw.RawDataTypeProperties" version="26.6.0">
+          <batchProperties class="com.mirth.connect.plugins.datatypes.raw.RawBatchProperties" version="26.6.0">
+            <splitType>JavaScript</splitType>
+            <batchScript></batchScript>
+          </batchProperties>
+        </outboundProperties>
+      </transformer>
+      <responseTransformer version="26.6.0">
+        <elements/>
+        <inboundDataType>RAW</inboundDataType>
+        <outboundDataType>RAW</outboundDataType>
+        <inboundProperties class="com.mirth.connect.plugins.datatypes.raw.RawDataTypeProperties" version="26.6.0">
+          <batchProperties class="com.mirth.connect.plugins.datatypes.raw.RawBatchProperties" version="26.6.0">
+            <splitType>JavaScript</splitType>
+            <batchScript></batchScript>
+          </batchProperties>
+        </inboundProperties>
+        <outboundProperties class="com.mirth.connect.plugins.datatypes.raw.RawDataTypeProperties" version="26.6.0">
+          <batchProperties class="com.mirth.connect.plugins.datatypes.raw.RawBatchProperties" version="26.6.0">
+            <splitType>JavaScript</splitType>
+            <batchScript></batchScript>
+          </batchProperties>
+        </outboundProperties>
+      </responseTransformer>
+      <filter version="26.6.0">
+        <elements>
+          <com.mirth.connect.plugins.rulebuilder.RuleBuilderRule version="26.6.0">
+            <name>Accept message if &quot;$(&apos;validated&apos;)&quot; equals true</name>
+            <sequenceNumber>0</sequenceNumber>
+            <enabled>true</enabled>
+            <field>$(&apos;validated&apos;)</field>
+            <condition>EQUALS</condition>
+            <values>
+              <string>true</string>
+            </values>
+          </com.mirth.connect.plugins.rulebuilder.RuleBuilderRule>
+        </elements>
+      </filter>
+      <transportName>JavaScript Writer</transportName>
+      <mode>DESTINATION</mode>
+      <enabled>true</enabled>
+      <waitForPrevious>true</waitForPrevious>
+    </connector>
+    <connector version="26.6.0">
+      <metaDataId>2</metaDataId>
+      <name>Destination 2</name>
+      <properties class="com.mirth.connect.connectors.file.FileDispatcherProperties" version="26.6.0">
+        <pluginProperties/>
+        <destinationConnectorProperties version="26.6.0">
+          <queueEnabled>false</queueEnabled>
+          <sendFirst>false</sendFirst>
+          <retryIntervalMillis>10000</retryIntervalMillis>
+          <regenerateTemplate>false</regenerateTemplate>
+          <retryCount>0</retryCount>
+          <rotate>false</rotate>
+          <includeFilterTransformer>false</includeFilterTransformer>
+          <threadCount>1</threadCount>
+          <threadAssignmentVariable></threadAssignmentVariable>
+          <validateResponse>false</validateResponse>
+          <resourceIds class="linked-hash-map">
+            <entry>
+              <string>Default Resource</string>
+              <string>[Default Resource]</string>
+            </entry>
+          </resourceIds>
+          <queueBufferSize>1000</queueBufferSize>
+          <reattachAttachments>true</reattachAttachments>
+        </destinationConnectorProperties>
+        <scheme>FILE</scheme>
+        <host>${errorFilePath}</host>
+        <outputPattern>${errorFileName}</outputPattern>
+        <anonymous>true</anonymous>
+        <username>anonymous</username>
+        <password>anonymous</password>
+        <timeout>10000</timeout>
+        <keepConnectionOpen>true</keepConnectionOpen>
+        <maxIdleTime>0</maxIdleTime>
+        <secure>true</secure>
+        <passive>true</passive>
+        <validateConnection>true</validateConnection>
+        <outputAppend>false</outputAppend>
+        <errorOnExists>false</errorOnExists>
+        <temporary>false</temporary>
+        <binary>false</binary>
+        <charsetEncoding>DEFAULT_ENCODING</charsetEncoding>
+        <template>${errorContent}</template>
+      </properties>
+      <transformer version="26.6.0">
+        <elements>
+          <com.mirth.connect.plugins.javascriptstep.JavaScriptStep version="26.6.0">
+            <sequenceNumber>0</sequenceNumber>
+            <enabled>true</enabled>
+            <script>try {
+    var errors = $(&apos;error&apos;)
+    var errorFileHeader = configurationMap.get(&quot;errorFileHeader&quot;);
+    var screeningPath = configurationMap.get(&quot;screeningLocation&quot;);
+    var screeningLocation = JSON.parse(screeningPath);
+    var mco_code = $(&apos;mcoCode&apos;);
+    var dbConn;
+    var jdbdcDriver = configurationMap.get(&quot;jdbdcDriver&quot;);
+    var jbdcUrl = configurationMap.get(&quot;jbdcUrl&quot;);
+    var dbName = configurationMap.get(&quot;dbName&quot;);
+    var dbPassword = configurationMap.get(&quot;dbPassword&quot;);
+    var errorTypeMap = globalChannelMap.get(&quot;errorTypeMap&quot;);
+    logger.info(&quot;erroMap&quot; + errorTypeMap)
+    var sdf = new java.text.SimpleDateFormat(&quot;yyyyMMdd&quot;);
+    var todayStr = sdf.format(new java.util.Date());
+    var splittedFileName = $(&apos;controlFileName&apos;).split(&quot;_&quot;)
+    var part = String(splittedFileName[2]).split(&quot;.&quot;);
+    var dateString = part[0] ? part[0] : todayStr;
+    var fileNameScreeningDetailIdMap = sourceMap.get(&quot;fileNameScreeningDetailIdMap&quot;);
+
+
+    // File name to upload
+    if (typeof errors === &apos;string&apos;) {
+        errors = JSON.parse(errors); // ensure array
+    }
+
+    // Build file content
+    var output = errorFileHeader + &quot;\n&quot;;
+    logger.info(&quot;error file header&quot; + output);
+    var sdf = new java.text.SimpleDateFormat(&quot;yyyy-MM-dd HH:mm:ss&quot;);
+    var errorTime = sdf.format(new java.util.Date());
+    logger.info(&quot;error length&quot;+errors.length)
+    for (var i = 0; i &lt; errors.length; i++) {
+        var err = errors[i];
+        var controlFileName = $(&apos;controlFileName&apos;);
+        var fileName = err.fileName || &quot;UNKNOWN&quot;;
+        var status = err.status || &quot;ERROR&quot;;
+        var description = err.description || &quot;UNKNOWN&quot;;
+        var deliveredDateTime = errorTime;
+
+        output += controlFileName + &quot;|&quot; + fileName + &quot;|&quot; + status + &quot;|&quot; + description + &quot;|&quot; + deliveredDateTime + &quot;\n&quot;;
+        logger.info(&quot;error content&quot; + output)
+        try {
+            if (!dbConn) {
+                dbConn = DatabaseConnectionFactory.createDatabaseConnection(
+                    jdbdcDriver,
+                    jbdcUrl,
+                    dbName,
+                    dbPassword
+                );
+            }
+           logger.info(&quot;db connection established&quot;)
+            var error_type_id = errorTypeMap[&quot;VALIDATION_ERROR&quot;]
+            var screening_id = $(&apos;screeningId&apos;);
+            var fallbackErrJson = {
+                fileName: err.fileName || &quot;UNKNOWN&quot;,
+                controlFileName: $(&apos;controlFileName&apos;),
+                err: err.description
+
+            };
+            var screeningDetailsId= fileNameScreeningDetailIdMap[err.fileName];
+            logger.info(screeningDetailsId)
+         var fileResult = dbConn.executeCachedQuery(
+                &quot;INSERT INTO screening_extracts.mco_screening_extracts_error_logs(mco_screening_id,mco_screening_extracts_details_id,error_json, created_on_utc, updated_on_utc, is_active, screening_error_type_id) VALUES (?,?,?::json, NOW(),NOW(),&apos;1&apos;,?) returning *&quot;,
+                [screening_id,
+                screeningDetailsId,
+                    JSON.stringify(fallbackErrJson),
+                    error_type_id]
+
+            );
+            logger.info(&quot;db query completed&quot;)
+
+        }
+        catch (err) {
+            throw {
+                errorType: &quot;POSTGRES ERROR&quot;,
+                description: &quot;Unable to connect to db&quot;,
+                rawError: err,
+                stackTrace: err.stack,
+                msg: err.message
+            };
+        }
+
+        logger.info(&quot;error file content&quot; + output);
+
+    } 
+    var remoteFileName = $(&apos;mcoCode&apos;) + &quot;_Error_&quot; + dateString + &quot;.txt&quot;;
+    var backupRemotePath = screeningLocation[mco_code][&quot;errorFiles&quot;];
+
+    channelMap.put(&quot;errorContent&quot;, output)
+    channelMap.put(&quot;errorFileName&quot;, remoteFileName)
+    channelMap.put(&quot;errorFilePath&quot;, backupRemotePath)
+}
+catch (err) {
+    try {
+        if (!dbConn) {
+            dbConn = DatabaseConnectionFactory.createDatabaseConnection(
+                jdbdcDriver,
+                jbdcUrl,
+                dbName,
+                dbPassword
+            );
+        }
+        var error_type_id = errorTypeMap[&quot;MIRTH_INTERNAL_ERROR&quot;]
+        var screening_id = $(&apos;screeningId&apos;);
+        var mco_screening_details_id = channelMap.get(&quot;screeningDetailsId&quot;);
+        var fallbackErrJson = {
+            errorType: err.errorType ? err.errorType : &quot;MIRTH INTERNAL ERROR&quot;,
+            description: &quot;Error While copy or moving&quot; + file + &quot;to&quot; + path,
+            stack: err.stack,
+            msg: err.msg ? err.msg : err.message,
+            rawError: err.rawError ? err.rawError : &quot;SFTP ERROR&quot;,
+        };
+        var fileResult = dbConn.executeCachedQuery(
+            &quot;INSERT INTO screening_extracts.mco_screening_extracts_error_logs(mco_screening_id, mco_screening_extracts_details_id,error_json, created_on_utc, updated_on_utc, is_active, screening_error_type_id) VALUES (?, ?,?::json, NOW(),NOW(),&apos;1&apos;,?) returning *&quot;,
+            [screening_id,
+            mco_screening_details_id,
+                JSON.stringify(fallbackErrJson),
+                error_type_id]
+
+        );
+
+    }
+    catch (err) {
+        throw {
+            errorType: &quot;POSTGRES ERROR&quot;,
+            description: &quot;Unable to connect to db&quot;,
+            rawError: err,
+            stackTrace: err.stack,
+            msg: err.message
+        };
+    }
+    logger.info(err)
+    throw err;
+} finally {
+    if (dbConn) {
+        dbConn.close();
+    }
+}</script>
+          </com.mirth.connect.plugins.javascriptstep.JavaScriptStep>
+        </elements>
+        <inboundTemplate encoding="base64"></inboundTemplate>
+        <outboundTemplate encoding="base64"></outboundTemplate>
+        <inboundDataType>RAW</inboundDataType>
+        <outboundDataType>RAW</outboundDataType>
+        <inboundProperties class="com.mirth.connect.plugins.datatypes.raw.RawDataTypeProperties" version="26.6.0">
+          <batchProperties class="com.mirth.connect.plugins.datatypes.raw.RawBatchProperties" version="26.6.0">
+            <splitType>JavaScript</splitType>
+            <batchScript></batchScript>
+          </batchProperties>
+        </inboundProperties>
+        <outboundProperties class="com.mirth.connect.plugins.datatypes.raw.RawDataTypeProperties" version="26.6.0">
+          <batchProperties class="com.mirth.connect.plugins.datatypes.raw.RawBatchProperties" version="26.6.0">
+            <splitType>JavaScript</splitType>
+            <batchScript></batchScript>
+          </batchProperties>
+        </outboundProperties>
+      </transformer>
+      <responseTransformer version="26.6.0">
+        <elements/>
+        <inboundDataType>RAW</inboundDataType>
+        <outboundDataType>RAW</outboundDataType>
+        <inboundProperties class="com.mirth.connect.plugins.datatypes.raw.RawDataTypeProperties" version="26.6.0">
+          <batchProperties class="com.mirth.connect.plugins.datatypes.raw.RawBatchProperties" version="26.6.0">
+            <splitType>JavaScript</splitType>
+            <batchScript></batchScript>
+          </batchProperties>
+        </inboundProperties>
+        <outboundProperties class="com.mirth.connect.plugins.datatypes.raw.RawDataTypeProperties" version="26.6.0">
+          <batchProperties class="com.mirth.connect.plugins.datatypes.raw.RawBatchProperties" version="26.6.0">
+            <splitType>JavaScript</splitType>
+            <batchScript></batchScript>
+          </batchProperties>
+        </outboundProperties>
+      </responseTransformer>
+      <filter version="26.6.0">
+        <elements>
+          <com.mirth.connect.plugins.rulebuilder.RuleBuilderRule version="26.6.0">
+            <name>Accept message if &quot;$(&apos;error&apos;)&quot; does not equal 0</name>
+            <sequenceNumber>0</sequenceNumber>
+            <enabled>true</enabled>
+            <field>$(&apos;error&apos;)</field>
+            <condition>NOT_EQUAL</condition>
+            <values>
+              <string>0</string>
+            </values>
+          </com.mirth.connect.plugins.rulebuilder.RuleBuilderRule>
+        </elements>
+      </filter>
+      <transportName>File Writer</transportName>
+      <mode>DESTINATION</mode>
+      <enabled>true</enabled>
+      <waitForPrevious>true</waitForPrevious>
+    </connector>
+  </destinationConnectors>
+  <preprocessingScript>// Modify the message variable below to pre process data
+return message;</preprocessingScript>
+  <postprocessingScript>// This script executes once after a message has been processed
+// Responses returned from here will be stored as &quot;Postprocessor&quot; in the response map
+return;</postprocessingScript>
+  <deployScript>var errorTypeMap = {};
+var mcoMap={}
+
+
+ 
+
+ 
+try {
+	var dbConn = DatabaseConnectionFactory.createDatabaseConnection(configurationMap.get(&apos;jdbdcDriver&apos;), configurationMap.get(&apos;jbdcUrl&apos;), configurationMap.get(&apos;dbName&apos;), configurationMap.get(&apos;dbPassword&apos;));
+    var rsErr = dbConn.executeCachedQuery(
+        &quot;SELECT screening_error_type_name, screening_error_type_id FROM screening_extracts.screening_error_types WHERE is_active = &apos;1&apos;&quot;
+    );
+    while (rsErr.next()) {
+        errorTypeMap[rsErr.getString(&quot;screening_error_type_name&quot;)] = rsErr.getLong(&quot;screening_error_type_id&quot;);
+       
+    }
+    globalChannelMap.put(&quot;errorTypeMap&quot;, errorTypeMap);
+    var rsRes = dbConn.executeCachedQuery(
+        &quot;SELECT resource_type_id FROM screening_extracts.resource_types WHERE UPPER(resource_type_name) = &apos;BUNDLE&apos; AND is_active = &apos;1&apos;&quot;
+    );
+    if (rsRes.next()) {
+        globalChannelMap.put(&quot;bundleResourceTypeId&quot;, rsRes.getLong(&quot;resource_type_id&quot;));
+    }
+    var rtRes = dbConn.executeCachedQuery(
+        &quot;SELECT resource_type_id FROM screening_extracts.resource_types WHERE UPPER(resource_type_name) = &apos;FLATFILE&apos; AND is_active = &apos;1&apos;&quot;
+    );
+     if (rtRes.next()) {
+        globalChannelMap.put(&quot;flatFileResourceId&quot;, rtRes.getLong(&quot;resource_type_id&quot;));
+    }
+    var rsMco = dbConn.executeCachedQuery(
+        &quot;SELECT tenant_id, tenant_name,tenant_short_code FROM techbd_udi_ingress.tenants WHERE is_active = &apos;1&apos;&quot;
+    );
+    
+    while (rsMco.next()) {
+        mcoMap[rsMco.getString(&quot;tenant_short_code&quot;)] = rsMco.getString(&quot;tenant_id&quot;);    
+    }
+    
+    globalChannelMap.put(&quot;mcoMap&quot;, mcoMap);
+ 
+} catch (e) {
+    logger.error(&quot;Error initializing globalChannelMap values in Deliver files to MCO: &quot; + e);
+} finally {
+    if (dbConn) dbConn.close();
+}</deployScript>
+  <undeployScript>// This script executes once when the channel is undeployed
+// You only have access to the globalMap and globalChannelMap here to persist data
+return;</undeployScript>
+  <properties version="26.6.0">
+    <clearGlobalChannelMap>false</clearGlobalChannelMap>
+    <messageStorageMode>DEVELOPMENT</messageStorageMode>
+    <encryptData>false</encryptData>
+    <encryptAttachments>false</encryptAttachments>
+    <encryptCustomMetaData>false</encryptCustomMetaData>
+    <removeContentOnCompletion>true</removeContentOnCompletion>
+    <removeOnlyFilteredOnCompletion>false</removeOnlyFilteredOnCompletion>
+    <removeAttachmentsOnCompletion>false</removeAttachmentsOnCompletion>
+    <initialState>STARTED</initialState>
+    <storeAttachments>false</storeAttachments>
+    <metaDataColumns>
+      <metaDataColumn>
+        <name>SOURCE</name>
+        <type>STRING</type>
+        <mappingName>message_source</mappingName>
+      </metaDataColumn>
+      <metaDataColumn>
+        <name>TYPE</name>
+        <type>STRING</type>
+        <mappingName>message_type</mappingName>
+      </metaDataColumn>
+    </metaDataColumns>
+    <attachmentProperties version="26.6.0">
+      <type>None</type>
+      <properties/>
+    </attachmentProperties>
+    <resourceIds class="linked-hash-map">
+      <entry>
+        <string>Default Resource</string>
+        <string>[Default Resource]</string>
+      </entry>
+    </resourceIds>
+  </properties>
+  <exportData>
+    <metadata>
+      <enabled>true</enabled>
+      <lastModified>
+        <time>1790767983106</time>
+        <timezone>Asia/Calcutta</timezone>
+      </lastModified>
+      <pruningSettings>
+        <pruneMetaDataDays>1</pruneMetaDataDays>
+        <archiveEnabled>true</archiveEnabled>
+        <pruneErroredMessages>false</pruneErroredMessages>
+      </pruningSettings>
+      <userId>6</userId>
+    </metadata>
+    <channelTags>
+      <channelTag>
+        <id>f10e92b6-7d17-415e-9a35-2168267bad3b</id>
+        <name>flatfile</name>
+        <channelIds>
+          <string>b4c7b67b-bf67-4b28-9852-8bd7fde852a5</string>
+          <string>4fc0fa90-6de2-4b6c-a970-7083837d1365</string>
+          <string>631aa62d-39a7-4cd3-a7bc-a43d73d14853</string>
+          <string>8231df95-a7fa-4367-bd07-a3f892d9cd51</string>
+        </channelIds>
+        <backgroundColor>
+          <red>255</red>
+          <green>0</green>
+          <blue>0</blue>
+          <alpha>255</alpha>
+        </backgroundColor>
+      </channelTag>
+    </channelTags>
+  </exportData>
+</channel>

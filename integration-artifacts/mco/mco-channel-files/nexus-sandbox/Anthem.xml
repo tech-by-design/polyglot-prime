@@ -2,13 +2,9 @@
   <id>3c5d0850-0841-4603-a1f8-0ee6e9ef8559</id>
   <nextMetaDataId>17</nextMetaDataId>
   <name>Anthem</name>
-  <description>Version: 0.1.15
-Fixed success and file rejection receipt destination.
-&quot;Stream file to SFTP&quot; now authenticates with SSH keys (MCO_SFTP_PRIVATE_KEY /
-MCO_DESTINATION_SFTP_PRIVATE_KEY from the Config-sensitive Lookup Manager group) instead
-of a username/password, and reads sftpUserName/destinationSftpUserName from the
-configuration map instead of a hardcoded per-MCO username.</description>
-  <revision>3</revision>
+  <description>Version: 0.1.16
+Update file transfer to S3 via FUSE and SFTP via SSH keys, and fix bigint input validation</description>
+  <revision>8</revision>
   <sourceConnector version="26.6.0">
     <metaDataId>0</metaDataId>
     <name>sourceConnector</name>
@@ -98,8 +94,8 @@ configuration map instead of a hardcoded per-MCO username.</description>
           <enabled>true</enabled>
           <script>function setMcoInfoInGlobalMap() {
     globalChannelMap.put(&quot;mco_code&quot;, &quot;ANT&quot;);
-    globalChannelMap.put(&quot;root_sftp_folder&quot;, &quot;/lza-prod-esmf&quot;);
-    globalChannelMap.put(&quot;mco_sftp_folder&quot;, &quot;mco-anthem&quot;);
+ globalChannelMap.put(&quot;root_sftp_folder&quot;, &quot;/opt/bridgelink/mco-sftp&quot;);
+ globalChannelMap.put(&quot;mco_sftp_folder&quot;, &quot;mco-sftp-anthem_elevance_health&quot;);
     // Usernames used to be hardcoded here (source_sftp_username/destination_sftp_username),
     // out of step with every other SFTP connection detail (sftpIp/sftpPort/destinationSftpIp/
     // destinationSftpPort), which all come from the configuration map and can be changed
@@ -3345,21 +3341,15 @@ function thresholdExceecedFunction(limit, totalRecords, errorRecords) {
 }
 
 var username = configurationMap.get(&quot;sftpUserName&quot;);
-// SSH key auth (see sftpFileTransfer below) replaces the password previously read here via
-// configurationMap.get(&quot;sftpPassword&quot;) - the private key/passphrase now come from globalMap,
-// populated in the deploy script from the Config-sensitive Lookup Manager group.
-var privateKeyPem = globalMap.get(&quot;mcoSftpPrivateKeyPem&quot;);
-var keyPassphrase = globalMap.get(&quot;mcoSftpKeyPassphrase&quot;);
+var password = configurationMap.get(&quot;sftpPassword&quot;);
 var ip = configurationMap.get(&quot;sftpIp&quot;);
 var port = configurationMap.get(&quot;sftpPort&quot;);
 
-var destinationUsername = configurationMap.get(&quot;destinationSftpUserName&quot;);
-// Same SSH key auth switch as above, for the downstream datalake SFTP leg - replaces
-// configurationMap.get(&quot;destinationSftpPassword&quot;).
-var destinationPrivateKeyPem = globalMap.get(&quot;mcoDestinationSftpPrivateKeyPem&quot;);
-var destinationKeyPassphrase = globalMap.get(&quot;mcoDestinationSftpKeyPassphrase&quot;);
-var destinationIp = configurationMap.get(&quot;destinationSftpIp&quot;);
-var destinationPort = configurationMap.get(&quot;destinationSftpPort&quot;);
+var destinationUsername = configurationMap.get(&quot;nyecSftpUsername&quot;);  
+var destinationPassword = configurationMap.get(&quot;nyecSftpPassphrase&quot;);
+var destinationIp = configurationMap.get(&quot;nyecSftpDns&quot;);
+var destinationPort = parseInt(configurationMap.get(&quot;nyecSftpPort&quot;));
+var destinationPrivateKeyPath = configurationMap.get(&quot;nyecSftpPrivateKey&quot;);
 
 //SMTP
 var smtpHostname = configurationMap.get(&quot;smtpHostName&quot;);
@@ -3383,8 +3373,7 @@ function sftpFileTransfer(
 	destinationServerName,
 	destinationPort,
 	destinationUsername,
-	destinationPrivateKeyPem,
-	destinationKeyPassphrase,
+	destinationPassword,
 	sourceFileName,
 	destinationFileName,
 	fileDestination,
@@ -3393,40 +3382,28 @@ function sftpFileTransfer(
 ) {
 	try {
 
-		//Success Data/Error Data destinations write the file content to S3, not to local disk, so it is
-		//pulled from the globalChannelMap where those steps already staged it earlier in this same message
-		//(&apos;validContent&apos; / &apos;errorContent&apos;) instead of re-reading a local d:/mco-success, d:/mco-err file.
-		var content = String(sourceFileName.indexOf(&quot;Error_&quot;) === 0 ? $(&apos;errorContent&apos;) : $(&apos;validContent&apos;));
-		logger.info(&quot;Streaming in-memory content for : &quot; + sourceFileName);
+		logger.info(&apos;OG Filename: &apos; + $(&quot;originalFilename&quot;));
+
+		//mco-sftp-anthem_elevance_health-qa-mco-sftp-inbound/bridgelink-inbound/mco-sftp-anthem_elevance_health/mirth_processed/
+		
+		var fileName = &apos;mco-sftp/bridgelink-inbound/mco-sftp-anthem_elevance_health/mirth_processed/&apos; + String(sourceFileName.indexOf(&quot;Error_&quot;) === 0 ? &apos;Error_&apos; + $(&quot;originalFilename&quot;) : &apos;Success_&apos; + $(&quot;originalFilename&quot;));
+		logger.info(&apos;Filename parsed: &apos; + sourceFileName);
+
+		var file = java.io.File(fileName);
+		logger.info(&apos;File: &apos; + file);
 
 		if (isSftp) {
-			var fileToStream = new java.io.ByteArrayInputStream(java.lang.String(content).getBytes(&quot;UTF-8&quot;));
+			var fileToStream = new FileInputStream(file);
 			var jsch = new JSch();
+			
+			if (destinationPassword) {
+				jsch.addIdentity(destinationPrivateKeyPath, destinationPassword);
+			} else {
+				jsch.addIdentity(destinationPrivateKeyPath);
+			}
+			
 			var fileTransferred = false;
 			var session2 = null;
-			var hasPassphrase = false;
-
-			if (!destinationPrivateKeyPem) {
-				// Fail loudly and specifically here rather than letting this fall through to
-				// jsch.getSession()/connect() with zero identities registered - with
-				// PreferredAuthentications forced to publickey below, that produces a generic
-				// &quot;Auth fail for methods 'publickey'&quot; from the server, which looks like a bad
-				// key/passphrase and sends whoever is debugging it looking in the wrong place,
-				// when the real problem is that the Config-sensitive Lookup Manager entry
-				// (MCO_SFTP_PRIVATE_KEY / MCO_DESTINATION_SFTP_PRIVATE_KEY) is missing or empty.
-				throw {
-					message: &quot;No SFTP private key configured for &quot; + destinationServerName + &quot; - check the MCO_SFTP_PRIVATE_KEY/MCO_DESTINATION_SFTP_PRIVATE_KEY entry in the Config-sensitive Lookup Manager group&quot;
-				};
-			}
-
-			// Loaded in-memory from Secrets Manager (via Config-sensitive) - never written to
-			// disk. Config-sensitive does not allow a blank value, so an unprotected key is
-			// registered there as the literal string &quot;NONE&quot; - treat that sentinel as &quot;no
-			// passphrase&quot;, same convention used by the Aetna SFTP Bridge channel.
-			hasPassphrase = destinationKeyPassphrase &amp;&amp; destinationKeyPassphrase.toString().trim() !== &apos;&apos; &amp;&amp; destinationKeyPassphrase.toString().trim().toUpperCase() !== &apos;NONE&apos;;
-			var privateKeyBytes = java.lang.String(destinationPrivateKeyPem).getBytes(&quot;UTF-8&quot;);
-			var passphraseBytes = hasPassphrase ? java.lang.String(destinationKeyPassphrase).getBytes(&quot;UTF-8&quot;) : null;
-			jsch.addIdentity(&quot;mco-sftp-key&quot;, privateKeyBytes, null, passphraseBytes);
 
 			session2 = jsch.getSession(
 				destinationUsername,
@@ -3434,18 +3411,11 @@ function sftpFileTransfer(
 				destinationPort
 			);
 
-			session2.setConfig(&quot;StrictHostKeyChecking&quot;, &quot;no&quot;);
-			// Key-only login - safe to force now that an identity is guaranteed to be
-			// registered above (the empty-key case throws before reaching here). Forcing this
-			// unconditionally regardless of whether a key was actually loaded was the original
-			// bug: with zero identities to offer, JSch still attempts 'publickey' because
-			// PreferredAuthentications allows nothing else, and the server rejects it with the
-			// same generic &quot;Auth fail for methods 'publickey'&quot; as a genuinely bad key would
-			// produce - masking a missing Config-sensitive entry as an auth/credentials problem.
-			session2.setConfig(&quot;PreferredAuthentications&quot;, &quot;publickey&quot;);
+			//      if (destinationPassword) {
+			//      session2.setPassword(destinationPassword);
+			//    }
 
-			// Diagnostic - safe fields only, never logs the key/passphrase values themselves
-			logger.info(&quot;Streaming to &quot; + destinationServerName + &quot;:&quot; + destinationPort + &quot; as \&quot;&quot; + destinationUsername + &quot;\&quot; (privateKey=present, passphrase=&quot; + (hasPassphrase ? &quot;present&quot; : &quot;none&quot;) + &quot;)&quot;);
+			session2.setConfig(&quot;StrictHostKeyChecking&quot;, &quot;no&quot;);
 
 			session2.connect();
 			// Create an SFTP channel
@@ -3508,13 +3478,24 @@ function sftpFileTransfer(
 
 			return true; // Return true if the file was transferred successfully
 		} else {
-			org.apache.commons.io.FileUtils.writeStringToFile(
-				java.io.File(fileDestination + destinationFileName),
-				content,
-				&quot;UTF-8&quot;
-			);
-			fileTransferred = true;
-			return fileTransferred;
+			if (isCopy == true) {
+				org.apache.commons.io.FileUtils.copyFile(
+					file,
+					java.io.File(fileDestination + destinationFileName),
+					false,
+					java.nio.file.StandardCopyOption.REPLACE_EXISTING
+				);
+				fileTransferred = true;
+				return fileTransferred;
+			} else {
+				org.apache.commons.io.FileUtils.moveFile(
+					file,
+					java.io.File(fileDestination + destinationFileName),
+					java.nio.file.StandardCopyOption.REPLACE_EXISTING
+				);
+				fileTransferred = true;
+				return fileTransferred;
+			}
 		}
 	} catch (err) {
 		logger.info(&quot;Failed sftp transfer file : &quot; + sourceFileName);
@@ -3550,8 +3531,7 @@ try {
 	//This case will never hit since threshold is 100 now
 	if (thresholdExceeded) {
 		logger.info(&quot;Inside failed case&quot;);
-		var failedCaseFolder = &apos;/esmf/outbound/error/&apos;;
-		//var failedCaseFolder = $(&apos;root_sftp_folder&apos;) + &apos;/&apos; + $(&apos;mco_sftp_folder&apos;) + &apos;/esmf/outbound/error/&apos;;
+		var failedCaseFolder = $(&apos;root_sftp_folder&apos;) + &apos;/&apos; + $(&apos;mco_sftp_folder&apos;) + &apos;/esmf/outbound/error/&apos;;
 		var failedCaseArchiveFolder = $(&apos;root_sftp_folder&apos;) + &apos;/archive/&apos; + $(&apos;mco_sftp_folder&apos;) + &apos;/prod/mco_error/&apos;
 
 		//Move error file to mco outbound folder
@@ -3559,12 +3539,11 @@ try {
 			ip,
 			port,
 			username,
-			privateKeyPem,
-			keyPassphrase,
+			password,
 			errorFileName,
 			errorFileName,
 			failedCaseFolder,
-			true,
+			false,
 			true
 		);
 
@@ -3573,8 +3552,7 @@ try {
 			ip,
 			port,
 			username,
-			privateKeyPem,
-			keyPassphrase,
+			password,
 			errorFileName,
 			errorFileName,
 			failedCaseArchiveFolder,
@@ -3591,9 +3569,8 @@ try {
 			[$(&quot;batch_details_id&quot;)]
 		);
 	} else if (!thresholdExceeded &amp;&amp; $(&quot;totalErrors&quot;) &gt; 0) {
-		var datalakeFolder = &apos;/esmf/inbound/&apos;;
-		var failedCaseFolder = &apos;/esmf/outbound/error/&apos;;
-		//var failedCaseFolder = $(&apos;root_sftp_folder&apos;) + &apos;/&apos; + $(&apos;mco_sftp_folder&apos;) + &apos;/esmf/outbound/error/&apos;;
+		var datalakeFolder = &apos;/inbound/esmf/&apos;;
+		var failedCaseFolder = $(&apos;root_sftp_folder&apos;) + &apos;/&apos; + $(&apos;mco_sftp_folder&apos;) + &apos;/esmf/outbound/error/&apos;;
 		var datalakeArchiveFolder = $(&apos;root_sftp_folder&apos;) + &apos;/archive/&apos; + $(&apos;mco_sftp_folder&apos;) + &apos;/prod/nyec_processed/&apos;
 		var failedCaseArchiveFolder = $(&apos;root_sftp_folder&apos;) + &apos;/archive/&apos; + $(&apos;mco_sftp_folder&apos;) + &apos;/prod/mco_error/&apos;
 
@@ -3604,12 +3581,11 @@ try {
 			ip,
 			port,
 			username,
-			privateKeyPem,
-			keyPassphrase,
+			password,
 			errorFileName,
 			errorFileName,
 			failedCaseFolder,
-			true,
+			false,
 			true
 		);
 
@@ -3618,8 +3594,7 @@ try {
 			ip,
 			port,
 			username,
-			privateKeyPem,
-			keyPassphrase,
+			password,
 			errorFileName,
 			errorFileName,
 			failedCaseArchiveFolder,
@@ -3632,8 +3607,7 @@ try {
 			destinationIp,
 			destinationPort,
 			destinationUsername,
-			destinationPrivateKeyPem,
-			destinationKeyPassphrase,
+			destinationPassword,
 			successFileName,
 			originalFileName,
 			datalakeFolder,
@@ -3646,8 +3620,7 @@ try {
 			destinationIp,
 			destinationPort,
 			destinationUsername,
-			destinationPrivateKeyPem,
-			destinationKeyPassphrase,
+			destinationPassword,
 			successFileName,
 			originalFileName,
 			datalakeArchiveFolder,
@@ -3665,7 +3638,7 @@ try {
 			[$(&quot;batch_details_id&quot;)]
 		);
 	} else {
-		var datalakeFolder = &apos;/esmf/inbound/&apos;;
+		var datalakeFolder = &apos;/inbound/esmf/&apos;;
 		var datalakeArchiveFolder = $(&apos;root_sftp_folder&apos;) + &apos;/archive/&apos; + $(&apos;mco_sftp_folder&apos;) + &apos;/prod/nyec_processed/&apos;
 
 		logger.info(&quot;Inside success case&quot;);
@@ -3674,8 +3647,7 @@ try {
 			destinationIp,
 			destinationPort,
 			destinationUsername,
-			destinationPrivateKeyPem,
-			destinationKeyPassphrase,
+			destinationPassword,
 			successFileName,
 			originalFileName,
 			datalakeFolder,
@@ -3687,15 +3659,13 @@ try {
 			destinationIp,
 			destinationPort,
 			destinationUsername,
-			destinationPrivateKeyPem,
-			destinationKeyPassphrase,
+			destinationPassword,
 			successFileName,
 			originalFileName,
 			datalakeArchiveFolder,
 			false,
 			false
 		);
-
 		var batch_update = dbConn.executeUpdate(
 			&quot;update mco_data.mco_records set sent_to_datalake_time=current_timestamp,updated_on_utc=current_timestamp where batch_id = ?::bigint&quot;,
 			[$(&quot;batch_id&quot;)]
@@ -3726,7 +3696,7 @@ try {
 		var new_batch_details_id = batch_details_insert.next()
 			? batch_details_insert.getInt(&quot;batch_details_id&quot;)
 			: null;
-	     var errorDetails = {
+ 	     var errorDetails = {
 			    message: JSON.stringify({
 			        channel: &quot;Anthem&quot;,
 			        destination: &quot;Stream file to SFTP&quot;,
@@ -3734,9 +3704,9 @@ try {
 			    }),
 			    fileName: err.fileName,
 			    lineNumber: err.lineNumber
-			};  			
+			};
 		var error_log_insert = dbConn.executeUpdate(
-			&quot;insert into mco_data.mco_record_error_logs (batch_id, error_json, created_on_utc, updated_on_utc, batch_details_id, is_active, error_type_id, tenant_id) values (?::bigint, ?::json, current_timestamp, current_timestamp, ?::bigint, &apos;1&apos;, ?, ?)&quot;,
+			&quot;insert into mco_data.mco_record_error_logs (batch_id, error_json, created_on_utc, updated_on_utc, batch_details_id, is_active, error_type_id,tenant_id) values (?::bigint, ?::json, current_timestamp, current_timestamp, ?::bigint, &apos;1&apos;, ?,?)&quot;,
 			[
 				mirthBatchId,
 				JSON.stringify(errorDetails),
@@ -3764,7 +3734,6 @@ finally {
 		dbConn.close();
 	}
 }
-
 </script>
       </properties>
       <transformer version="26.6.0">
@@ -3881,6 +3850,12 @@ var fromEmail = configurationMap.get(&quot;smtpFromEmail&quot;);
 var batch_id = $(&quot;batch_id&quot;) || null;
 var batch_details_id = $(&quot;batch_details_id&quot;) || null;
 
+var totalProcess = $(&quot;totalProcess&quot;) || 0;
+var totalErrors  = $(&quot;totalErrors&quot;)  || 0;
+var recordsCount = $(&quot;recordsCount&quot;) || 0;
+var mirthMcoId   = $(&quot;mcoId&quot;) || null;
+
+
 var errorTypesString = configurationMap.get(&quot;errorTypes&quot;);
 var errorTypes = JSON.parse(errorTypesString);
 
@@ -3916,9 +3891,9 @@ try {
 				&quot;update mco_data.mco_records set status = ?, qa_completed_time = current_timestamp,processed_count=?::bigint,errored_count=?::bigint,total_records=?::bigint,file_size_in_kb=?,updated_on_utc=current_timestamp where batch_id = ?::bigint&quot;,
 				[
 					status,
-					$(&quot;totalProcess&quot;),
-					$(&quot;totalErrors&quot;),
-					$(&quot;recordsCount&quot;),
+					totalProcess,
+					totalErrors,
+					recordsCount,
 					$(&quot;totalFileSize&quot;),
 					batch_id,
 				]
@@ -3929,15 +3904,15 @@ try {
 			&quot;update mco_data.mco_record_details set status = ?, qa_completed_time = current_timestamp,processed_count=?::bigint,errored_count=?::bigint,total_records=?::bigint,file_size_in_kb=?,updated_on_utc=current_timestamp where batch_details_id = ?::bigint&quot;,
 			[
 				status,
-				$(&quot;totalProcess&quot;),
-				$(&quot;totalErrors&quot;),
-				$(&quot;recordsCount&quot;),
+				totalProcess,
+				totalErrors,
+				recordsCount,
 				$(&quot;totalFileSize&quot;),
 				batch_details_id,
 			]
 		);
 
-		if ($(&quot;totalErrors&quot;) &amp;&amp; $(&quot;totalErrors&quot;) != 0) {
+		if (totalErrors &amp;&amp; totalErrors != 0) {
 			var error_log_insert = dbConn.executeUpdate(
 				&quot;insert into mco_data.mco_record_error_logs (batch_id, error_json, created_on_utc, updated_on_utc, batch_details_id, is_active, error_type_id, tenant_id) values (?::bigint, ?::json, current_timestamp, current_timestamp, ?::bigint, &apos;1&apos;, ?, ?)&quot;,
 				[
@@ -3945,7 +3920,7 @@ try {
 					JSON.stringify($(&quot;errorJson&quot;)),
 					batch_details_id,
 					errorTypes[&quot;FIELD_VALIDATION_ERROR&quot;][&quot;error_type_id&quot;],
-					$(&quot;mcoId&quot;)
+					mirthMcoId
 				]
 			);
 		}
@@ -3964,7 +3939,7 @@ try {
 				[
 					batch_id,
 					batch_details_id,
-					$(&quot;totalErrors&quot;),
+					totalErrors,
 					batch_id,
 				]
 			);
@@ -3976,7 +3951,7 @@ try {
 					status,
 					batch_id,
 					batch_details_id,
-					$(&quot;totalErrors&quot;),
+				     totalErrors,
 					batch_id,
 				]
 			);
@@ -6263,26 +6238,28 @@ return;</undeployScript>
     <metadata>
       <enabled>true</enabled>
       <lastModified>
-        <time>1789711577760</time>
+        <time>1790758576506</time>
         <timezone>Asia/Calcutta</timezone>
       </lastModified>
       <pruningSettings>
         <archiveEnabled>true</archiveEnabled>
         <pruneErroredMessages>false</pruneErroredMessages>
       </pruningSettings>
-      <userId>6</userId>
+      <userId>10</userId>
     </metadata>
     <channelTags>
       <channelTag>
-        <id>fdba656f-84c1-4994-ab33-f620ad54aac7</id>
-        <name>0_1_14</name>
+        <id>7fe23fd3-5679-4ccf-bd02-b24f62a2bbf8</id>
+        <name>0_1_16</name>
         <channelIds>
           <string>3c5d0850-0841-4603-a1f8-0ee6e9ef8559</string>
+          <string>66faf132-8acc-4843-88e7-8324198c7117</string>
+          <string>19586ff2-81c6-476a-971d-e3d16014ed79</string>
           <string>d77fcb36-3c97-45fe-b8ba-5fdc9bcf1df2</string>
         </channelIds>
         <backgroundColor>
-          <red>0</red>
-          <green>255</green>
+          <red>255</red>
+          <green>0</green>
           <blue>0</blue>
           <alpha>255</alpha>
         </backgroundColor>

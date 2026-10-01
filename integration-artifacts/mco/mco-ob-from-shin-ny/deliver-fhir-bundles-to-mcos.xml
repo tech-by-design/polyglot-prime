@@ -1,0 +1,1388 @@
+<channel version="26.6.0">
+  <id>a3ece49e-f52f-40bb-927d-03cc71087ad7</id>
+  <nextMetaDataId>5</nextMetaDataId>
+  <name>Deliver FHIR Bundles to MCOs</name>
+  <description>v 0.1.0</description>
+  <revision>3</revision>
+  <sourceConnector version="26.6.0">
+    <metaDataId>0</metaDataId>
+    <name>sourceConnector</name>
+    <properties class="com.mirth.connect.connectors.http.HttpReceiverProperties" version="26.6.0">
+      <pluginProperties>
+        <com.mirth.connect.plugins.httpauth.basic.BasicHttpAuthProperties version="26.6.0">
+  <authType>BASIC</authType>
+          <realm>My Realm</realm>
+          <credentials class="linked-hash-map">
+    <entry>
+      <string>mco_screening_extract_user</string>
+              <string>adminmcomc3</string>
+            </entry>
+          </credentials>
+          <isUseCredentialsVariable>false</isUseCredentialsVariable>
+          <credentialsVariable/>
+        </com.mirth.connect.plugins.httpauth.basic.BasicHttpAuthProperties>
+        <com.mirth.connect.plugins.ssl.SSLSettingsProperties version="26.6.0">
+  <sslEnabled>false</sslEnabled>
+          <mutualTlsEnabled>true</mutualTlsEnabled>
+          <mutualTlsMigrated>true</mutualTlsMigrated>
+          <clientCertValidationEnabled>true</clientCertValidationEnabled>
+          <clientCertOptionalEnabled>false</clientCertOptionalEnabled>
+          <serverCertValidationEnabled>true</serverCertValidationEnabled>
+          <verifyHostname>false</verifyHostname>
+          <keystorePath/>
+          <keystorePassword/>
+          <certAlias/>
+          <certPassword/>
+          <truststorePath/>
+          <truststorePassword/>
+          <tls13>true</tls13>
+          <tls12>true</tls12>
+          <tls11>false</tls11>
+          <keystoreType/>
+          <truststoreType/>
+          <keystoreSettingFromSystem>false</keystoreSettingFromSystem>
+          <keystoreUid/>
+          <myCertificateAlias/>
+          <truststoreSettingFromSystem>false</truststoreSettingFromSystem>
+          <truststoreUid/>
+          <validationMode>pkix</validationMode>
+          <revocationMode>disabled</revocationMode>
+          <softFailIfResponderUnavailable>false</softFailIfResponderUnavailable>
+          <pinnedLeafPins/>
+          <subjectSanFilterPatterns/>
+        </com.mirth.connect.plugins.ssl.SSLSettingsProperties>
+      </pluginProperties>
+      <listenerConnectorProperties version="26.6.0">
+        <host>0.0.0.0</host>
+        <port>8002</port>
+      </listenerConnectorProperties>
+      <sourceConnectorProperties version="26.6.0">
+        <responseVariable>Auto-generate (Before processing)</responseVariable>
+        <respondAfterProcessing>false</respondAfterProcessing>
+        <processBatch>false</processBatch>
+        <firstResponse>false</firstResponse>
+        <processingThreads>1</processingThreads>
+        <resourceIds class="linked-hash-map">
+          <entry>
+            <string>Default Resource</string>
+            <string>[Default Resource]</string>
+          </entry>
+        </resourceIds>
+        <queueBufferSize>1000</queueBufferSize>
+      </sourceConnectorProperties>
+      <xmlBody>false</xmlBody>
+      <parseMultipart>true</parseMultipart>
+      <includeMetadata>false</includeMetadata>
+      <binaryMimeTypes>application/.*(?&lt;!json|xml)$|image/.*|video/.*|audio/.*</binaryMimeTypes>
+      <binaryMimeTypesRegex>true</binaryMimeTypesRegex>
+      <responseContentType>text/plain</responseContentType>
+      <responseDataTypeBinary>false</responseDataTypeBinary>
+      <responseStatusCode>200</responseStatusCode>
+      <responseHeaders class="linked-hash-map"/>
+      <responseHeadersVariable></responseHeadersVariable>
+      <useResponseHeadersVariable>false</useResponseHeadersVariable>
+      <charset>UTF-8</charset>
+      <contextPath></contextPath>
+      <timeout>30000</timeout>
+      <requestHeaderSize>8192</requestHeaderSize>
+      <staticResources/>
+    </properties>
+    <transformer version="26.6.0">
+      <elements>
+        <com.mirth.connect.plugins.javascriptstep.JavaScriptStep version="26.6.0">
+          <sequenceNumber>0</sequenceNumber>
+          <enabled>true</enabled>
+          <script>var dbConn = null;
+var resource_type_id = null;
+var globalConfig = null;
+var mcoMap = null;
+var errorTypeMap = {};
+var inputJson,
+  rawMessage = connectorMessage.getRawData();
+var bundleId = null;
+var attributedSource = channelMap.get(&quot;attributed_source&quot;);
+var submittingSource = null;
+var mco_id = null;
+var mco_screening_id = null;
+var mco_details_id = null;
+var isSourceValid = false;
+var errorTypeMap = {};
+var mcoMap = {};
+var scrPerferenceMap = null;
+var endPoint = null;
+var errorDropLocation = null;
+// var resourceType=null;
+
+try {
+  // connection check
+  dbConn = DatabaseConnectionFactory.createDatabaseConnection(
+    configurationMap.get(&quot;jdbdcDriver&quot;),
+    configurationMap.get(&quot;jbdcUrl&quot;),
+    configurationMap.get(&quot;dbName&quot;),
+    configurationMap.get(&quot;dbPassword&quot;)
+  );
+
+  // Load configuration and mappings
+  try {
+    resource_type_id = globalChannelMap.get(&quot;bundleResourceTypeId&quot;);
+    globalConfig = JSON.parse(configurationMap.get(&quot;screeningLocation&quot;));
+    errorTypeMap = globalChannelMap.get(&quot;bundleErrorTypeMap&quot;);
+    mcoMap = globalChannelMap.get(&quot;bundleMcoMap&quot;);
+    scrPerferenceMap = globalChannelMap.get(&quot;scrPerferenceMap&quot;);
+    endPoint = globalMap.get(&quot;screeningEndpoint&quot;);
+    if (attributedSource) {
+      attributedSource = attributedSource.toString().toUpperCase();
+    }
+    if (globalConfig[attributedSource]) {
+      var dropLocationCheck = true;
+      if (globalConfig[attributedSource][&quot;bundleOutbound&quot;]) {
+        channelMap.put(
+          &quot;bundleOutbound&quot;,
+          globalConfig[attributedSource][&quot;bundleOutbound&quot;]
+        );
+        dropLocationCheck = false;
+      } else {
+        dropLocationCheck = true;
+      }
+      if (globalConfig[attributedSource][&quot;errorFiles&quot;]) {
+        errorDropLocation = globalConfig[attributedSource][&quot;errorFiles&quot;];
+        channelMap.put(&quot;errorFiles&quot;, errorDropLocation);
+        dropLocationCheck = false;
+      }
+      if (dropLocationCheck) {
+        throw {
+          errorType: &quot;VALIDATION_ERROR&quot;,
+          description: &quot;Invalid attributedSource and not configured&quot;,
+          rawError: new Error(&quot;Invalid attributedSource&quot;),
+          stackTrace: new Error().stack,
+          msg: inputJson,
+        };
+      }
+    } else {
+
+      throw {
+        errorType: &quot;VALIDATION_ERROR&quot;,
+        description: &quot;Invalid attributedSource and not configured&quot;,
+        rawError: new Error(&quot;Invalid attributedSource&quot;),
+        stackTrace: new Error().stack,
+        msg: inputJson,
+      };
+
+    }
+    // resourceType=channelMap.get(&quot;resourceType&quot;);
+  } catch (configErr) {
+    throw {
+      errorType: &quot;CONFIG_RETERIVAL_ERROR&quot;,
+      description: &quot;Failed to retrieve or parse configuration&quot;,
+      rawError: configErr,
+      stackTrace: configErr.stack,
+      msg: inputJson,
+    };
+  }
+
+  try {
+    inputJson = JSON.parse(rawMessage);
+    if (inputJson.hasOwnProperty(&quot;medicaid_cin&quot;)) {
+      delete inputJson[&quot;medicaid_cin&quot;];
+    }
+    rawMessage = JSON.stringify(inputJson);
+    logger.info(&quot;rawMessage&quot; + rawMessage);
+  } catch (err) {
+    throw {
+      errorType: &quot;PARSE_ERRROR&quot;,
+      description: &quot;Unable to Parse Notification Message&quot;,
+      rawError: err,
+      stackTrace: err.stack,
+      rawMessage: rawMessage,
+    };
+  }
+
+  // Parse incoming message
+  try {
+    if (!(inputJson &amp;&amp; inputJson.bundle_id)) {
+      throw {
+        errorType: &quot;VALIDATION_ERROR&quot;,
+        description: &quot;Missing bundleId.&quot;,
+        rawError: new Error(&quot;bundleId is missing.&quot;),
+        stackTrace: new Error().stack,
+        msg: inputJson,
+      };
+    } else {
+      bundleId = inputJson.bundle_id;
+      channelMap.put(&quot;bundle_id&quot;, bundleId);
+    }
+    if (!(inputJson &amp;&amp; inputJson.attributed_source)) {
+      throw {
+        errorType: &quot;VALIDATION_ERROR&quot;,
+        description: &quot;Missing attributed_source.&quot;,
+        rawError: new Error(&quot;attributed_source is missing.&quot;),
+        stackTrace: new Error().stack,
+        msg: inputJson,
+      };
+    } else {
+      attributedSource = inputJson.attributed_source.toString().toUpperCase();
+      channelMap.put(&quot;attributed_source&quot;, attributedSource);
+    }
+    var now = new Date();
+    var yyyy = now.getFullYear();
+    var mm = String(now.getMonth() + 1).padStart(2, &apos;0&apos;);
+    var dd = String(now.getDate()).padStart(2, &apos;0&apos;);
+    var yyyymmdd = yyyy + mm + dd;
+
+    // channelMap.put(&quot;fileName&quot;,attributedSource + &quot;_hrsnob_&quot;+resourceType+&quot;_&quot; +yyyymmdd+&quot;_&quot;+ bundleId + &quot;.json&quot; );
+    channelMap.put(&quot;fileName&quot;, attributedSource + &quot;_hrsnob_&quot; + yyyymmdd + &quot;_&quot; + bundleId + &quot;.json&quot;);
+    if (!(inputJson &amp;&amp; inputJson.submitting_source)) {
+      throw {
+        errorType: &quot;VALIDATION_ERROR&quot;,
+        description: &quot;Missing submitting_source.&quot;,
+        rawError: new Error(&quot;submitting_source is missing.&quot;),
+        stackTrace: new Error().stack,
+        msg: inputJson,
+      };
+    } else {
+      submittingSource = inputJson.submitting_source.toString().toUpperCase()
+      channelMap.put(&quot;submitting_source&quot;, submittingSource)
+    }
+
+    channelMap.put(
+      &quot;fhirQuery&quot;,
+      endPoint + &quot;bundle_id=&quot; + bundleId + &quot;&amp;source_code=&quot; + submittingSource
+    );
+    logger.info(channelMap.get(&quot;fhirQuery&quot;));
+
+  } catch (jsonErr) {
+    throw {
+      errorType: &quot;VALIDATION_ERROR&quot;,
+      description: &quot;Invalid Missing bundleId or attributedSource or submittingSource&quot;,
+      rawError: new Error(&quot;bundleId or attributedSource or submittingSource is missing/invalid&quot;),
+      stackTrace: new Error().stack,
+      msg: inputJson,
+    };
+  }
+
+  logger.info(&quot;MCO_ID&quot; + attributedSource + &quot;&quot; + mcoMap[attributedSource]);
+  if (mcoMap[attributedSource]) {
+    mco_id = mcoMap[attributedSource];
+  }
+  logger.info(mco_id);
+  if (!mcoMap[attributedSource]) {
+    throw {
+      errorType: &quot;VALIDATION_ERROR&quot;,
+      description: &quot;Invalid attributedSource not found in prefence List&quot;,
+      rawError: new Error(&quot;Invalid attributedSource&quot;),
+      stackTrace: new Error().stack,
+      msg: inputJson,
+    };
+  }
+
+  logger.info(&quot;fetching Latest Query&quot;);
+  var fetchScreeningIdsQuery =
+    &quot;SELECT mco_screening_id FROM screening_extracts.mco_screening_extracts WHERE request_bundle_id = ? and mco_id =? and is_active =&apos;1&apos; ORDER BY mco_screening_id DESC LIMIT 1&quot;;
+  var rs = dbConn.executeCachedQuery(fetchScreeningIdsQuery, [bundleId, mco_id]);
+
+  var latestScreeningId = null;
+  while (rs.next()) {
+    latestScreeningId = rs.getLong(&quot;mco_screening_id&quot;);
+  }
+
+  if (latestScreeningId != null) {
+    var updateExtractsQuery =
+      &quot;UPDATE screening_extracts.mco_screening_extracts SET is_active = &apos;0&apos; WHERE mco_screening_id = ? &quot;;
+    dbConn.executeUpdate(updateExtractsQuery, [latestScreeningId]);
+
+    var updateDetailsQuery =
+      &quot;UPDATE screening_extracts.mco_screening_extracts_details SET is_active = &apos;0&apos; WHERE mco_screening_id = ?&quot;;
+    dbConn.executeUpdate(updateDetailsQuery, [latestScreeningId]);
+
+    var updateErrorsQuery =
+      &quot;UPDATE screening_extracts.mco_screening_extracts_error_logs SET is_active = &apos;0&apos; WHERE mco_screening_id = ?&quot;;
+    dbConn.executeUpdate(updateErrorsQuery, [latestScreeningId]);
+
+    logger.info(
+      &quot;Deactivated all previous records for bundleId: &quot; +
+      bundleId +
+      &quot; with screeningId: &quot; +
+      latestScreeningId
+    );
+  } else {
+    logger.info(
+      &quot;No existing records found for bundleId: &quot; +
+      bundleId +
+      &quot;. Proceeding to insert fresh.&quot;
+    );
+  }
+
+  // Save screening extract and details
+  var rs3 = dbConn.executeCachedQuery(
+    &quot;INSERT INTO screening_extracts.mco_screening_extracts (mco_id, resource_type_id, status, request_bundle_id, created_on_utc, updated_on_utc, acknowledge_time,is_active) VALUES (?, ?, ?, ?, now(), now(), now(),&apos;1&apos;) RETURNING mco_screening_id&quot;,
+    [mco_id, resource_type_id, &quot;RECEIVED&quot;, bundleId]
+  );
+  if (rs3.next()) mco_screening_id = rs3.getLong(1);
+  channelMap.put(&quot;mco_screening_id&quot;, mco_screening_id);
+
+  var rs4 = dbConn.executeCachedQuery(
+    &quot;INSERT INTO screening_extracts.mco_screening_extracts_details (mco_screening_id, notification_doc, resource_type_id, status, is_active, created_on_utc,updated_on_utc) VALUES (?, ?::json, ?, ?, &apos;1&apos;, now(),now()) RETURNING mco_screening_extracts_details_id&quot;,
+    [mco_screening_id, JSON.stringify(inputJson), resource_type_id, &quot;RECEIVED&quot;]
+  );
+  if (rs4.next()) mco_details_id = rs4.getLong(1);
+  channelMap.put(&quot;mco_screening_extracts_details_id&quot;, mco_details_id);
+  logger.info(&quot;Source Transformer Completed&quot;);
+} catch (e) {
+  // Fallback connection for logging, if not already connected
+  if (
+    !dbConn ||
+    (e.javaClassName &amp;&amp; e.javaClassName.toString().includes(&quot;PSQLException&quot;)) ||
+    (e.description &amp;&amp; e.description.toString().includes(&quot;connect&quot;))
+  ) {
+    var pgError = {
+      errorType: &quot;POSTGRES_ERROR&quot;,
+      description: &quot;Unable to connect to database&quot;,
+      rawError: e,
+      stackTrace: e.stack || new Error().stack,
+      msg: rawMessage,
+    };
+
+    logger.error(&quot;ERROR TYPE: &quot; + pgError.errorType);
+    logger.error(&quot;DESCRIPTION: &quot; + pgError.description);
+    logger.error(&quot;STACK TRACE: &quot; + pgError.stackTrace);
+    throw &quot;ERROR OCCURRED: &quot; + pgError.errorType;
+  }
+  try {
+    if (!dbConn) {
+      dbConn = DatabaseConnectionFactory.createDatabaseConnection(
+        configurationMap.get(&quot;jdbdcDriver&quot;),
+        configurationMap.get(&quot;jbdcUrl&quot;),
+        configurationMap.get(&quot;dbName&quot;),
+        configurationMap.get(&quot;dbPassword&quot;)
+      );
+    }
+
+    var fallbackErrJson = {
+      errorType: e.errorType,
+      description: e.description,
+      stack: e.stackTrace,
+      msg: e.msg ? e.msg : {},
+      rawError: e.rawError,
+    };
+
+    if (e.rawMessage) fallbackErrJson[&quot;rawMessage&quot;] = e.rawMessage;
+    logger.info(&quot;fallbackErrJson&quot; + JSON.stringify(fallbackErrJson));
+    if (mco_screening_id == null) {
+      var rs1 = dbConn.executeCachedQuery(
+        &quot;INSERT INTO screening_extracts.mco_screening_extracts (mco_id, resource_type_id, status, request_bundle_id, created_on_utc,updated_on_utc, acknowledge_time,is_active) VALUES (?, ?, ?, ?, now(),now(), now(),&apos;1&apos;) RETURNING mco_screening_id&quot;,
+        [mco_id, resource_type_id, &quot;ERROR&quot;, bundleId]
+      );
+      if (rs1.next()) mco_screening_id = rs1.getLong(1);
+      logger.info(mco_screening_id);
+    } else {
+      var rs1 = dbConn.executeCachedQuery(
+        &quot;UPDATE screening_extracts.mco_screening_extracts SET status= &apos;ERROR&apos;, updated_on_utc =now() where mco_screening_id =?&quot;,
+        [mco_screening_id]
+      );
+    }
+    if (!inputJson) {
+      inputJson = { rawMessage: e.rawMessage };
+    }
+    var rs2 = dbConn.executeCachedQuery(
+      &quot;INSERT INTO screening_extracts.mco_screening_extracts_details (mco_screening_id, notification_doc, resource_type_id, status, is_active, created_on_utc, updated_on_utc) VALUES (?, ?::json, ?, ?, &apos;1&apos;, now(),now()) RETURNING mco_screening_extracts_details_id&quot;,
+      [mco_screening_id, JSON.stringify(inputJson), resource_type_id, &quot;ERROR&quot;]
+    );
+    if (rs2.next()) mco_details_id = rs2.getLong(1);
+    logger.info(rs2.getLong(1));
+    dbConn.executeUpdate(
+      &quot;INSERT INTO screening_extracts.mco_screening_extracts_error_logs (mco_screening_id, mco_screening_extracts_details_id, error_json, created_on_utc, updated_on_utc,is_active, screening_error_type_id) VALUES (?, ?, ?::json, now(),now() ,&apos;1&apos;, ?)&quot;,
+      [
+        mco_screening_id,
+        mco_details_id,
+        JSON.stringify(fallbackErrJson),
+        errorTypeMap &amp;&amp; errorTypeMap[e.errorType],
+      ]
+    );
+    var fileName = channelMap.get(&quot;fileName&quot;);
+    if (bundleId == null) {
+      var now = new Date();
+      var yyyy = now.getFullYear();
+      var mm = String(now.getMonth() + 1).padStart(2, &apos;0&apos;);
+      var dd = String(now.getDate()).padStart(2, &apos;0&apos;);
+      var hh = String(now.getHours()).padStart(2, &apos;0&apos;);
+      var min = String(now.getMinutes()).padStart(2, &apos;0&apos;);
+      var ss = String(now.getSeconds()).padStart(2, &apos;0&apos;);
+      var yyyymmddhhmmss = yyyy + mm + dd + hh + min + ss;
+      channelMap.put(&quot;fileName&quot;, &quot;Error_&quot; + attributedSource + &quot;_hrsnob_&quot; + yyyymmddhhmmss + &quot;.json&quot;);
+    } else {
+      channelMap.put(&quot;fileName&quot;, &quot;Error_&quot; + fileName);
+    }
+    channelMap.put(&quot;isSourceValidationError&quot;, true);
+    channelMap.put(&quot;sftpDropLocation&quot;, errorDropLocation);
+    channelMap.put(&quot;fileContent&quot;, JSON.stringify(fallbackErrJson));
+
+
+  } catch (fallbackErr) {
+    logger.error(&quot;Failed to log fallback error: &quot; + fallbackErr);
+  } finally {
+    if (dbConn) {
+      try {
+        dbConn.close();
+      } catch (closeErr) {
+        logger.warn(&quot;DB close failed: &quot; + closeErr);
+      }
+    }
+  }
+
+  logger.error(&quot;ERROR TYPE: &quot; + e.errorType);
+  logger.error(&quot;DESCRIPTION: &quot; + e.description);
+  logger.error(&quot;STACK TRACE: &quot; + e.stackTrace);
+  //  throw &quot;ERROR OCCURED&quot; + e.errorType;
+} finally {
+  if (dbConn) {
+    try {
+      dbConn.close();
+    } catch (closeErr) {
+      logger.warn(&quot;DB close failed: &quot; + closeErr);
+    }
+  }
+}</script>
+        </com.mirth.connect.plugins.javascriptstep.JavaScriptStep>
+      </elements>
+      <inboundTemplate encoding="base64"></inboundTemplate>
+      <outboundTemplate encoding="base64"></outboundTemplate>
+      <inboundDataType>RAW</inboundDataType>
+      <outboundDataType>RAW</outboundDataType>
+      <inboundProperties class="com.mirth.connect.plugins.datatypes.raw.RawDataTypeProperties" version="26.6.0">
+        <batchProperties class="com.mirth.connect.plugins.datatypes.raw.RawBatchProperties" version="26.6.0">
+          <splitType>JavaScript</splitType>
+          <batchScript></batchScript>
+        </batchProperties>
+      </inboundProperties>
+      <outboundProperties class="com.mirth.connect.plugins.datatypes.raw.RawDataTypeProperties" version="26.6.0">
+        <batchProperties class="com.mirth.connect.plugins.datatypes.raw.RawBatchProperties" version="26.6.0">
+          <splitType>JavaScript</splitType>
+          <batchScript></batchScript>
+        </batchProperties>
+      </outboundProperties>
+    </transformer>
+    <filter version="26.6.0">
+      <elements>
+        <com.mirth.connect.plugins.javascriptrule.JavaScriptRule version="26.6.0">
+          <sequenceNumber>0</sequenceNumber>
+          <enabled>true</enabled>
+          <script>var requestUri = String($(&apos;requestUri&apos;) || &apos;&apos;);
+
+logger.info(&quot;Request URI: &quot; + requestUri);
+
+if (requestUri == &quot;/healthcheck&quot;) {
+    return true;
+}
+
+
+var dbConn = null;
+var resource_type_id = null;
+var globalConfig = {}, errorTypeMap = {}, mcoMap = {}, scrPerferenceMap = {};
+var inputJson, rawMessage = connectorMessage.getRawData();
+var bundleId = null;
+var attributeSource = null;
+var mco_id = null;
+var mco_screening_id = null;
+var mco_details_id = null;
+
+
+try {
+  dbConn = DatabaseConnectionFactory.createDatabaseConnection(
+    configurationMap.get(&quot;jdbdcDriver&quot;),
+    configurationMap.get(&quot;jbdcUrl&quot;),
+    configurationMap.get(&quot;dbName&quot;),
+    configurationMap.get(&quot;dbPassword&quot;)
+  );
+
+  try {
+    resource_type_id = globalChannelMap.get(&quot;bundleResourceTypeId&quot;);
+    logger.info(resource_type_id);
+    errorTypeMap = globalChannelMap.get(&quot;bundleErrorTypeMap&quot;);
+    mcoMap = globalChannelMap.get(&quot;bundleMcoMap&quot;);
+    scrPerferenceMap = globalChannelMap.get(&quot;scrPerferenceMap&quot;);
+  } catch (configErr) {
+    logger.info(&quot;Config retrieval error&quot;);
+    throw {
+      errorType: &quot;CONFIG_RETERIVAL_ERROR&quot;,
+      description: &quot;Failed to retrieve or parse configuration&quot;,
+      rawError: configErr,
+      stackTrace: configErr.stack,
+      msg: inputJson,
+    };
+  }
+  try {
+    inputJson = JSON.parse(rawMessage);
+    if (inputJson.hasOwnProperty(&quot;medicaid_cin&quot;)) {
+      delete inputJson[&quot;medicaid_cin&quot;];
+    }
+    /*
+    if (!inputJson || !inputJson.bundle_type_list || !Array.isArray(inputJson.bundle_type_list)|| (Array.isArray(inputJson.bundle_type_list) &amp;&amp; inputJson.bundle_type_list.length==0)) {
+      throw {
+        errorType: &quot;VALIDATION_ERROR&quot;,
+        description: &quot;Missing Bundle Type List&quot;,
+        rawError: new Error(&quot;Missing Bundle Type List&quot;),
+        stackTrace: new Error().stack,
+        msg: inputJson,
+      };
+    }
+
+  var resourceType = inputJson.bundle_type_list[0].toString().toLowerCase();
+	
+  if (resourceType !== &quot;screening&quot; &amp;&amp;  resourceType !== &quot;assessment&quot; &amp;&amp;  resourceType !== &quot;referral&quot;) {
+    throw {
+      errorType: &quot;VALIDATION_ERROR&quot;,
+      description: &quot;Invalid Bundle Type: &quot; + resourceType,
+      rawError: new Error(&quot;Invalid Bundle Type: &quot; + resourceType),
+      stackTrace: new Error().stack,
+      msg: inputJson,
+    };
+  }
+        channelMap.put(&quot;resourceType&quot;, resourceType);
+    */
+
+    if (inputJson[&quot;attributed_source&quot;] &amp;&amp; scrPerferenceMap[inputJson[&quot;attributed_source&quot;].toString().toUpperCase()]) {
+      channelMap.put(&quot;attributed_source&quot;, inputJson[&quot;attributed_source&quot;]);
+      return true;
+    }
+    if (inputJson.bundle_id) {
+      bundleId = inputJson.bundle_id;
+    }
+    if (inputJson.attributed_source) {
+      attributeSource = inputJson.attributed_source.toString().toUpperCase();
+      if (mcoMap[attributeSource]) {
+        mco_id = mcoMap[attributeSource];
+      }
+    }
+    rawMessage = JSON.stringify(inputJson);
+  } catch (err) {
+    var errorMessage;
+    var description;
+    logger.info(&quot;Inside Error:&quot; + err.errorType + &quot; &quot; + err.description);
+    if (err &amp;&amp; err.errorType == &apos;VALIDATION_ERROR&apos;) {
+      errorMessage = err.errorType;
+      description = err.description;
+    } else {
+      errorMessage = &quot;PARSE_ERROR&quot;;
+      description = &quot;Unable to Parse Notification Message&quot;;
+    }
+    throw {
+      errorType: errorMessage,
+      description: description,
+      rawError: err,
+      stackTrace: err.stack,
+      rawMessage: rawMessage,
+    };
+  }
+
+  var rs1 = dbConn.executeCachedQuery(
+    &quot;INSERT INTO screening_extracts.mco_screening_extracts (mco_id, resource_type_id, status, request_bundle_id, created_on_utc,updated_on_utc, acknowledge_time,is_active) VALUES (?, ?, ?, ?, now(),now(), now(),&apos;1&apos;) RETURNING mco_screening_id&quot;,
+    [mco_id, resource_type_id, &quot;FILTERED&quot;, bundleId]
+  );
+  if (rs1.next()) mco_screening_id = rs1.getLong(1);
+
+  var rs2 = dbConn.executeCachedQuery(
+    &quot;INSERT INTO screening_extracts.mco_screening_extracts_details (mco_screening_id, notification_doc, resource_type_id, status, is_active, created_on_utc, updated_on_utc) VALUES (?, ?::json, ?, ?, &apos;1&apos;, now(),now()) RETURNING mco_screening_extracts_details_id&quot;,
+    [mco_screening_id, JSON.stringify(inputJson), resource_type_id, &quot;FILTERED&quot;]
+  );
+  if (rs2.next()) mco_details_id = rs2.getLong(1);
+  logger.info(rs2.getLong(1));
+  return false;
+
+} catch (e) {
+  if (
+    !dbConn ||
+    (e.javaClassName &amp;&amp; e.javaClassName.toString().includes(&quot;PSQLException&quot;)) ||
+    (e.description &amp;&amp; e.description.toString().includes(&quot;connect&quot;))
+  ) {
+    var pgError = {
+      errorType: &quot;POSTGRES_ERROR&quot;,
+      description: &quot;Unable to connect to database&quot;,
+      rawError: e,
+      stackTrace: e.stack || new Error().stack,
+      msg: rawMessage,
+    };
+
+    logger.error(&quot;ERROR TYPE: &quot; + pgError.errorType);
+    logger.error(&quot;DESCRIPTION: &quot; + pgError.description);
+    logger.error(&quot;STACK TRACE: &quot; + pgError.stackTrace);
+    throw &quot;ERROR OCCURRED: &quot; + pgError.errorType;
+  }
+  try {
+
+    var fallbackErrJson = {
+      errorType: e.errorType,
+      description: e.description,
+      stack: e.stackTrace,
+      msg: e.msg ? e.msg : {},
+      rawError: e.rawError,
+    }; if (!inputJson) {
+      inputJson = { rawMessage: e.rawMessage };
+    }
+    var rs1 = dbConn.executeCachedQuery(
+      &quot;INSERT INTO screening_extracts.mco_screening_extracts (mco_id, resource_type_id, status, request_bundle_id, created_on_utc,updated_on_utc, acknowledge_time,is_active) VALUES (?, ?, ?, ?, now(),now(), now(),&apos;1&apos;) RETURNING mco_screening_id&quot;,
+      [mco_id, resource_type_id, &quot;ERROR&quot;, bundleId]
+    );
+    if (rs1.next()) mco_screening_id = rs1.getLong(1);
+    logger.info(mco_screening_id);
+    var rs2 = dbConn.executeCachedQuery(
+      &quot;INSERT INTO screening_extracts.mco_screening_extracts_details (mco_screening_id, notification_doc, resource_type_id, status, is_active, created_on_utc, updated_on_utc) VALUES (?, ?::json, ?, ?, &apos;1&apos;, now(),now()) RETURNING mco_screening_extracts_details_id&quot;,
+      [mco_screening_id, JSON.stringify(inputJson), resource_type_id, &quot;ERROR&quot;]
+    );
+    if (rs2.next()) mco_details_id = rs2.getLong(1);
+    logger.info(rs2.getLong(1));
+    dbConn.executeUpdate(
+      &quot;INSERT INTO screening_extracts.mco_screening_extracts_error_logs (mco_screening_id, mco_screening_extracts_details_id, error_json, created_on_utc, updated_on_utc,is_active, screening_error_type_id) VALUES (?, ?, ?::json, now(),now() ,&apos;1&apos;, ?)&quot;,
+      [
+        mco_screening_id,
+        mco_details_id,
+        JSON.stringify(fallbackErrJson),
+        errorTypeMap &amp;&amp; errorTypeMap[e.errorType],
+      ]
+    );
+  } catch (fallbackErr) {
+    logger.error(&quot;Failed to log fallback error: &quot; + fallbackErr);
+    throw fallbackErr;
+  } finally {
+    if (dbConn) {
+      try {
+        dbConn.close();
+      } catch (closeErr) {
+        logger.warn(&quot;DB close failed: &quot; + closeErr);
+      }
+    }
+  }
+
+  logger.error(&quot;ERROR TYPE: &quot; + e.errorType);
+  logger.error(&quot;DESCRIPTION: &quot; + e.description);
+  logger.error(&quot;STACK TRACE: &quot; + e.stackTrace);
+  throw &quot;ERROR OCCURED&quot; + e.errorType;
+} finally {
+  if (dbConn) {
+    try {
+      dbConn.close();
+    } catch (closeErr) {
+      logger.warn(&quot;DB close failed: &quot; + closeErr);
+    }
+  }
+
+}</script>
+        </com.mirth.connect.plugins.javascriptrule.JavaScriptRule>
+      </elements>
+    </filter>
+    <transportName>HTTP Listener</transportName>
+    <mode>SOURCE</mode>
+    <enabled>true</enabled>
+    <waitForPrevious>true</waitForPrevious>
+  </sourceConnector>
+  <destinationConnectors>
+    <connector version="26.6.0">
+      <metaDataId>1</metaDataId>
+      <name>Read Bundle From DLAKE</name>
+      <properties class="com.mirth.connect.connectors.http.HttpDispatcherProperties" version="26.6.0">
+        <pluginProperties>
+          <com.mirth.connect.plugins.ssl.SSLSettingsProperties version="26.6.0">
+  <sslEnabled>false</sslEnabled>
+            <mutualTlsEnabled>true</mutualTlsEnabled>
+            <mutualTlsMigrated>true</mutualTlsMigrated>
+            <clientCertValidationEnabled>true</clientCertValidationEnabled>
+            <clientCertOptionalEnabled>false</clientCertOptionalEnabled>
+            <serverCertValidationEnabled>true</serverCertValidationEnabled>
+            <verifyHostname>false</verifyHostname>
+            <keystorePath/>
+            <keystorePassword/>
+            <certAlias/>
+            <certPassword/>
+            <truststorePath/>
+            <truststorePassword/>
+            <tls13>true</tls13>
+            <tls12>true</tls12>
+            <tls11>false</tls11>
+            <keystoreType/>
+            <truststoreType/>
+            <keystoreSettingFromSystem>false</keystoreSettingFromSystem>
+            <keystoreUid/>
+            <myCertificateAlias/>
+            <truststoreSettingFromSystem>false</truststoreSettingFromSystem>
+            <truststoreUid/>
+            <validationMode>pkix</validationMode>
+            <revocationMode>disabled</revocationMode>
+            <softFailIfResponderUnavailable>false</softFailIfResponderUnavailable>
+            <pinnedLeafPins/>
+            <subjectSanFilterPatterns/>
+          </com.mirth.connect.plugins.ssl.SSLSettingsProperties>
+        </pluginProperties>
+        <destinationConnectorProperties version="26.6.0">
+          <queueEnabled>false</queueEnabled>
+          <sendFirst>false</sendFirst>
+          <retryIntervalMillis>10000</retryIntervalMillis>
+          <regenerateTemplate>false</regenerateTemplate>
+          <retryCount>0</retryCount>
+          <rotate>false</rotate>
+          <includeFilterTransformer>false</includeFilterTransformer>
+          <threadCount>1</threadCount>
+          <threadAssignmentVariable></threadAssignmentVariable>
+          <validateResponse>false</validateResponse>
+          <resourceIds class="linked-hash-map">
+            <entry>
+              <string>Default Resource</string>
+              <string>[Default Resource]</string>
+            </entry>
+          </resourceIds>
+          <queueBufferSize>1000</queueBufferSize>
+          <reattachAttachments>true</reattachAttachments>
+        </destinationConnectorProperties>
+        <host>${fhirQuery}</host>
+        <useProxyServer>false</useProxyServer>
+        <proxyAddress></proxyAddress>
+        <proxyPort></proxyPort>
+        <method>post</method>
+        <headers class="linked-hash-map"/>
+        <parameters class="linked-hash-map"/>
+        <useHeadersVariable>false</useHeadersVariable>
+        <headersVariable></headersVariable>
+        <useParametersVariable>false</useParametersVariable>
+        <parametersVariable></parametersVariable>
+        <responseXmlBody>false</responseXmlBody>
+        <responseParseMultipart>true</responseParseMultipart>
+        <responseIncludeMetadata>false</responseIncludeMetadata>
+        <responseBinaryMimeTypes>application/.*(?&lt;!json|xml)$|image/.*|video/.*|audio/.*</responseBinaryMimeTypes>
+        <responseBinaryMimeTypesRegex>true</responseBinaryMimeTypesRegex>
+        <multipart>false</multipart>
+        <useAuthentication>false</useAuthentication>
+        <authenticationType>Basic</authenticationType>
+        <usePreemptiveAuthentication>false</usePreemptiveAuthentication>
+        <username></username>
+        <password></password>
+        <content></content>
+        <contentType>text/plain</contentType>
+        <dataTypeBinary>false</dataTypeBinary>
+        <charset>UTF-8</charset>
+        <socketTimeout>30000</socketTimeout>
+      </properties>
+      <transformer version="26.6.0">
+        <elements/>
+        <inboundTemplate encoding="base64"></inboundTemplate>
+        <inboundDataType>RAW</inboundDataType>
+        <outboundDataType>RAW</outboundDataType>
+        <inboundProperties class="com.mirth.connect.plugins.datatypes.raw.RawDataTypeProperties" version="26.6.0">
+          <batchProperties class="com.mirth.connect.plugins.datatypes.raw.RawBatchProperties" version="26.6.0">
+            <splitType>JavaScript</splitType>
+            <batchScript></batchScript>
+          </batchProperties>
+        </inboundProperties>
+        <outboundProperties class="com.mirth.connect.plugins.datatypes.raw.RawDataTypeProperties" version="26.6.0">
+          <batchProperties class="com.mirth.connect.plugins.datatypes.raw.RawBatchProperties" version="26.6.0">
+            <splitType>JavaScript</splitType>
+            <batchScript></batchScript>
+          </batchProperties>
+        </outboundProperties>
+      </transformer>
+      <responseTransformer version="26.6.0">
+        <elements>
+          <com.mirth.connect.plugins.javascriptstep.JavaScriptStep version="26.6.0">
+            <sequenceNumber>0</sequenceNumber>
+            <enabled>true</enabled>
+            <script>var dbConn = null;
+var bundleResponseStatus = response.getNewMessageStatus();
+var responseBody = response.getMessage();
+var errorText = response.getError();
+var statusMessage = response.getStatusMessage();
+channelMap.put(&quot;bundleResponseStatus&quot;, bundleResponseStatus);
+
+
+var mco_screening_id = channelMap.get(&quot;mco_screening_id&quot;);
+var mco_details_id = channelMap.get(&quot;mco_screening_extracts_details_id&quot;);
+var resource_type_id = globalChannelMap.get(&quot;bundleResourceTypeId&quot;);
+var errorTypeMap =globalChannelMap.get(&quot;bundleErrorTypeMap&quot;);
+var request_bundle_id = channelMap.get(&quot;bundleId&quot;);
+var responseBundleId = null;
+var sftpDropLocation=null;
+
+try {
+  dbConn = DatabaseConnectionFactory.createDatabaseConnection(
+    configurationMap.get(&quot;jdbdcDriver&quot;),
+    configurationMap.get(&quot;jbdcUrl&quot;),
+    configurationMap.get(&quot;dbName&quot;),
+    configurationMap.get(&quot;dbPassword&quot;)
+  );
+
+  logger.info(&quot;bundleResponseStatus &quot; + bundleResponseStatus.toString());
+  if (bundleResponseStatus.toString() != &quot;ERROR&quot; &amp;&amp; responseBody) {
+    var parsed = null;
+
+    try {
+      parsed = JSON.parse(responseBody);
+    } catch (parseErr) {
+    		channelMap.put(&quot;errorResponseBody&quot;, responseBody);
+    		channelMap.put(&quot;fileContent&quot;, responseBody);
+      throw {
+        errorType: &quot;PARSE_ERRROR&quot;,
+        description: &quot;Unable to parse response JSON from API&quot;,
+        rawError: parseErr,
+        stackTrace: parseErr.stack
+      };
+    }
+
+    responseBundleId = parsed.bundle_id || parsed.id || null;
+    if (responseBundleId) {
+      channelMap.put(&quot;response_bundle_id&quot;, responseBundleId);
+      if (mco_screening_id) {
+        dbConn.executeUpdate(
+          &quot;UPDATE screening_extracts.mco_screening_extracts SET response_bundle_id = ?, status = ?, updated_on_utc = now()  WHERE mco_screening_id = ?&quot;,
+          [responseBundleId, &quot;INPROGRESS&quot;, mco_screening_id]
+        );
+      }
+      if (mco_details_id) {
+        dbConn.executeUpdate(
+          &quot;UPDATE screening_extracts.mco_screening_extracts_details   SET status = ?, updated_on_utc = now()  WHERE mco_screening_extracts_details_id = ?&quot;,
+          [&quot;INPROGRESS&quot;, mco_details_id]
+        );
+      }
+
+      logger.info(
+        &quot;Updated status to INPROGRESS for response_bundle_id: &quot; +
+          responseBundleId
+      );
+    } else {
+      logger.warn(&quot;No response_bundle_id found in API response.&quot;);
+    }
+    channelMap.put(&quot;fileContent&quot;, responseBody);
+    channelMap.put(&quot;sftpDropLocation&quot;,  $(&quot;bundleOutbound&quot;));
+  } else {
+      logger.info(&quot;API_ERROR&quot;);
+      channelMap.put(&quot;sftpDropLocation&quot;,  $(&quot;errorFiles&quot;));
+      if(responseBody==null || responseBody==&quot;&quot;){
+      	responseBody=&quot;EMPTY DATALAKE API RESPONSE&quot;;
+      }
+      channelMap.put(&quot;fileContent&quot;, responseBody);
+    	channelMap.put(&quot;errorResponseBody&quot;, responseBody);
+    	channelMap.put(&quot;sftpDropLocation&quot;,  $(&quot;errorFiles&quot;));
+
+    throw {
+      errorType: &quot;API_ERROR&quot;,
+      description: &quot;API responded with ERROR&quot;,
+      rawError: new Error(errorText || &quot;Unknown API error&quot;),
+      stackTrace: new Error().stack,
+      statusMessage: statusMessage,
+      errorResponseBody:responseBody
+    };
+  }
+} catch (e) {	
+  var fileName= channelMap.get(&quot;fileName&quot;);
+  channelMap.put(&quot;fileName&quot;, &quot;Error_&quot;+fileName);
+  channelMap.put(&quot;sftpDropLocation&quot;,  $(&quot;errorFiles&quot;));
+  logger.info(&quot;HTTP sender catch &quot;);
+  if (
+    !dbConn ||
+    (e.javaClassName &amp;&amp; e.javaClassName.toString().includes(&quot;PSQLException&quot;)) ||
+    (e.description &amp;&amp; e.description.toString().includes(&quot;connect&quot;))
+  ) {
+    var pgError = {
+      errorType: &quot;POSTGRES_ERROR&quot;,
+      description: &quot;Unable to connect to database&quot;,
+      rawError: e,
+      stackTrace: e.stack || new Error().stack,
+      msg: rawMessage,
+    };
+
+    logger.error(&quot;ERROR TYPE: &quot; + pgError.errorType);
+    logger.error(&quot;DESCRIPTION: &quot; + pgError.description);
+    logger.error(&quot;STACK TRACE: &quot; + pgError.stackTrace);
+    throw &quot;ERROR OCCURRED: &quot; + pgError.errorType;
+  }
+  logger.info(&quot;eror types&quot;+errorTypeMap);
+  logger.info(&quot;Error Type&quot;+e.errorType);
+	logger.info(&quot;logger error Type&quot;+ errorTypeMap[e.errorType]);
+  try {
+    if (!dbConn) {
+      dbConn = DatabaseConnectionFactory.createDatabaseConnection(
+        configurationMap.get(&quot;jdbdcDriver&quot;),
+        configurationMap.get(&quot;jbdcUrl&quot;),
+        configurationMap.get(&quot;dbName&quot;),
+        configurationMap.get(&quot;dbPassword&quot;)
+      );
+    }
+    logger.info(e.errorType);
+    logger.info(e.errorType==&apos;API_ERROR&apos;);
+
+    var fallbackErrJson = {
+      errorType: e.errorType,
+      description: e.description || e.toString(),
+      stack: e.stackTrace || new Error().stack,
+      statusMessage: e.statusMessage || statusMessage,
+      rawError: e.rawError || e,
+    };
+    if (mco_screening_id) {
+      dbConn.executeUpdate(
+        &quot;UPDATE screening_extracts.mco_screening_extracts SET response_bundle_id = ?, status = ?, updated_on_utc = now()  WHERE mco_screening_id = ?&quot;,
+        [responseBundleId, &quot;ERROR&quot;, mco_screening_id]
+      );
+    }
+    if (mco_details_id) {
+      dbConn.executeUpdate(
+        &quot;UPDATE screening_extracts.mco_screening_extracts_details SET status = ?, updated_on_utc = now() WHERE mco_screening_extracts_details_id = ?&quot;,
+        [&quot;ERROR&quot;, mco_details_id]
+      );
+    }
+
+	
+    dbConn.executeUpdate(
+      &quot;INSERT INTO screening_extracts.mco_screening_extracts_error_logs (mco_screening_id, mco_screening_extracts_details_id, error_json, created_on_utc,updated_on_utc, is_active, screening_error_type_id) VALUES (?, ?, ?::json, now(), now(), &apos;1&apos;, ?)&quot;,
+      [
+        mco_screening_id,
+        mco_details_id,
+        JSON.stringify(fallbackErrJson),
+        errorTypeMap &amp;&amp; errorTypeMap[e.errorType],
+      ]
+    );
+
+    logger.error(
+      &quot;Updated status to ERROR for mco_screening_id: &quot; + mco_screening_id
+    );
+  } catch (fallbackErr) {
+    logger.error(&quot;fallback DB logging failed: &quot; + fallbackErr);
+  }finally {
+    if (dbConn) {
+      try {
+        dbConn.close();
+      } catch (closeErr) {
+        logger.warn(&quot;DB close failed: &quot; + closeErr);
+      }
+    }
+  }
+  logger.error(&quot;ERROR TYPE: &quot; + e.errorType);
+  logger.error(&quot;DESCRIPTION: &quot; + e.description);
+  logger.error(&quot;STACK TRACE: &quot; + e.stackTrace);
+  throw &quot;ERROR OCCURED: &quot; + (e.errorType || &quot;UNKNOWN&quot;);
+} finally {
+  if (dbConn) {
+    try {
+      dbConn.close();
+    } catch (closeErr) {
+      logger.warn(&quot;DB connection close failed: &quot; + closeErr);
+    }
+  }
+}</script>
+          </com.mirth.connect.plugins.javascriptstep.JavaScriptStep>
+        </elements>
+        <inboundTemplate encoding="base64"></inboundTemplate>
+        <outboundTemplate encoding="base64"></outboundTemplate>
+        <inboundDataType>RAW</inboundDataType>
+        <outboundDataType>RAW</outboundDataType>
+        <inboundProperties class="com.mirth.connect.plugins.datatypes.raw.RawDataTypeProperties" version="26.6.0">
+          <batchProperties class="com.mirth.connect.plugins.datatypes.raw.RawBatchProperties" version="26.6.0">
+            <splitType>JavaScript</splitType>
+            <batchScript></batchScript>
+          </batchProperties>
+        </inboundProperties>
+        <outboundProperties class="com.mirth.connect.plugins.datatypes.raw.RawDataTypeProperties" version="26.6.0">
+          <batchProperties class="com.mirth.connect.plugins.datatypes.raw.RawBatchProperties" version="26.6.0">
+            <splitType>JavaScript</splitType>
+            <batchScript></batchScript>
+          </batchProperties>
+        </outboundProperties>
+      </responseTransformer>
+      <filter version="26.6.0">
+        <elements>
+          <com.mirth.connect.plugins.rulebuilder.RuleBuilderRule version="26.6.0">
+            <name>Accept message if &quot;$(&apos;isSourceValidationError&apos;)&quot; does not exist</name>
+            <sequenceNumber>0</sequenceNumber>
+            <enabled>true</enabled>
+            <field>$(&apos;isSourceValidationError&apos;)</field>
+            <condition>NOT_EXIST</condition>
+            <values/>
+          </com.mirth.connect.plugins.rulebuilder.RuleBuilderRule>
+        </elements>
+      </filter>
+      <transportName>HTTP Sender</transportName>
+      <mode>DESTINATION</mode>
+      <enabled>true</enabled>
+      <waitForPrevious>true</waitForPrevious>
+    </connector>
+    <connector version="26.6.0">
+      <metaDataId>2</metaDataId>
+      <name>File Writer</name>
+      <properties class="com.mirth.connect.connectors.file.FileDispatcherProperties" version="26.6.0">
+        <pluginProperties/>
+        <destinationConnectorProperties version="26.6.0">
+          <queueEnabled>false</queueEnabled>
+          <sendFirst>false</sendFirst>
+          <retryIntervalMillis>10000</retryIntervalMillis>
+          <regenerateTemplate>false</regenerateTemplate>
+          <retryCount>3</retryCount>
+          <rotate>false</rotate>
+          <includeFilterTransformer>false</includeFilterTransformer>
+          <threadCount>10</threadCount>
+          <threadAssignmentVariable></threadAssignmentVariable>
+          <validateResponse>false</validateResponse>
+          <resourceIds class="linked-hash-map">
+            <entry>
+              <string>Default Resource</string>
+              <string>[Default Resource]</string>
+            </entry>
+          </resourceIds>
+          <queueBufferSize>100</queueBufferSize>
+          <reattachAttachments>true</reattachAttachments>
+        </destinationConnectorProperties>
+        <scheme>FILE</scheme>
+        <host>${sftpDropLocation}</host>
+        <outputPattern>${fileName}</outputPattern>
+        <anonymous>true</anonymous>
+        <username>anonymous</username>
+        <password>anonymous</password>
+        <timeout>10000</timeout>
+        <keepConnectionOpen>true</keepConnectionOpen>
+        <maxIdleTime>0</maxIdleTime>
+        <secure>true</secure>
+        <passive>true</passive>
+        <validateConnection>true</validateConnection>
+        <outputAppend>false</outputAppend>
+        <errorOnExists>false</errorOnExists>
+        <temporary>false</temporary>
+        <binary>false</binary>
+        <charsetEncoding>DEFAULT_ENCODING</charsetEncoding>
+        <template>${fileContent}</template>
+      </properties>
+      <transformer version="26.6.0">
+        <elements/>
+        <inboundDataType>RAW</inboundDataType>
+        <outboundDataType>RAW</outboundDataType>
+        <inboundProperties class="com.mirth.connect.plugins.datatypes.raw.RawDataTypeProperties" version="26.6.0">
+          <batchProperties class="com.mirth.connect.plugins.datatypes.raw.RawBatchProperties" version="26.6.0">
+            <splitType>JavaScript</splitType>
+            <batchScript></batchScript>
+          </batchProperties>
+        </inboundProperties>
+        <outboundProperties class="com.mirth.connect.plugins.datatypes.raw.RawDataTypeProperties" version="26.6.0">
+          <batchProperties class="com.mirth.connect.plugins.datatypes.raw.RawBatchProperties" version="26.6.0">
+            <splitType>JavaScript</splitType>
+            <batchScript></batchScript>
+          </batchProperties>
+        </outboundProperties>
+      </transformer>
+      <responseTransformer version="26.6.0">
+        <elements>
+          <com.mirth.connect.plugins.javascriptstep.JavaScriptStep version="26.6.0">
+            <sequenceNumber>0</sequenceNumber>
+            <enabled>true</enabled>
+            <script>var dbConn = null;
+var sftpResponseStatus = response.getNewMessageStatus();
+var errorText = response.getError();
+var statusMessage = response.getStatusMessage();
+var responseBody = response.getMessage();
+var mco_screening_id = channelMap.get(&quot;mco_screening_id&quot;);
+var mco_details_id = channelMap.get(&quot;mco_screening_extracts_details_id&quot;);
+var errorTypeMap = globalChannelMap.get(&quot;bundleErrorTypeMap&quot;);
+var File = Packages.java.io.File;
+function verifyFileResponse(filePath) {
+  var file = new File(filePath);
+  if (file.exists()) {
+    logger.info(&quot;Confirmed: File exists at &quot; + filePath);
+    return true;
+  } else {
+    logger.error(&quot;File not found at &quot; + filePath);
+    return false;
+  }
+}
+
+try {
+  dbConn = DatabaseConnectionFactory.createDatabaseConnection(
+    configurationMap.get(&quot;jdbdcDriver&quot;),
+    configurationMap.get(&quot;jbdcUrl&quot;),
+    configurationMap.get(&quot;dbName&quot;),
+    configurationMap.get(&quot;dbPassword&quot;)
+  );
+
+  logger.info(&quot;STATAUS &quot; + sftpResponseStatus.toString());
+
+  if (!$(&apos;isSourceValidationError&apos;) &amp;&amp; $(&apos;bundleResponseStatus&apos;) != &quot;ERROR&quot; &amp;&amp; sftpResponseStatus!=&quot;ERROR&quot; &amp;&amp; verifyFileResponse($(&apos;sftpDropLocation&apos;) + &quot;/&quot; + $(&apos;fileName&apos;))) {
+      if (mco_screening_id) {
+        dbConn.executeUpdate(
+          &quot;UPDATE screening_extracts.mco_screening_extracts SET status = ?,sent_file_name=?, updated_on_utc = now(), sent_to_mco=now() WHERE mco_screening_id = ?&quot;,
+          [&quot;COMPLETED&quot;, $(&quot;fileName&quot;), mco_screening_id]
+        );
+      }
+      if (mco_details_id) {
+        dbConn.executeUpdate(
+          &quot;UPDATE screening_extracts.mco_screening_extracts_details SET status = ?, updated_on_utc = now() WHERE mco_screening_extracts_details_id = ?&quot;,
+          [&quot;COMPLETED&quot;, mco_details_id]
+        );
+      }
+  } else {
+    if (sftpResponseStatus == &apos;ERROR&apos; || !verifyFileResponse($(&apos;sftpDropLocation&apos;) + &quot;/&quot; + $(&apos;fileName&apos;))) {
+      throw {
+        errorType: &quot;SFTP_ERROR&quot;,
+        description: &quot;SFTP ERROR ERROR&quot;,
+        rawError: new Error(errorText || &quot;Unknown ERROR error&quot;),
+        stackTrace: new Error().stack,
+        statusMessage: statusMessage,
+        errorResponseBody: responseBody
+      };
+    }
+  }
+
+
+} catch (e) {
+  logger.info(&quot;sftp catch &quot;);
+  if (
+    !dbConn ||
+    (e.javaClassName &amp;&amp; e.javaClassName.toString().includes(&quot;PSQLException&quot;)) ||
+    (e.description &amp;&amp; e.description.toString().includes(&quot;connect&quot;))
+  ) {
+    var pgError = {
+      errorType: &quot;POSTGRES_ERROR&quot;,
+      description: &quot;Unable to connect to database&quot;,
+      rawError: e,
+      stackTrace: e.stack || new Error().stack,
+    };
+
+    logger.error(&quot;ERROR TYPE: &quot; + pgError.errorType);
+    logger.error(&quot;DESCRIPTION: &quot; + pgError.description);
+    logger.error(&quot;STACK TRACE: &quot; + pgError.stackTrace);
+    throw &quot;ERROR OCCURRED: &quot; + pgError.errorType;
+  }
+  logger.error(
+    &quot;SFTP or DB error: &quot; + (e.errorType || &quot;UNKNOWN&quot;) + &quot; - &quot; + e.description
+  );
+
+  // Reconnect DB if needed
+  if (!dbConn) {
+    try {
+      dbConn = DatabaseConnectionFactory.createDatabaseConnection(
+        configurationMap.get(&quot;jdbdcDriver&quot;),
+        configurationMap.get(&quot;jbdcUrl&quot;),
+        configurationMap.get(&quot;dbName&quot;),
+        configurationMap.get(&quot;dbPassword&quot;)
+      );
+    } catch (fallbackErr) {
+      logger.error(&quot;Unable to reconnect to DB to log error: &quot; + fallbackErr);
+      throw &quot;POSTGRES_ERROR&quot;;
+    }
+  }
+
+  try {
+    var errorJson = {
+      errorType: e.errorType || &quot;SFTP_ERROR&quot;,
+      description: e.description || e.toString(),
+      stackTrace: e.stackTrace || (e.rawError &amp;&amp; e.rawError.stack) || &quot;&quot;,
+      file: fileName
+    };
+    if (mco_screening_id) {
+      dbConn.executeUpdate(
+        &quot;UPDATE screening_extracts.mco_screening_extracts SET status = ?, updated_on_utc = now() WHERE mco_screening_id = ?&quot;,
+        [&quot;ERROR&quot;, mco_screening_id]
+      );
+    }
+    if (mco_details_id) {
+      dbConn.executeUpdate(
+        &quot;UPDATE screening_extracts.mco_screening_extracts_details SET status = ?, updated_on_utc = now() WHERE mco_screening_extracts_details_id = ?&quot;,
+        [&quot;ERROR&quot;, mco_details_id]
+      );
+    }
+    dbConn.executeUpdate(
+      &quot;INSERT INTO screening_extracts.mco_screening_extracts_error_logs (mco_screening_id, mco_screening_extracts_details_id, error_json, created_on_utc,updated_on_utc, is_active, screening_error_type_id) VALUES (?, ?, ?::json, now(), now(), &apos;1&apos;, ?)&quot;,
+      [
+        mco_screening_id,
+        mco_details_id,
+        JSON.stringify(errorJson),
+        errorTypeMap[&quot;SFTP_ERROR&quot;],
+      ]
+    );
+  } catch (logErr) {
+    logger.error(&quot;Failed to log error to DB: &quot; + logErr);
+    throw &quot;POSTGRES_ERROR&quot;;
+  } finally {
+    try {
+      if (dbConn) dbConn.close();
+    } catch (closeErr) {
+      logger.warn(&quot;Failed to close DB connection: &quot; + closeErr);
+    }
+  }
+
+  throw (
+    &quot;SFTP Upload or Status Update Failure: &quot; + (e.errorType || &quot;SFTP_ERROR&quot;)
+  );
+} finally {
+  try {
+    if (dbConn) dbConn.close();
+  } catch (closeErr) {
+    logger.warn(&quot;Failed to close DB connection: &quot; + closeErr);
+  }
+}</script>
+          </com.mirth.connect.plugins.javascriptstep.JavaScriptStep>
+        </elements>
+        <inboundTemplate encoding="base64"></inboundTemplate>
+        <outboundTemplate encoding="base64"></outboundTemplate>
+        <inboundDataType>RAW</inboundDataType>
+        <outboundDataType>RAW</outboundDataType>
+        <inboundProperties class="com.mirth.connect.plugins.datatypes.raw.RawDataTypeProperties" version="26.6.0">
+          <batchProperties class="com.mirth.connect.plugins.datatypes.raw.RawBatchProperties" version="26.6.0">
+            <splitType>JavaScript</splitType>
+            <batchScript></batchScript>
+          </batchProperties>
+        </inboundProperties>
+        <outboundProperties class="com.mirth.connect.plugins.datatypes.raw.RawDataTypeProperties" version="26.6.0">
+          <batchProperties class="com.mirth.connect.plugins.datatypes.raw.RawBatchProperties" version="26.6.0">
+            <splitType>JavaScript</splitType>
+            <batchScript></batchScript>
+          </batchProperties>
+        </outboundProperties>
+      </responseTransformer>
+      <filter version="26.6.0">
+        <elements/>
+      </filter>
+      <transportName>File Writer</transportName>
+      <mode>DESTINATION</mode>
+      <enabled>true</enabled>
+      <waitForPrevious>true</waitForPrevious>
+    </connector>
+  </destinationConnectors>
+  <preprocessingScript>// Modify the message variable below to pre process data
+return message;</preprocessingScript>
+  <postprocessingScript>// This script executes once after a message has been processed
+// Responses returned from here will be stored as &quot;Postprocessor&quot; in the response map
+return;</postprocessingScript>
+  <deployScript>// This script executes once when the channel is deployed
+// You only have access to the globalMap and globalChannelMap here to persist data
+logger.info(&quot;started&quot;);
+var dbConn;
+try {
+  var errorTypeMap = {},resource_type_id,mcoMap = {},scrPerferenceMap={};
+  dbConn = DatabaseConnectionFactory.createDatabaseConnection(
+    configurationMap.get(&quot;jdbdcDriver&quot;),
+    configurationMap.get(&quot;jbdcUrl&quot;),
+    configurationMap.get(&quot;dbName&quot;),
+    configurationMap.get(&quot;dbPassword&quot;)
+  );
+  var rsErr = dbConn.executeCachedQuery(
+    &quot;SELECT screening_error_type_name, screening_error_type_id FROM screening_extracts.screening_error_types WHERE is_active = &apos;1&apos;&quot;
+  );
+  while (rsErr.next()) {
+    var ename = rsErr.getString(&quot;screening_error_type_name&quot;);
+    var id = rsErr.getLong(&quot;screening_error_type_id&quot;);
+    if (ename &amp;&amp; id) {
+      errorTypeMap[ename] = id;
+    }
+  }
+  logger.info(JSON.stringify(errorTypeMap));
+  globalChannelMap.put(&quot;bundleErrorTypeMap&quot;, errorTypeMap);
+
+  var rsRes = dbConn.executeCachedQuery(
+    &quot;SELECT resource_type_id FROM screening_extracts.resource_types WHERE resource_type_name = &apos;BUNDLE&apos; AND is_active = &apos;1&apos;&quot;
+  );
+  if (rsRes.next()) {
+    resource_type_id = rsRes.getInt(&quot;resource_type_id&quot;);
+  }
+  logger.info(&quot;ResourceID : &quot; + resource_type_id);
+  globalChannelMap.put(&quot;bundleResourceTypeId&quot;, resource_type_id);
+  var rsMco = dbConn.executeCachedQuery(
+    &quot;SELECT tenant_id, tenant_name,tenant_short_code FROM techbd_udi_ingress.tenants WHERE is_active = &apos;1&apos;&quot;
+  );
+  while (rsMco.next()) {
+    var mcoCode = rsMco.getString(&quot;tenant_short_code&quot;);
+    var mcoId = rsMco.getString(&quot;tenant_id&quot;);
+    if (mcoCode &amp;&amp; mcoId) {
+      mcoMap[mcoCode] = mcoId;
+    }
+  }
+  logger.info(&quot;mcoMap&quot; + JSON.stringify(mcoMap));
+  globalChannelMap.put(&quot;bundleMcoMap&quot;, mcoMap);
+  logger.info(&quot;Initial Config Completed&quot;);
+
+  var pfMco = dbConn.executeCachedQuery( &quot;SELECT msp.tenant_id as tenant_id , m.tenant_short_code as tenant_short_code FROM screening_extracts.mco_screening_preferences msp inner join techbd_udi_ingress.tenants m on msp.tenant_id =m.tenant_id inner join screening_extracts.resource_types rt on msp.resource_type_id  = rt.resource_type_id WHERE msp.is_active = &apos;1&apos; and m.is_active =&apos;1&apos;and UPPER(rt.resource_type_name)=&apos;BUNDLE&apos;&quot;);
+  while (pfMco.next()) {  scrPerferenceMap[pfMco.getString(&quot;tenant_short_code&quot;)] = pfMco.getString(&quot;tenant_id&quot;);}
+  logger.info(&quot;Preference Map&quot; + JSON.stringify(scrPerferenceMap));
+  globalChannelMap.put(&quot;scrPerferenceMap&quot;, scrPerferenceMap);
+
+} catch (e) {
+  logger.error(&quot;Error initializing globalChannelMap values: &quot; + e);
+} finally {	
+	if(dbConn){
+       dbConn.close();
+	}
+}
+
+return;</deployScript>
+  <undeployScript>// This script executes once when the channel is undeployed
+// You only have access to the globalMap and globalChannelMap here to persist data
+return;</undeployScript>
+  <properties version="26.6.0">
+    <clearGlobalChannelMap>true</clearGlobalChannelMap>
+    <messageStorageMode>DEVELOPMENT</messageStorageMode>
+    <encryptData>false</encryptData>
+    <encryptAttachments>false</encryptAttachments>
+    <encryptCustomMetaData>false</encryptCustomMetaData>
+    <removeContentOnCompletion>false</removeContentOnCompletion>
+    <removeOnlyFilteredOnCompletion>false</removeOnlyFilteredOnCompletion>
+    <removeAttachmentsOnCompletion>false</removeAttachmentsOnCompletion>
+    <initialState>STARTED</initialState>
+    <storeAttachments>true</storeAttachments>
+    <metaDataColumns>
+      <metaDataColumn>
+        <name>SOURCE</name>
+        <type>STRING</type>
+        <mappingName>message_source</mappingName>
+      </metaDataColumn>
+      <metaDataColumn>
+        <name>TYPE</name>
+        <type>STRING</type>
+        <mappingName>message_type</mappingName>
+      </metaDataColumn>
+      <metaDataColumn>
+        <name>ATTRIBUTED_SOURCE</name>
+        <type>STRING</type>
+        <mappingName>attributed_source</mappingName>
+      </metaDataColumn>
+      <metaDataColumn>
+        <name>BUNDLE_ID</name>
+        <type>STRING</type>
+        <mappingName>bundle_id</mappingName>
+      </metaDataColumn>
+    </metaDataColumns>
+    <attachmentProperties version="26.6.0">
+      <type>None</type>
+      <properties/>
+    </attachmentProperties>
+    <resourceIds class="linked-hash-map">
+      <entry>
+        <string>Default Resource</string>
+        <string>[Default Resource]</string>
+      </entry>
+    </resourceIds>
+  </properties>
+  <exportData>
+    <metadata>
+      <enabled>true</enabled>
+      <lastModified>
+        <time>1790767995094</time>
+        <timezone>Asia/Calcutta</timezone>
+      </lastModified>
+      <pruningSettings>
+        <pruneMetaDataDays>1</pruneMetaDataDays>
+        <archiveEnabled>true</archiveEnabled>
+        <pruneErroredMessages>false</pruneErroredMessages>
+      </pruningSettings>
+      <userId>6</userId>
+    </metadata>
+    <channelTags>
+      <channelTag>
+        <id>07ed94c0-d58a-45ac-8346-569c22d34014</id>
+        <name>fhir</name>
+        <channelIds>
+          <string>a3ece49e-f52f-40bb-927d-03cc71087ad7</string>
+          <string>4b746a11-87b3-4691-841d-23e39a806dcf</string>
+          <string>ee0e8c40-8b78-4d8f-bf0f-ad57593404eb</string>
+          <string>be4273be-6d68-40e9-b849-24d7f62899e0</string>
+          <string>2e0562b9-f00f-4921-9ded-25652e9dc1e6</string>
+          <string>6564751c-ed02-4e87-9a7b-ec4d51d71de6</string>
+        </channelIds>
+        <backgroundColor>
+          <red>255</red>
+          <green>0</green>
+          <blue>0</blue>
+          <alpha>255</alpha>
+        </backgroundColor>
+      </channelTag>
+    </channelTags>
+  </exportData>
+</channel>
