@@ -20,7 +20,6 @@ public class HealthCheckController {
     @RequestMapping(value = "/", method = {RequestMethod.GET, RequestMethod.HEAD})
     public ResponseEntity<Void> healthCheck() {
         try {
-            LOG.info("Health check requested via /");
             return ResponseEntity.ok().build();
         } catch (Exception e) {
             LOG.error("Health check failed", e);
