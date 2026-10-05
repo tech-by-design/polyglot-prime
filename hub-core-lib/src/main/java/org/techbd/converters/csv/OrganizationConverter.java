@@ -91,7 +91,7 @@ public class OrganizationConverter extends BaseConverter {
         populateIsActive(organization, qeAdminData);
         populateOrganizationType(organization, qeAdminData, interactionId);
         populateOrganizationAddress(organization, qeAdminData, interactionId);
-         
+
         BundleEntryComponent bundleEntryComponent = new BundleEntryComponent();
         bundleEntryComponent.setFullUrl(fullUrl);
         bundleEntryComponent.setRequest(new Bundle.BundleEntryRequestComponent().setMethod(HTTPVerb.POST).setUrl(baseUrl + "/Organization/" + organization.getId()));
@@ -113,14 +113,13 @@ public class OrganizationConverter extends BaseConverter {
                     "http://www.medicaid.gov/", "MA",
                     "http://www.irs.gov/", "TAX");
 
-            String rawSystem = data.getScreeningEntityIdCodeSystem();
+            String rawSystem = data.getScreeningEntityIdCodeSystem(); // system string from CSV
             String code = systemToCodeMap.getOrDefault(rawSystem, "UNKNOWN");
             String system = fetchSystem(code, rawSystem, CsvConstants.SCREENING_ENITITY_ID, interactionId);
 
-            String typeCodingSystem = "http://terminology.hl7.org/CodeSystem/v2-0203";
             Identifier identifier = new Identifier();
             Coding coding = new Coding();
-            coding.setSystem(typeCodingSystem);
+            coding.setSystem(system);
             coding.setCode(code);
             CodeableConcept type = new CodeableConcept();
             type.addCoding(coding);
@@ -173,7 +172,7 @@ public class OrganizationConverter extends BaseConverter {
             if (StringUtils.isNotEmpty(qrAdminData.getFacilityCity())) {
                 fullAddressText += ", " + qrAdminData.getFacilityCity();
             }
-            
+
             if (StringUtils.isNotEmpty(qrAdminData.getFacilityState())) {
                 String originalValue = qrAdminData.getFacilityState();
                 String code = fetchCode(originalValue, CsvConstants.STATE, interactionId);
@@ -204,9 +203,9 @@ public class OrganizationConverter extends BaseConverter {
                     addressLines.add(new StringType(qrAdminData.getFacilityAddress2()));
                 }
                     address.setLine(addressLines);
-            
+
             }
-        
+
 
             address.setCity(qrAdminData.getFacilityCity());
             address.setDistrict(qrAdminData.getFacilityCounty());
