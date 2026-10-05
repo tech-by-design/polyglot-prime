@@ -62,20 +62,14 @@ public class FHIRUtil {
 
         if (appConfig.getIgPackages() != null && appConfig.getIgPackages().containsKey("fhir-v4")) {
             FhirV4Config fhirV4Config = appConfig.getIgPackages().get("fhir-v4");
-            Map<String, AppConfig.ShinnyPackageConfig> shinNyPackages = fhirV4Config.getShinnyPackages();
+            Map<String, Map<String, String>> shinNyPackages = fhirV4Config.getShinnyPackages();
 
-            if (shinNyPackages != null) {
-                for (AppConfig.ShinnyPackageConfig igPackage : shinNyPackages.values()) {
-                    if (igPackage != null && igPackage.getProfileBaseUrl() != null) {
-                        String packageFhirProfileUrl = getProfileUrl(
-                                igPackage.getProfileBaseUrl(),
-                                BUNDLE);
-                        allowedProfileUrls.add(packageFhirProfileUrl);
-                    }
-                }
+            for (Map<String, String> igPackage : shinNyPackages.values()) {
+                String profileBaseUrl = igPackage.getOrDefault("profile-base-url", "");
+                String packageFhirProfileUrl = getProfileUrl(profileBaseUrl, BUNDLE);
+                allowedProfileUrls.add(packageFhirProfileUrl);
             }
         }
-
         return allowedProfileUrls;
     }
 
@@ -295,20 +289,6 @@ public class FHIRUtil {
 
         } catch (Exception e) {
             LOG.error("Error resolving IG folder path: {}", requestedPath, e);
-            return false;
-        }
-    }
-
-    public static boolean isIg2OrLater(final String igVersion) {
-        if (igVersion == null || igVersion.isBlank()) {
-            return false;
-        }
-
-        try {
-            int major = Integer.parseInt(igVersion.split("\\.")[0]);
-            return major >= 2;
-        } catch (NumberFormatException e) {
-            LOG.warn("Unable to parse IG version: {}", igVersion);
             return false;
         }
     }
