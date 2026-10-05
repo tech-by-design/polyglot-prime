@@ -1610,13 +1610,9 @@ INSERT INTO techbd_udi_ingress.ref_code_lookup (ref_code_lookup_id,code_type,cod
  
 -- Update system_value for the relevant screening codes
 UPDATE techbd_udi_ingress.ref_code_lookup
-SET system_value = 'http://test.shinny.org/us/ny/hrsn/CodeSystem/NYSHRSNQuestionnaire'
+SET system_value = 'http://shinny.org/us/ny/hrsn/CodeSystem/NYS-HRSN-Questionnaire'
 WHERE code_type = 'screening_code'
-  AND code IN ('NA', 'NYSAHCHRSN');
-
-DELETE FROM techbd_udi_ingress.ref_code_lookup
-WHERE code_type = 'screening_code'
-  AND code = 'NYS-AHC-HRSN';  
+  AND code IN ('NA', 'NYSAHCHRSN');  
 
 PERFORM pg_advisory_unlock_shared(hashtext('insert_code_lookup_data'));
  
