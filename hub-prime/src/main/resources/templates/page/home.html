@@ -43,15 +43,22 @@
 
             <!-- Top Header & Time Period Filter Bar -->
             <div class="flex flex-wrap justify-between items-center gap-4 w-full mb-4 relative">
-                <!-- Requirement 1: Left Side - Dynamic Active MCO Name -->
+                <!--  Left Side - Dynamic Active MCO Name -->
                 <h2 class="text-xl font-bold text-gray-800">
                     <span
-                        th:text="${session.activeTenant != null and session.activeTenant != '' ? session.activeTenant : (#authentication.principal.attributes['activeTenant'] != null and #authentication.principal.attributes['activeTenant'] != '' ? #authentication.principal.attributes['activeTenant'] : 'MCO Summary Metric')}">
+                        th:text="${#authentication.principal.attributes['role'].contains('NYeC Admin')
+                            ? 'MCO Summary Metric'
+                            : (session.activeTenant != null and session.activeTenant != ''
+                                ? session.activeTenant
+                                : (#authentication.principal.attributes['activeTenant'] != null
+                                    and #authentication.principal.attributes['activeTenant'] != ''
+                                    ? #authentication.principal.attributes['activeTenant']
+                                    : 'MCO Summary Metric'))}">
                         MCO Summary Metric
                     </span>
                 </h2>
 
-                <!-- Requirement 2 & 5: Top-Right Controls -->
+                <!--  Top-Right Controls -->
                 <div class="flex flex-wrap items-center gap-1 relative" id="mco-time-period-container">
                     <!-- Select Time Period Dropdown -->
                     <div class="flex items-center gap-2 pt-1 pr-1">
