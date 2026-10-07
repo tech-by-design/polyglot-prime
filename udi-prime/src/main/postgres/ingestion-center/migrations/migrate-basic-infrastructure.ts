@@ -1202,8 +1202,13 @@ const migrateSP = pgSQLa.storedProcedure(
     headerBodySeparator: "$migrateVersionSP$",
   },
 )`
+    DECLARE
+      migration_start_time TIMESTAMPTZ;
+      migration_group_start_time TIMESTAMPTZ;
+      migration_index_start_time TIMESTAMPTZ;
     BEGIN
-
+      migration_start_time := clock_timestamp();
+      RAISE NOTICE '[MIGRATION] START basic-infra at %', migration_start_time;
 
       ${ingressSchema}
 
@@ -1268,6 +1273,10 @@ const migrateSP = pgSQLa.storedProcedure(
 
       ${diagnosticDataledgerSat}
       
+      migration_group_start_time := clock_timestamp();
+      
+      RAISE NOTICE '[MIGRATION] START group=fhir_request_indexes at %', migration_group_start_time;
+      
       PERFORM pg_advisory_lock(hashtext('islm_migration_fhir_request_index_creation'));
           IF NOT EXISTS (
               SELECT 1 FROM pg_indexes
@@ -1296,10 +1305,14 @@ const migrateSP = pgSQLa.storedProcedure(
             AND tablename = 'sat_interaction_fhir_request'
             AND indexname = 'idx_interaction_id_trgm_partial'
           ) THEN
+            migration_index_start_time := clock_timestamp();
+            RAISE NOTICE '[MIGRATION] START index=idx_interaction_id_trgm_partial at %', migration_index_start_time;
             CREATE INDEX idx_interaction_id_trgm_partial
             ON techbd_udi_ingress.sat_interaction_fhir_request
             USING gin ((hub_interaction_id) techbd_udi_ingress.gin_trgm_ops)
             WHERE nature = 'Original FHIR Payload';
+            RAISE NOTICE '[MIGRATION] END index=idx_interaction_id_trgm_partial duration_ms=%',
+              round((extract(epoch FROM clock_timestamp() - migration_index_start_time) * 1000)::numeric, 2);
           END IF;
 
           -- Add idx_bundle_id_trgm_partial index if not exists
@@ -1309,10 +1322,14 @@ const migrateSP = pgSQLa.storedProcedure(
             AND tablename = 'sat_interaction_fhir_request'
             AND indexname = 'idx_bundle_id_trgm_partial'
           ) THEN
+            migration_index_start_time := clock_timestamp();
+            RAISE NOTICE '[MIGRATION] START index=idx_bundle_id_trgm_partial at %', migration_index_start_time;
             CREATE INDEX idx_bundle_id_trgm_partial
             ON techbd_udi_ingress.sat_interaction_fhir_request
             USING gin ((bundle_id) techbd_udi_ingress.gin_trgm_ops)
             WHERE nature = 'Original FHIR Payload';
+            RAISE NOTICE '[MIGRATION] END index=idx_bundle_id_trgm_partial duration_ms=%',
+              round((extract(epoch FROM clock_timestamp() - migration_index_start_time) * 1000)::numeric, 2);
           END IF;
 
           IF NOT EXISTS (
@@ -1443,6 +1460,10 @@ const migrateSP = pgSQLa.storedProcedure(
 
       PERFORM pg_advisory_unlock(hashtext('islm_migration_fhir_request_index_creation'));
 
+      RAISE NOTICE '[MIGRATION] END group=fhir_request_indexes duration_ms=%',
+
+        round((extract(epoch FROM clock_timestamp() - migration_group_start_time) * 1000)::numeric, 2);
+
       ${interactionUserRequestSat}
 
       ${interactionUIUserSat}
@@ -1477,6 +1498,10 @@ const migrateSP = pgSQLa.storedProcedure(
       ${interactionHl7RequestSat}    
       
       ${interactionCcdaRequestSat}          
+      
+      migration_group_start_time := clock_timestamp();
+      
+      RAISE NOTICE '[MIGRATION] START group=table_indexes at %', migration_group_start_time;
       
       PERFORM pg_advisory_lock(hashtext('islm_migration_table_index_creation'));
           -- HL7 indexes         
@@ -1517,6 +1542,8 @@ const migrateSP = pgSQLa.storedProcedure(
               EXECUTE 'CREATE INDEX idx_sat_interaction_zip_file_request_hub_interaction_id ON techbd_udi_ingress.sat_interaction_zip_file_request USING btree (hub_interaction_id)';
           END IF;
       PERFORM pg_advisory_unlock(hashtext('islm_migration_table_index_creation'));
+      RAISE NOTICE '[MIGRATION] END group=table_indexes duration_ms=%',
+        round((extract(epoch FROM clock_timestamp() - migration_group_start_time) * 1000)::numeric, 2);
 
       BEGIN
         ${fileExchangeProtocol.seedDML}
@@ -1538,6 +1565,12 @@ const migrateSP = pgSQLa.storedProcedure(
       ALTER TABLE ${assuranceSchema.sqlNamespace}.${pgTapTestResult.tableName} ADD COLUMN IF NOT EXISTS sat_pgtap_test_result_id TEXT NULL; 
       ALTER TABLE ${assuranceSchema.sqlNamespace}.${pgTapTestResult.tableName} ADD COLUMN IF NOT EXISTS techbd_version_number TEXT NULL; 
       ALTER TABLE ${assuranceSchema.sqlNamespace}.${pgTapTestResult.tableName} ADD COLUMN IF NOT EXISTS notok_results TEXT NULL;
+      
+        
+      migration_group_start_time := clock_timestamp();
+      
+        
+      RAISE NOTICE '[MIGRATION] START group=http_request_indexes at %', migration_group_start_time;
       
         
       PERFORM pg_advisory_lock(hashtext('islm_migration_http_request_index_creation'));
@@ -1658,6 +1691,10 @@ const migrateSP = pgSQLa.storedProcedure(
 
       PERFORM pg_advisory_unlock(hashtext('islm_migration_http_request_index_creation'));
 
+      RAISE NOTICE '[MIGRATION] END group=http_request_indexes duration_ms=%',
+
+        round((extract(epoch FROM clock_timestamp() - migration_group_start_time) * 1000)::numeric, 2);
+
       ${jsonActionRule}
 
       -- Add new column is_deleted  
@@ -1696,6 +1733,10 @@ const migrateSP = pgSQLa.storedProcedure(
       
      --- TRUNCATE TABLE techbd_udi_ingress.json_action_rule;       
 
+      migration_group_start_time := clock_timestamp();
+
+      RAISE NOTICE '[MIGRATION] START group=json_action_rule_indexes at %', migration_group_start_time;
+
       PERFORM pg_advisory_lock(hashtext('islm_migration_json_action_rule_index_creation'));          
 
           IF NOT EXISTS (
@@ -1709,8 +1750,14 @@ const migrateSP = pgSQLa.storedProcedure(
           END IF;          
           
       PERFORM pg_advisory_unlock(hashtext('islm_migration_json_action_rule_index_creation'));
+          
+      RAISE NOTICE '[MIGRATION] END group=json_action_rule_indexes duration_ms=%',
+          
+        round((extract(epoch FROM clock_timestamp() - migration_group_start_time) * 1000)::numeric, 2);
     
       ${refCodeLookUp}
+      migration_group_start_time := clock_timestamp();
+      RAISE NOTICE '[MIGRATION] START group=lookup_indexes at %', migration_group_start_time;
       PERFORM pg_advisory_lock(hashtext('islm_migration_lookup_index_creation'));
           IF NOT EXISTS (
               SELECT 1
@@ -1737,6 +1784,8 @@ const migrateSP = pgSQLa.storedProcedure(
         );
     END IF;
     PERFORM pg_advisory_unlock(hashtext('islm_migration_lookup_index_creation'));
+    RAISE NOTICE '[MIGRATION] END group=lookup_indexes duration_ms=%',
+      round((extract(epoch FROM clock_timestamp() - migration_group_start_time) * 1000)::numeric, 2);
 
 
       
@@ -1762,6 +1811,8 @@ const migrateSP = pgSQLa.storedProcedure(
                 ON techbd_udi_ingress.sat_nexus_interaction_ingestion (hub_nexus_interaction_id)';
     END IF;*/
       ${csvFhirProcessingErrors}
+      migration_group_start_time := clock_timestamp();
+      RAISE NOTICE '[MIGRATION] START group=flat_file_indexes at %', migration_group_start_time;
       PERFORM pg_advisory_lock(hashtext('islm_migration_flat_file_index_creation'));
           IF NOT EXISTS (
               SELECT 1
@@ -1784,6 +1835,8 @@ const migrateSP = pgSQLa.storedProcedure(
                       ON techbd_udi_ingress.sat_csv_fhir_processing_errors (zip_file_hub_interaction_id)';
           END IF;         
       PERFORM pg_advisory_unlock(hashtext('islm_migration_flat_file_index_creation'));
+      RAISE NOTICE '[MIGRATION] END group=flat_file_indexes duration_ms=%',
+        round((extract(epoch FROM clock_timestamp() - migration_group_start_time) * 1000)::numeric, 2);
 
       -- If the existing constraint is not included 'processing_errors', drop it if 'category_check' constraint exists and then recreate it.
       IF NOT EXISTS (
@@ -3499,6 +3552,8 @@ const migrateSP = pgSQLa.storedProcedure(
               -- Raise an error with a custom message
               RAISE EXCEPTION 'Error occurred while executing runtests: %', SQLERRM;
       END;
+      RAISE NOTICE '[MIGRATION] END basic-infra duration_ms=%',
+        round((extract(epoch FROM clock_timestamp() - migration_start_time) * 1000)::numeric, 2);
     END
   `;
 

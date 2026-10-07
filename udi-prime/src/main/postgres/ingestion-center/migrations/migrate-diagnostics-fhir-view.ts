@@ -114,12 +114,16 @@ const migrateSP = pgSQLa.storedProcedure(
     headerBodySeparator: "$migrateVersionSP$",
   },
 )`
+    DECLARE
+      migration_start timestamptz := clock_timestamp();
     BEGIN
+      RAISE NOTICE '[MIGRATION] START % at %', 'diagnostics-fhir-view', migration_start;
 
       
       ${dependenciesSQL}      
 
       
+        RAISE NOTICE '[MIGRATION] END % duration_ms=%', 'diagnostics-fhir-view', round((extract(epoch from (clock_timestamp() - migration_start)) * 1000)::numeric, 2);
     END
   `;
 
