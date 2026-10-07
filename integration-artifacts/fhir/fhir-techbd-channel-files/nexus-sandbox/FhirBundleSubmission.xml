@@ -1,12 +1,17 @@
 <channel version="26.6.0">
-  <id>fb0dfd45-a990-43c0-88bc-7e525fe7dc3d</id>
+  <id>cac50f15-1204-495d-a15e-0f341c494171</id>
   <nextMetaDataId>5</nextMetaDataId>
   <name>FhirBundleSubmission</name>
-  <description>
-
-Version 0.8.45
-Restored the channel naming conventions to ensure consistency with the standard naming structure.</description>
-  <revision>110</revision>
+  <description>Version 0.8.46
+Historical FHIR Bundle Replay has been integrated into the existing FhirBundleSubmission channel. No separate historical endpoint or channel is used.
+Historical processing is applied only when the FHIR Bundle.id starts with historical-. All other Bundles continue through the existing normal Bundle processing flow unchanged.
+Historical Bundles support:
+- ooSize: full, lite, or none. Default is lite.
+- dataLedger: true or false. Default is false.
+- ooSize controls the OperationOutcome returned to the client.
+- dataLedger=false, including the default behavior when the parameter is omitted, prevents Data Ledger submission for the historical request.
+The channel validates the Bundle, processes and persists the FHIR data through the existing flow, and applies historical-specific response handling only for Historical Bundles.</description>
+  <revision>9</revision>
   <sourceConnector version="26.6.0">
     <metaDataId>0</metaDataId>
     <name>sourceConnector</name>
@@ -341,6 +346,23 @@ try {
 } catch (e) {
     logger.error(&quot; Error processing DataLedger Tracking secret: &quot; + e.message);
 }
+
+//per-request override of DATA_LEDGER_TRACKING for historical bundles with dataLedger=false
+//dest_bundle forwards header X-TechBD-Data-Ledger-Tracking=${DATA_LEDGER_TRACKING} to the hub, and the hub
+//writes its own &quot;received&quot; ledger entry from that header. Previously it always carried the config value (true),
+//so dataLedger=false was ignored. Overriding it here (channelMap only, NOT globalMap) disables the hub ledger call,
+//the dest_datalake &quot;sent&quot; ledger call and the source-map value for this message only.
+try {
+    var cfgTracking = String(channelMap.get(&quot;DATA_LEDGER_TRACKING&quot;) || &quot;false&quot;).trim().toLowerCase() === &quot;true&quot;;
+    var skipLedger = (String(channelMap.get(&quot;isHistorical&quot;)) === &quot;true&quot; &amp;&amp; String(channelMap.get(&quot;dataLedgerParam&quot;)) === &quot;false&quot;);
+    var effectiveTracking = (cfgTracking &amp;&amp; !skipLedger) ? &quot;true&quot; : &quot;false&quot;;
+    channelMap.put(&quot;DATA_LEDGER_TRACKING&quot;, effectiveTracking);
+    channelMap.put(&quot;dataLedgerTracking&quot;, effectiveTracking);
+    logger.info(&quot;Data ledger tracking effective=&quot; + effectiveTracking + &quot; (config=&quot; + cfgTracking + &quot;, historical dataLedger=false skip=&quot; + skipLedger + &quot;)&quot;);
+} catch (eDl) {
+    logger.error(&quot;Error computing effective data ledger tracking: &quot; + eDl.message);
+}
+
 
 /********************************************
     9️⃣ FETCH DATA LEDGER  DATA_LEDGER_DIAGNOSTICS (Plain text)
@@ -1164,6 +1186,17 @@ channelMap.put(&apos;isActionDiscard&apos;, &quot;discard&quot;);
 
 var requestUri = channelMap.get(&quot;requestUri&quot;);&#xd;
 
+// dest_datalake: read historical replay flags and apply their defaults
+// Determine whether the current Bundle is a historical replay request.
+// For historical Bundles, use the ooSize and dataLedger parameters captured by the preprocessor.
+// Default ooSize to &quot;full&quot; and dataLedger to &quot;true&quot; when no value is provided.
+var isHistoricalFlag = (String(channelMap.get(&apos;isHistorical&apos;)) === &apos;true&apos;);
+var ooSizeParam = channelMap.get(&apos;ooSize&apos;);
+if (ooSizeParam == null || ooSizeParam === &apos;&apos;) { ooSizeParam = &apos;full&apos;; }
+var dataLedgerParamFlag = channelMap.get(&apos;dataLedgerParam&apos;);
+if (dataLedgerParamFlag == null || dataLedgerParamFlag === &apos;&apos;) { dataLedgerParamFlag = &apos;true&apos;; }
+
+
 
 // Safe single-parse helper (handles java.lang.String)
 function parseOnceMaybeString(v) {
@@ -1294,6 +1327,100 @@ function extractIssueAndDisposition(operationOutcomePayload, validationSeverityL
 
     return result;
 }
+
+
+// applyOoSizeFilter(result, ooSize) - JS mirror of the Java
+// HistoricalReplayService#applyOoSizeFilter method. Operates on the FULL parsed
+// dest_bundle response (root object with an &quot;OperationOutcome&quot; key containing
+// &quot;validationResults&quot;), NOT on the flattened object extractIssueAndDisposition()
+// returns - that function is unchanged and continues to only affect what gets
+// forwarded to DataLake above.
+//  - ooSize &quot;full&quot; (default), or result == null -&gt; returned unchanged.
+//  - ooSize &quot;none&quot; -&gt; returns null (caller responds with just the interactionId).
+//  - ooSize &quot;lite&quot; -&gt; keeps only fatal/error issues inside every
+//        OperationOutcome.validationResults[*].operationOutcome.issue array.
+//  - any other/unexpected shape -&gt; fail-open, returned unchanged.
+function applyOoSizeFilter(result, ooSize) {
+    var normalizedOoSize = (ooSize != null &amp;&amp; String(ooSize).trim() !== &apos;&apos;) ? String(ooSize).trim().toLowerCase() : &apos;full&apos;;
+    logger.info(&quot;[CHANNEL: 1115 TECHBD &quot; + channelName + &quot;][INTERACTION ID: &quot; +interactionId +&quot; ]: applyOoSizeFilter STARTS -&gt; normalizedOoSize=&quot; + normalizedOoSize + &quot;, resultIsNull=&quot; + (result == null));
+
+    if (normalizedOoSize === &apos;full&apos; || result == null) {
+        logger.info(&quot;[CHANNEL: 1115 TECHBD &quot; + channelName + &quot;][INTERACTION ID: &quot; +interactionId +&quot; ]: applyOoSizeFilter: full (or null result) -&gt; returning result unchanged&quot;);
+        return result;
+    }
+    if (normalizedOoSize === &apos;none&apos;) {
+        logger.info(&quot;[CHANNEL: 1115 TECHBD &quot; + channelName + &quot;][INTERACTION ID: &quot; +interactionId +&quot; ]: applyOoSizeFilter: none -&gt; returning null&quot;);
+        return null;
+    }
+    if (normalizedOoSize !== &apos;lite&apos; || typeof result !== &apos;object&apos;) {
+        logger.info(&quot;[CHANNEL: 1115 TECHBD &quot; + channelName + &quot;][INTERACTION ID: &quot; +interactionId +&quot; ]: applyOoSizeFilter: not lite, or result not an object -&gt; returning result unchanged&quot;);
+        return result;
+    }
+
+    // lite: keep only error/fatal issues inside OperationOutcome.validationResults[*].operationOutcome.issue
+    try {
+        var root = {};
+        for (var rk in result) { if (Object.prototype.hasOwnProperty.call(result, rk)) root[rk] = result[rk]; }
+
+        var ooObj = root[&apos;OperationOutcome&apos;];
+        if (!ooObj || typeof ooObj !== &apos;object&apos;) {
+            logger.info(&quot;[CHANNEL: 1115 TECHBD &quot; + channelName + &quot;][INTERACTION ID: &quot; +interactionId +&quot; ]: applyOoSizeFilter: lite - no OperationOutcome present, returning result unchanged&quot;);
+            return result;
+        }
+        var oo = {};
+        for (var ok in ooObj) { if (Object.prototype.hasOwnProperty.call(ooObj, ok)) oo[ok] = ooObj[ok]; }
+
+        var vrObj = oo[&apos;validationResults&apos;];
+        if (!(vrObj instanceof Array)) {
+            logger.info(&quot;[CHANNEL: 1115 TECHBD &quot; + channelName + &quot;][INTERACTION ID: &quot; +interactionId +&quot; ]: applyOoSizeFilter: lite - validationResults missing/not an array, returning result unchanged&quot;);
+            return result;
+        }
+
+        var filteredVr = [];
+        for (var i = 0; i &lt; vrObj.length; i++) {
+            var vrItem = vrObj[i];
+            if (!vrItem || typeof vrItem !== &apos;object&apos;) {
+                filteredVr.push(vrItem);
+                continue;
+            }
+            var vr = {};
+            for (var vk in vrItem) { if (Object.prototype.hasOwnProperty.call(vrItem, vk)) vr[vk] = vrItem[vk]; }
+
+            var innerOoObj = vr[&apos;operationOutcome&apos;];
+            if (innerOoObj &amp;&amp; typeof innerOoObj === &apos;object&apos;) {
+                var innerOo = {};
+                for (var ik in innerOoObj) { if (Object.prototype.hasOwnProperty.call(innerOoObj, ik)) innerOo[ik] = innerOoObj[ik]; }
+
+                var issuesObj = innerOo[&apos;issue&apos;];
+                if (issuesObj instanceof Array) {
+                    var errorsOnly = [];
+                    for (var j = 0; j &lt; issuesObj.length; j++) {
+                        var iss = issuesObj[j];
+                        if (iss &amp;&amp; typeof iss === &apos;object&apos;) {
+                            var sev = String(iss[&apos;severity&apos;]);
+                            if (sev.toLowerCase() === &apos;error&apos; || sev.toLowerCase() === &apos;fatal&apos;) {
+                                errorsOnly.push(iss);
+                            }
+                        }
+                    }
+                    logger.info(&quot;[CHANNEL: 1115 TECHBD &quot; + channelName + &quot;][INTERACTION ID: &quot; +interactionId +&quot; ]: applyOoSizeFilter: lite - validationResults[&quot; + i + &quot;] issue count &quot; + issuesObj.length + &quot; -&gt; &quot; + errorsOnly.length + &quot; after filtering to fatal/error&quot;);
+                    innerOo[&apos;issue&apos;] = errorsOnly;
+                }
+                vr[&apos;operationOutcome&apos;] = innerOo;
+            }
+            filteredVr.push(vr);
+        }
+        oo[&apos;validationResults&apos;] = filteredVr;
+        root[&apos;OperationOutcome&apos;] = oo;
+        logger.info(&quot;[CHANNEL: 1115 TECHBD &quot; + channelName + &quot;][INTERACTION ID: &quot; +interactionId +&quot; ]: applyOoSizeFilter ENDS -&gt; lite filtering applied successfully&quot;);
+        return root;
+    } catch (e) {
+        logger.warn(&quot;[CHANNEL: 1115 TECHBD &quot; + channelName + &quot;][INTERACTION ID: &quot; +interactionId +&quot; ]: applyOoSizeFilter failed, returning original unfiltered result: &quot; + e.message);
+        return result;
+    }
+}
+
+
 
 // appendToBundlePayload(payload, extractedOutcome) mirror of your Java method
 function appendToBundlePayload(payload, extractedOutcome) {
@@ -1526,7 +1653,7 @@ if (extractedPayload) {
 	    	    
 		var trackingEnabled = channelMap.get(&quot;DATA_LEDGER_TRACKING&quot;);
 		&#xd;
-		if (trackingEnabled != null &amp;&amp; trackingEnabled.toLowerCase() == &quot;true&quot;) {&#xd;
+		if (trackingEnabled != null &amp;&amp; trackingEnabled.toLowerCase() == &quot;true&quot; &amp;&amp; !(isHistoricalFlag &amp;&amp; dataLedgerParamFlag === &apos;false&apos;)) { // (historical dataLedger=false skips ledger) &#xd;
 		    logger.info(&quot;[CHANNEL: 1115 TECHBD &quot; + channelName + &quot;][INTERACTION ID: &quot; +interactionId +&quot; ]:data ledger api call -BEGIN received&quot;);&#xd;
 		    try {&#xd;
 		        sendDataLedgerSync(payloadDataLedger,interactionId);&#xd;
@@ -1554,7 +1681,8 @@ if (extractedPayload) {
 			   tenantId,&#xd;
 			   requestUri , //sourceMap.get(&apos;contextPath&apos;),&#xd;
 			   JSON.stringify(updatedPayload),&#xd;
-			   operation,source&#xd;
+			   operation,source,
+			   isHistoricalFlag&#xd;
 			);
 			var end = Instant.now();
 			var elapsedMillis = Duration.between(start, end).toMillis();&#xd;
@@ -1583,7 +1711,34 @@ if (extractedPayload) {
         }
 	} // isActionDiscard
 
-        try { responseMap.put(&apos;finalResponse&apos;, rawResponseMsg); } catch(ignore){}
+        
+        if (isHistoricalFlag) {
+            // Historical replay: shape client response using ooSize (full | lite | none)
+            try {
+                var parsedRawResponse = parseOnceMaybeString(rawResponseMsg);
+                if (!parsedRawResponse &amp;&amp; rawResponseMsg &amp;&amp; typeof rawResponseMsg === &apos;object&apos;) {
+                    parsedRawResponse = rawResponseMsg;
+                }
+                var filteredResult = null;
+                try {
+                    filteredResult = applyOoSizeFilter(parsedRawResponse, ooSizeParam);
+                } catch (eFilter) {
+                    logger.error(&quot;[CHANNEL: 1115 TECHBD &quot; + channelName + &quot;][INTERACTION ID: &quot; + interactionId + &quot; ]: applyOoSizeFilter threw, falling back to raw response: &quot; + eFilter);
+                    filteredResult = parsedRawResponse;
+                }
+                if (filteredResult == null) {
+                    responseMap.put(&apos;finalResponse&apos;, JSON.stringify({ interactionId: interactionId }));
+                } else {
+                    responseMap.put(&apos;finalResponse&apos;, JSON.stringify(filteredResult));
+                }
+            } catch (eResp) {
+                logger.error(&quot;[CHANNEL: 1115 TECHBD &quot; + channelName + &quot;][INTERACTION ID: &quot; + interactionId + &quot; ]: Unexpected error building historical response, falling back to raw response: &quot; + eResp);
+                responseMap.put(&apos;finalResponse&apos;, rawResponseMsg);
+            }
+        } else {
+            try { responseMap.put(&apos;finalResponse&apos;, rawResponseMsg); } catch(ignore){}
+        }
+       
     } catch (e) {
         try { logger.error(&quot;[CHANNEL: 1115 TECHBD &quot; + channelName + &quot;][INTERACTION ID: &quot; +interactionId +&quot; ]: Failed to append extractedPayload: &quot; + e); } catch(ignore){}
     }
@@ -1754,6 +1909,55 @@ if (message == null || String(message).trim() === &quot;&quot;) {
 channelMap.put(&apos;channelName&apos;,channelName);
 
 
+// Historical replay detection: Bundle.id starting with &quot;historical-&quot; (case-insensitive).
+// Anything else (or unparseable body) keeps the original, non-historical flow.
+var isHistorical = &apos;false&apos;;
+try {
+    var __bundleObj = JSON.parse(String(message));
+    var __bundleId = (__bundleObj &amp;&amp; __bundleObj.id != null) ? String(__bundleObj.id).trim().toLowerCase() : &apos;&apos;;
+    if (__bundleId.indexOf(&apos;historical-&apos;) === 0) {
+        isHistorical = &apos;true&apos;;
+    }
+} catch (eHist) {
+    logger.info(&quot;[CHANNEL: 1115 TECHBD &quot; + channelName + &quot;]: Preprocessor - could not read bundle id for historical check, treating as normal bundle: &quot; + eHist);
+}
+channelMap.put(&apos;isHistorical&apos;, isHistorical);
+
+var ooSizeParam = &apos;lite&apos;;
+var dataLedgerParam = &apos;true&apos;;
+if (isHistorical === &apos;true&apos;) {
+	dataLedgerParam = &apos;false&apos;;
+    var __getQP = globalMap.get(&apos;getQueryParam&apos;);
+    var __histUri = sourceMap.get(&apos;uri&apos;);
+
+    // ooSize: full  | lite (default) | none
+    var __ooRaw = __getQP(__histUri, &apos;ooSize&apos;);
+    if (__ooRaw != null &amp;&amp; String(__ooRaw).trim() !== &apos;&apos;) {
+        ooSizeParam = String(__ooRaw).trim().toLowerCase();
+        if (ooSizeParam !== &apos;lite&apos; &amp;&amp; ooSizeParam !== &apos;none&apos; &amp;&amp; ooSizeParam !== &apos;full&apos;) {
+            setErrorResponse(400, &quot;Invalid ooSize. Allowed values are: full, lite, none.&quot;);
+            throw &quot;Invalid ooSize parameter&quot;;
+        }
+    }
+
+//    // dataLedger: true (default) | false
+//    var __dlRaw = __getQP(__histUri, &apos;dataLedger&apos;);
+//    if (__dlRaw != null) { __dlRaw = String(__dlRaw).trim().toLowerCase(); }
+//    dataLedgerParam = (__dlRaw === &apos;false&apos;) ? &apos;false&apos; : &apos;true&apos;;
+// dataLedger: true  | false (default)
+var __dlRaw = __getQP(__histUri, &apos;dataLedger&apos;);
+if (__dlRaw != null &amp;&amp; String(__dlRaw).trim() !== &apos;&apos;) {
+    __dlRaw = String(__dlRaw).trim().toLowerCase();
+    dataLedgerParam = (__dlRaw === &apos;false&apos;) ? &apos;false&apos; : &apos;true&apos;;
+}
+    
+    logger.info(&quot;[CHANNEL: 1115 TECHBD &quot; + channelName + &quot;]: Preprocessor - HISTORICAL bundle detected. ooSize=&quot; + ooSizeParam + &quot;, dataLedger=&quot; + dataLedgerParam);
+}
+channelMap.put(&apos;ooSize&apos;, ooSizeParam);
+channelMap.put(&apos;dataLedgerParam&apos;, dataLedgerParam);
+
+
+
 var incomingInteractionId = $(&apos;headers&apos;).getHeader(&apos;X-TechBD-Interaction-ID&apos;);
 var incomingCorrelationId = $(&apos;headers&apos;).getHeader(&apos;X-Correlation-ID&apos;);
 
@@ -1906,7 +2110,7 @@ if (incomingHealthCheck != null &amp;&amp; incomingHealthCheck.trim() !== &apos;
 }
 
 channelMap.put(&quot;healthCheck&quot;, healthCheck);
-logger.info(&quot;**************[FhirBundlleSubmission123] incomingHealthCheck raw: &quot; + incomingHealthCheck + &quot; | healthCheck stored: &quot; + healthCheck);
+logger.info(&quot;[FhirBundlleSubmission] incomingHealthCheck raw: &quot; + incomingHealthCheck + &quot; | healthCheck stored: &quot; + healthCheck);
 
 
 
@@ -1974,6 +2178,7 @@ if (responseDataLakeStatusText &amp;&amp; isActionDiscard != &quot;discard&quot;
 
 
 var saveFHIRPayload = globalMap.get(&apos;saveFHIRPayload&apos;);
+var isHistorical = String(channelMap.get(&quot;isHistorical&quot;)) === &quot;true&quot;;
 var tenantId = $(&apos;headers&apos;).getHeader(&apos;X-TechBD-Tenant-ID&apos;);
 var source = channelMap.get(&quot;source&quot;);
 
@@ -2109,7 +2314,7 @@ var datalakeApiUrl = channelMap.get(&apos;DATALAKE_API_URL&apos;);
 			   tenantId,
 			   requestUri, //sourceMap.get(&apos;contextPath&apos;),
 			   responseDataLakeData , // JSON.stringify(responseDataLakeData),
-			   operation,source
+			   operation,source,isHistorical
 			);
 			var end = Instant.now();
 			var elapsedMillis = Duration.between(start, end).toMillis();
@@ -2141,7 +2346,7 @@ var datalakeApiUrl = channelMap.get(&apos;DATALAKE_API_URL&apos;);
 			   tenantId,
 			   requestUri, //sourceMap.get(&apos;contextPath&apos;),
 			   responseDataLakeData , //JSON.stringify(responseDataLakeData),
-			   operation,source
+			   operation,source,isHistorical
 			);
 			var end = Instant.now();
 			var elapsedMillis = Duration.between(start, end).toMillis();
@@ -2190,7 +2395,7 @@ function toJsonb(value) {&#xd;
     return jsonbObj;&#xd;
 }
 
-function saveFHIRPayload(interactionId, tenantId, requestUri, payloadJson, operation,source) {&#xd;
+function saveFHIRPayload(interactionId, tenantId, requestUri, payloadJson, operation,source, isHistorical) {&#xd;
 	&#xd;
 	logger.info(&quot;[CHANNEL: 1115 TECHBD &quot; + channelName + &quot;][INTERACTION ID: &quot; +interactionId +&quot; ]:tenantId: &quot; + tenantId);&#xd;
 	logger.info(&quot;[CHANNEL: 1115 TECHBD &quot; + channelName + &quot;][INTERACTION ID: &quot; +interactionId +&quot; ]:requestUri: &quot; + requestUri);&#xd;
@@ -2354,14 +2559,25 @@ function saveFHIRPayload(interactionId, tenantId, requestUri, payloadJson, opera
 		    }
 		}
 		
-		var provenanceString = 
-		    &quot;channel:&quot; + channelName +
-		    &quot;, script:deploy&quot;;
+var provenanceString;
+
+if (isHistorical) {
+    provenanceString =
+        &quot;channel:&quot; + channelName +
+        &quot;,submission:historical&quot; +
+        &quot;, script:deploy&quot;;
+} else {
+    provenanceString =
+        &quot;channel:&quot; + channelName +
+        &quot;,submission:normal&quot; +
+        &quot;, script:deploy&quot;;
+}
 		
 		// ONLY for Forward HTTP Request
 		if (operation === &quot;saveForwardFHIRPayload&quot;) {
 		    provenanceString += &quot;, processingAgent:&quot; + processingAgentFinal;
 		}
+		logger.info(&quot;[CHANNEL: &quot; + channelName + &quot;] PROVENANCE being sent: &quot; + provenanceString);
 		// 18. p_provenance
 		stmt.setString(18, provenanceString);
 
@@ -2429,6 +2645,7 @@ function saveFHIRPayload(interactionId, tenantId, requestUri, payloadJson, opera
 }&#xd;
 &#xd;
 globalMap.put(&apos;saveFHIRPayload&apos;, saveFHIRPayload);
+//globalChannelMap.put(&quot;saveFHIRPayload&quot;, saveFHIRPayload);
 
 
 
@@ -2583,6 +2800,16 @@ return;</undeployScript>
         <type>STRING</type>
         <mappingName>validationSeverityLevel</mappingName>
       </metaDataColumn>
+      <metaDataColumn>
+        <name>OOSIZE</name>
+        <type>STRING</type>
+        <mappingName>ooSize</mappingName>
+      </metaDataColumn>
+      <metaDataColumn>
+        <name>DATALEDGERPARAM</name>
+        <type>STRING</type>
+        <mappingName>dataLedgerParam</mappingName>
+      </metaDataColumn>
     </metaDataColumns>
     <attachmentProperties version="26.6.0">
       <type>None</type>
@@ -2599,7 +2826,7 @@ return;</undeployScript>
     <metadata>
       <enabled>true</enabled>
       <lastModified>
-        <time>1786595218574</time>
+        <time>1791371044581</time>
         <timezone>Asia/Calcutta</timezone>
       </lastModified>
       <pruningSettings>
@@ -2609,20 +2836,5 @@ return;</undeployScript>
       </pruningSettings>
       <userId>10</userId>
     </metadata>
-    <channelTags>
-      <channelTag>
-        <id>0f5624ef-7756-4c22-b366-85079b53e6be</id>
-        <name>0_8_45</name>
-        <channelIds>
-          <string>fb0dfd45-a990-43c0-88bc-7e525fe7dc3d</string>
-        </channelIds>
-        <backgroundColor>
-          <red>255</red>
-          <green>0</green>
-          <blue>0</blue>
-          <alpha>255</alpha>
-        </backgroundColor>
-      </channelTag>
-    </channelTags>
   </exportData>
 </channel>
