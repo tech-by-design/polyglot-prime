@@ -113,7 +113,10 @@ const migrateSP = pgSQLa.storedProcedure(
     headerBodySeparator: "$migrateVersionSP$",
   },
 )`
+    DECLARE
+      migration_start timestamptz := clock_timestamp();
     BEGIN
+      RAISE NOTICE '[MIGRATION] START % at %', 'interaction-fhir-view', migration_start;
 
       
       ${dependenciesSQL}
@@ -144,6 +147,7 @@ const migrateSP = pgSQLa.storedProcedure(
       PERFORM pg_advisory_unlock(hashtext('islm_migration_http_request_index_creation'));
 
       
+        RAISE NOTICE '[MIGRATION] END % duration_ms=%', 'interaction-fhir-view', round((extract(epoch from (clock_timestamp() - migration_start)) * 1000)::numeric, 2);
     END
   `;
 
