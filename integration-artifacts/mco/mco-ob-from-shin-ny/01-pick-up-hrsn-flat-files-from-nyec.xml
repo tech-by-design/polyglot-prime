@@ -2,8 +2,10 @@
   <id>631aa62d-39a7-4cd3-a7bc-a43d73d14853</id>
   <nextMetaDataId>3</nextMetaDataId>
   <name>01 - Pick up HRSN Flat files from NYeC</name>
-  <description>v 0.1.0</description>
-  <revision>25</revision>
+  <description>v 0.1.1
+Removed repeated sftp details
+Added error header type</description>
+  <revision>31</revision>
   <sourceConnector version="26.6.0">
     <metaDataId>0</metaDataId>
     <name>sourceConnector</name>
@@ -54,20 +56,20 @@
       <schemeProperties class="com.mirth.connect.connectors.file.SftpSchemeProperties">
         <passwordAuth>false</passwordAuth>
         <keyAuth>true</keyAuth>
-        <keyFile>/lza-prod-esmf/internal/external-sftp/datalake-info/rochester-rhio-key-prod</keyFile>
+        <keyFile>${screeningdlPrivatekey}</keyFile>
         <passPhrase></passPhrase>
         <hostKeyChecking>no</hostKeyChecking>
         <knownHostsFile></knownHostsFile>
         <configurationSettings class="linked-hash-map"/>
       </schemeProperties>
-      <host>${mcoHrsnNyecSftpHost}/outbound/mco/screenings/dailyfiles</host>
+      <host>${screeningdlHost}/outbound/mco/screenings/dailyfiles</host>
       <fileFilter>(?i)^.*Control.*$</fileFilter>
       <regex>true</regex>
       <directoryRecursion>false</directoryRecursion>
       <ignoreDot>true</ignoreDot>
       <anonymous>false</anonymous>
-      <username>${mcoHrsnNyecSftpUsername}</username>
-      <password>${mcoHrsnNyecSftpPassword}</password>
+      <username>${screeningdlUserName}</username>
+      <password></password>
       <timeout>10000</timeout>
       <secure>true</secure>
       <passive>true</passive>
@@ -2293,7 +2295,7 @@ return;</undeployScript>
     <metadata>
       <enabled>true</enabled>
       <lastModified>
-        <time>1790767969269</time>
+        <time>1791371393861</time>
         <timezone>Asia/Calcutta</timezone>
       </lastModified>
       <pruningSettings>

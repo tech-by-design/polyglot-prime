@@ -102,8 +102,8 @@
       "type": "Configuration Map",
       "channel": "configuration_map_export.properties",
       "version": "",
-      "editedby": "anoopvarma-2000-p",
-      "date": "2026-10-01"
+      "editedby": "abhiramisanthosh90",
+      "date": "2026-10-07"
     },
     {
       "type": "AwsSqsFifoQueueListener",
@@ -289,6 +289,14 @@
       "editedby": "anoopvarma-2000-p",
       "date": "2026-10-01"
     },
+    {
+      "type": "Channel Group",
+      "channel": "mco-ob-from-shin-ny",
+      "version": "",
+      "editedby": "abhiramisanthosh90",
+      "date": "2026-10-07"
+    },
+
   {
       "type": "code-templates",
       "channel": "SSL Certificate Validation.xml",
@@ -316,7 +324,29 @@
       "version": "0.1.0",
       "editedby": "abhiramisanthosh90",
       "date": "2026-07-28"
+    },
+    {
+      "type": "MCO",
+      "channel": "deliver-fhir-bundles-to-mcos.xml",
+      "version": "0.1.0",
+      "editedby": "abhiramisanthosh90",
+      "date": "2026-10-07"
+    },
+    {
+      "type": "MCO",
+      "channel": "02-deliver-flat-files-to-mcos.xml",
+      "version": "0.1.0",
+      "editedby": "abhiramisanthosh90",
+      "date": "2026-10-07"
+    },
+    {
+      "type": "MCO",
+      "channel": "01-pick-up-hrsn-flat-files-from-nyec.xml",
+      "version": "0.1.1",
+      "editedby": "abhiramisanthosh90",
+      "date": "2026-10-07"
     }
+
   ],
   "transformations": {
     "CCDA": [
