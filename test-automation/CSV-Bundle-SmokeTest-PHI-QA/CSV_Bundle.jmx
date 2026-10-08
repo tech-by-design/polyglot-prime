@@ -31,7 +31,7 @@
           <elementProp name="HTTPsampler.Files" elementType="HTTPFileArgs">
             <collectionProp name="HTTPFileArgs.files">
               <elementProp name="${FilePath}" elementType="HTTPFileArg">
-                <stringProp name="File.mimetype">application/x-zip-compressed</stringProp>
+                <stringProp name="File.mimetype">application/zip</stringProp>
                 <stringProp name="File.path">${FilePath}</stringProp>
                 <stringProp name="File.paramname">file</stringProp>
               </elementProp>
