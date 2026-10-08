@@ -596,6 +596,7 @@ WHERE
 		OR fsi.patient_mrn = p_patient_mrn)
 	AND (p_org_id IS NULL
     	OR p_org_id = ANY(string_to_array(fsi.org_id, ', '))
-        );
+        )
+    ORDER BY fsi.submitted_date_time DESC;
 END;
 $$ language plpgsql;
