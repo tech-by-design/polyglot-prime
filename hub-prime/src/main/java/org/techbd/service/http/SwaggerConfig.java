@@ -18,6 +18,7 @@ import io.swagger.v3.oas.models.Operation;
 import io.swagger.v3.oas.models.PathItem;
 import io.swagger.v3.oas.models.info.Info;
 import io.swagger.v3.oas.models.info.License;
+import io.swagger.v3.oas.models.media.BooleanSchema;
 import io.swagger.v3.oas.models.media.StringSchema;
 import io.swagger.v3.oas.models.parameters.Parameter;
 import io.swagger.v3.oas.models.responses.ApiResponse;
@@ -419,6 +420,50 @@ public class SwaggerConfig {
                                             .addApiResponse("500",
                                                     new ApiResponse()
                                                             .description("Server error")))));
+
+
+                    // Historical replay query params for POST /Bundle (handled by the Mirth FhirBundleSubmission channel)
+                    final var ooSizeParam = new Parameter()
+                            .name("ooSize")
+                            .in("query")
+                            .required(false)
+                            .description("Historical replay only (applies when Bundle.id starts with `historical-`). "
+                                    + "Controls the OperationOutcome returned: `full`, `lite` is the default and returns only error/fatal issues in the OperationOutcome."
+                                    + "or `none` (returns only the interactionId). Ignored for non-historical bundles.")
+                            .schema(new StringSchema()._enum(List.of("full", "lite", "none"))._default("lite"));
+
+                    final var dataLedgerParam = new Parameter()
+                            .name("dataLedger")
+                            .in("query")
+                            .required(false)
+                            .description("Historical replay only. `false` (default) skips Data Ledger submission "
+                                    + "for this request. Ignored for non-historical bundles.")
+                            .schema(new BooleanSchema()._default(false));
+
+                    final var existingBundlePath = openApi.getPaths().get("/Bundle");
+                    if (existingBundlePath != null && existingBundlePath.getPost() != null) {
+                        existingBundlePath.getPost()
+                                .addParametersItem(ooSizeParam)
+                                .addParametersItem(dataLedgerParam);
+                    } else {
+                        openApi.getPaths().addPathItem("/Bundle", new PathItem()
+                                .post(new Operation()
+                                        .tags(List.of("Tech by Design Hub FHIR Endpoints"))
+                                        .summary("Validate, store and forward a FHIR Bundle to SHIN-NY. Use /Bundle/$validate to validate only.")
+                                        .addParametersItem(new Parameter()
+                                                .name("X-TechBD-Tenant-ID")
+                                                .description("Mandatory header for Tenant ID")
+                                                .required(true)
+                                                .in("header")
+                                                .schema(new StringSchema()))
+                                        .addParametersItem(ooSizeParam)
+                                        .addParametersItem(dataLedgerParam)
+                                        .responses(new ApiResponses()
+                                                .addApiResponse("200", new ApiResponse().description("Successful response"))
+                                                .addApiResponse("400", new ApiResponse()
+                                                        .description("Bad request, e.g. `Invalid ooSize. Allowed values are: full, lite, none.`"))
+                                                .addApiResponse("500", new ApiResponse().description("Server error")))));
+                    }
                 })
                 .build();
     }
