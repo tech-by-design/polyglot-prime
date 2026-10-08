@@ -10,7 +10,7 @@ on:
         options:
           - devl
           - uat
-          - prd
+          - prod
 
       tag:
         description: "Version tag (must end with -nexus)"
@@ -57,9 +57,9 @@ jobs:
               echo "CSV=aws/hub-csv-uat-techbd.org/.env" >> $GITHUB_OUTPUT
               ;;
             prd)
-              echo "HUB=aws/hub.prd.techbd.org/.env" >> $GITHUB_OUTPUT
-              echo "FHIR=aws/hub.fhir.prd.techbd.org/.env" >> $GITHUB_OUTPUT
-              echo "CSV=aws/hub.csv.prd.techbd.org/.env" >> $GITHUB_OUTPUT
+              echo "HUB=aws/hub-ui-prod-techbd.org/.env" >> $GITHUB_OUTPUT
+              echo "FHIR=aws/hub-fhir-prod-techbd.org/.env" >> $GITHUB_OUTPUT
+              echo "CSV=aws/hub-csv-prod-techbd.org/.env" >> $GITHUB_OUTPUT
               ;;
             *)
               echo "Invalid environment"
