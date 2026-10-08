@@ -464,6 +464,31 @@ public class SwaggerConfig {
                                                         .description("Bad request, e.g. `Invalid ooSize. Allowed values are: full, lite, none.`"))
                                                 .addApiResponse("500", new ApiResponse().description("Server error")))));
                     }
+                    
+                    final var existingBundleSlashPath  = openApi.getPaths().get("/Bundle/");
+                    if (existingBundleSlashPath  != null && existingBundleSlashPath .getPost() != null) {
+                        existingBundleSlashPath .getPost()
+                                .addParametersItem(ooSizeParam)
+                                .addParametersItem(dataLedgerParam);
+                    } else {
+                        openApi.getPaths().addPathItem("/Bundle/", new PathItem()
+                                .post(new Operation()
+                                        .tags(List.of("Tech by Design Hub FHIR Endpoints"))
+                                        .summary("Validate, store and forward a FHIR Bundle to SHIN-NY. Use /Bundle/$validate to validate only.")
+                                        .addParametersItem(new Parameter()
+                                                .name("X-TechBD-Tenant-ID")
+                                                .description("Mandatory header for Tenant ID")
+                                                .required(true)
+                                                .in("header")
+                                                .schema(new StringSchema()))
+                                        .addParametersItem(ooSizeParam)
+                                        .addParametersItem(dataLedgerParam)
+                                        .responses(new ApiResponses()
+                                                .addApiResponse("200", new ApiResponse().description("Successful response"))
+                                                .addApiResponse("400", new ApiResponse()
+                                                        .description("Bad request, e.g. `Invalid ooSize. Allowed values are: full, lite, none.`"))
+                                                .addApiResponse("500", new ApiResponse().description("Server error")))));
+                    }
                 })
                 .build();
     }
