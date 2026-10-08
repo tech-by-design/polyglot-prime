@@ -78,6 +78,7 @@ jobs:
             result_dir="./test-automation/Jmeter${env}Result"
             report_dir="./test-automation/Jmeter${env}Report"
             zip_file="./test-automation/Jmeter${env}Report.zip"
+            logs_zip_file="./test-automation/Jmeter${env}Logs.zip"
 
             echo "========================================="
             echo "Running CSV Bundle SmokeTest for: $env"
@@ -94,10 +95,12 @@ jobs:
             jtl_file="$result_dir/bundletest.jtl"
 
             # Run the JMeter test
+            # -j writes jmeter.log to a per-environment file so runs don't overwrite each other
             ./test-automation/apache-jmeter-5.6.3/bin/jmeter \
               -n \
               -t "$path" \
               -l "$jtl_file" \
+              -j "$result_dir/jmeter-${env}.log" \
               > "$result_dir/$env.log" 2>&1
 
             jmeter_exit_code=$?
@@ -112,6 +115,9 @@ jobs:
               failure_report="${failure_report}${counter}. ${env}, "
               counter=$((counter + 1))
 
+              # Still attach the logs so the failure can be diagnosed
+              attachments+=("$logs_zip_file")
+
               continue
             fi
 
@@ -121,7 +127,8 @@ jobs:
             # Generate HTML report from JTL
             ./test-automation/apache-jmeter-5.6.3/bin/jmeter \
               -g "$jtl_file" \
-              -o "$report_dir/"
+              -o "$report_dir/" \
+              -j "$result_dir/jmeter-${env}-report.log"
 
             report_exit_code=$?
 
@@ -147,7 +154,7 @@ jobs:
               failure_report="${failure_report}${counter}. ${env}, "
               counter=$((counter + 1))
 
-              attachments+=("$zip_file")
+              attachments+=("$zip_file" "$logs_zip_file")
 
               echo "SmokeTest FAILED for $env"
             else
@@ -167,15 +174,16 @@ jobs:
           # Convert attachments array to comma-separated string
           failure_attachments=$(IFS=,; echo "${attachments[*]}")
 
-          echo "failure_attachments=$failure_attachments" >> "$GITHUB_ENV"
-          echo "failure_report=$failure_report" >> "$GITHUB_ENV"
+          echo "failure_attachments=$failure_attachments" >> "$GITHUB_OUTPUT"
+          echo "failure_report=$failure_report" >> "$GITHUB_OUTPUT"
 
           echo "========================================="
           echo "Failure Report:"
           echo "$failure_report"
           echo "========================================="
 
-      - name: Archive JMeter Reports into ZIP files
+      - name: Archive JMeter Reports and Logs into ZIP files
+        if: always()
         run: |
           sudo apt-get install -y zip
 
@@ -183,9 +191,14 @@ jobs:
 
           for env in "Staging" "PHI-QA"; do
             mkdir -p "./Jmeter${env}Report"
+            mkdir -p "./Jmeter${env}Result"
 
             zip -r "./Jmeter${env}Report.zip" \
               "./Jmeter${env}Report/"
+
+            # Zip the jmeter.log files for this environment (flat, no folder paths)
+            zip -j "./Jmeter${env}Logs.zip" \
+              ./Jmeter${env}Result/jmeter-*.log || true
           done
 
       # Upload the raw JTL files, JMeter logs, and HTML reports
@@ -203,8 +216,20 @@ jobs:
           if-no-files-found: warn
           retention-days: 14
 
+      # Downloadable zips of the jmeter.log files (one per environment)
+      - name: Upload JMeter Logs ZIP
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: csv-bundle-jmeter-logs
+          path: |
+            ./test-automation/JmeterStagingLogs.zip
+            ./test-automation/JmeterPHI-QALogs.zip
+          if-no-files-found: warn
+          retention-days: 14
+
       - name: Send Email Notification (Conditional)
-        if: env.failure_report != 'No failures detected.'
+        if: steps.run-tests.outputs.failure_report != 'No failures detected.'
         uses: dawidd6/action-send-mail@v3
         with:
           server_address: email-smtp.us-east-1.amazonaws.com
@@ -219,12 +244,13 @@ jobs:
 
             The CSV Bundle SmokeTest encountered failures in the following environments:
 
-            ${{ env.failure_report }}
+            ${{ steps.run-tests.outputs.failure_report }}
 
-            Please find the attached reports for the same.
+            Please find the attached reports and JMeter log files for the same.
 
-            The detailed JMeter results, including the .jtl files and HTML reports,
-            are also available as artifacts in the GitHub Actions workflow run.
+            The detailed JMeter results, including the .jtl files, HTML reports,
+            and jmeter.log zips, are also available as artifacts in the GitHub
+            Actions workflow run.
 
             Regards,
             Tech by Design Automation Team
@@ -235,5 +261,4 @@ jobs:
 
           to: ratheeshkumar-kr@netspective.in, raphael-paily@netspective.in, roshni-kesavan@netspective.in
 
-          attachments: ${{ env.failure_attachments }}
-
+          attachments: ${{ steps.run-tests.outputs.failure_attachments }}
