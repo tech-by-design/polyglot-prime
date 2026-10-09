@@ -151,3 +151,11 @@ This folder contains one Mirth Connect channel export: `TechBD CCD Workflow`. Th
 - Correctly configured environment variables listed above
 
 ---
+
+## 🔗 Related Documentation
+
+- [CCDA Schema Files](../ccda-techbd-schema-files/README.md)
+- [1115 Channels (Mirth Connect)](../../README.md)
+- [Mirth Connect Global Scripts](../../global-scripts/README.md)
+- [BridgeLink version of this channel](../../../channels/1115/ccda/ccda-techbd-channel-files/README.md)
+- [Integration Artifacts Index](../../../README.md)

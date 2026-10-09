@@ -19,6 +19,7 @@ HL7v2 schemas and XSLT files are essential for:
 ## 🔗 Related Documentation
 
 - [HL7v2 Channel Files](../hl7-techbd-channel-files/README.md)
+- [1115 Channels (Mirth Connect)](../../README.md)
 - [Integration Artifacts Index](../../../README.md)
 
 ---

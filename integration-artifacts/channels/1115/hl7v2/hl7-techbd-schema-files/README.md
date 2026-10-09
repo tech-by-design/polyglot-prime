@@ -19,6 +19,8 @@ HL7v2 schemas and XSLT files are essential for:
 ## 🔗 Related Documentation
 
 - [HL7v2 Channel Files](../hl7-techbd-channel-files/README.md)
+- [Lookup Manager (`SchemaFiles` group)](../../../../lookup-manager/README.md)
+- [1115 Waiver Channels](../../README.md)
 - [Integration Artifacts Index](../../../../README.md)
 
 ---

@@ -37,9 +37,10 @@ All schema files in this folder are referenced by integration channels and valid
 | voc.xsd                           | Vocabulary and code system schema definitions                    |
 
 
-## �🔗 Related Documentation
+## 🔗 Related Documentation
 
 - [CCDA Channel Files](../ccda-techbd-channel-files/README.md)
+- [1115 Channels (Mirth Connect)](../../README.md)
 - [Integration Artifacts Index](../../../README.md)
 
 ---

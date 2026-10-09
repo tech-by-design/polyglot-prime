@@ -37,9 +37,11 @@ All schema files in this folder are referenced by integration channels and valid
 | voc.xsd                           | Vocabulary and code system schema definitions                    |
 
 
-## �🔗 Related Documentation
+## 🔗 Related Documentation
 
 - [CCDA Channel Files](../ccda-techbd-channel-files/README.md)
+- [Lookup Manager (`SchemaFiles` group)](../../../../lookup-manager/README.md)
+- [1115 Waiver Channels](../../README.md)
 - [Integration Artifacts Index](../../../../README.md)
 
 ---

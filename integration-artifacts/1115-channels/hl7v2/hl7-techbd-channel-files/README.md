@@ -408,3 +408,13 @@ The channel logs detailed information at various stages:
 - Destination responses
 
 Check Mirth Connect logs for detailed diagnostic information.
+
+---
+
+## 🔗 Related Documentation
+
+- [HL7v2 Schema Files](../hl7-techbd-schema-files/README.md)
+- [1115 Channels (Mirth Connect)](../../README.md)
+- [Mirth Connect Global Scripts](../../global-scripts/README.md)
+- [BridgeLink version of this channel](../../../channels/1115/hl7v2/hl7-techbd-channel-files/README.md)
+- [Integration Artifacts Index](../../../README.md)

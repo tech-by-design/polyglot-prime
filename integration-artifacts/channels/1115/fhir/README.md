@@ -270,3 +270,11 @@ Both channels perform similar preprocessing:
 - **Lookup Manager**: Configured with required lookup values
 
 ---
+
+## 🔗 Related Documentation
+
+- [1115 Waiver Channels](../README.md)
+- [RouterChannel](../../router/README.md)
+- [Code Templates](../../../code-templates/README.md)
+- [Lookup Manager](../../../lookup-manager/README.md)
+- [Integration Artifacts Index](../../../README.md)
