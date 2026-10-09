@@ -20,7 +20,7 @@
         </elementProp>
       </ThreadGroup>
       <hashTree>
-        <HTTPSamplerProxy guiclass="HttpTestSampleGui" testclass="HTTPSamplerProxy" testname="CSV_BUNDLE_PHI_QA_Request">
+        <HTTPSamplerProxy guiclass="HttpTestSampleGui" testclass="HTTPSamplerProxy" testname="CSV_BUNDLE_PHI_QA_Request" enabled="true">
           <stringProp name="HTTPSampler.domain">phi.fhir.api.qa.techbd.org</stringProp>
           <stringProp name="HTTPSampler.protocol">https</stringProp>
           <stringProp name="HTTPSampler.path">/flatfile/csv/Bundle</stringProp>
@@ -47,7 +47,18 @@
             <stringProp name="cacheKey">true</stringProp>
             <stringProp name="filename"></stringProp>
             <stringProp name="parameters"></stringProp>
-            <stringProp name="script">if (prev.getResponseCode() != &apos;200&apos;) {
+            <stringProp name="script">log.info(&quot;========== HTTP REQUEST ==========&quot;)
+log.info(&quot;Method: &quot; + sampler.getMethod())
+log.info(&quot;URL: &quot; + sampler.getUrl())
+
+log.info(&quot;----- Request Headers -----&quot;)
+log.info(sampler.getHeaderManager()?.getHeaders()?.toString())
+
+log.info(&quot;----- Request Body -----&quot;)
+log.info(sampler.getArguments()?.toString())
+
+log.info(&quot;=================================&quot;)
+if (prev.getResponseCode() != &apos;200&apos;) {
     log.error(&quot;&quot;&quot;
 ========== API ERROR ==========
 URL          : ${prev.getURL()}
@@ -63,7 +74,7 @@ ${prev.getResponseDataAsString()}
           </JSR223PostProcessor>
           <hashTree/>
         </hashTree>
-        <HeaderManager guiclass="HeaderPanel" testclass="HeaderManager" testname="HTTP Header Manager">
+        <HeaderManager guiclass="HeaderPanel" testclass="HeaderManager" testname="HTTP Header Manager" enabled="true">
           <collectionProp name="HeaderManager.headers">
             <elementProp name="" elementType="Header">
               <stringProp name="Header.name">X-TechBD-Tenant-ID</stringProp>
@@ -80,14 +91,14 @@ ${prev.getResponseDataAsString()}
           </collectionProp>
         </HeaderManager>
         <hashTree/>
-        <ConfigTestElement guiclass="HttpDefaultsGui" testclass="ConfigTestElement" testname="HTTP Request Defaults">
+        <ConfigTestElement guiclass="HttpDefaultsGui" testclass="ConfigTestElement" testname="HTTP Request Defaults" enabled="true">
           <elementProp name="HTTPsampler.Arguments" elementType="Arguments" guiclass="HTTPArgumentsPanel" testclass="Arguments" testname="User Defined Variables">
             <collectionProp name="Arguments.arguments"/>
           </elementProp>
           <stringProp name="HTTPSampler.implementation">Java</stringProp>
         </ConfigTestElement>
         <hashTree/>
-        <ResultCollector guiclass="ViewResultsFullVisualizer" testclass="ResultCollector" testname="View Results Tree">
+        <ResultCollector guiclass="ViewResultsFullVisualizer" testclass="ResultCollector" testname="View Results Tree" enabled="true">
           <boolProp name="ResultCollector.error_logging">false</boolProp>
           <objProp>
             <name>saveConfig</name>
@@ -210,7 +221,7 @@ ${prev.getResponseDataAsString()}
           <stringProp name="shareMode">shareMode.all</stringProp>
         </CSVDataSet>
         <hashTree/>
-        <CSVDataSet guiclass="TestBeanGUI" testclass="CSVDataSet" testname="Upload File Path">
+        <CSVDataSet guiclass="TestBeanGUI" testclass="CSVDataSet" testname="Upload File Path" enabled="true">
           <stringProp name="filename">./test-automation/CSV-Bundle-SmokeTest-PHI-QA/Input_files.csv</stringProp>
           <stringProp name="fileEncoding"></stringProp>
           <stringProp name="variableNames">FilePath</stringProp>
