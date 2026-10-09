@@ -14,13 +14,12 @@
         <module>hub-prime</module>
         <module>nexus-core-lib</module>
         <module>nexus-ingestion-api</module>
-        <module>hub-core-lib</module>
         <module>fhir-validation-service</module>
         <module>csv-service</module>
     </modules>
 
     <properties>
-        <revision>0.2098.0</revision>
+        <revision>0.2099.0</revision>
         <java.version>21</java.version>
         <spring-boot.version>3.3.3</spring-boot.version>
         <maven.compiler.source>21</maven.compiler.source>

@@ -24,6 +24,8 @@ import io.swagger.v3.oas.models.parameters.Parameter;
 import io.swagger.v3.oas.models.responses.ApiResponse;
 import io.swagger.v3.oas.models.responses.ApiResponses;
 import io.swagger.v3.oas.models.servers.Server;
+import io.swagger.v3.oas.models.media.Content;
+import io.swagger.v3.oas.models.media.MediaType;
 
 @Configuration
 public class SwaggerConfig {
@@ -488,7 +490,525 @@ public class SwaggerConfig {
                                                 .addApiResponse("400", new ApiResponse()
                                                         .description("Bad request, e.g. `Invalid ooSize. Allowed values are: full, lite, none.`"))
                                                 .addApiResponse("500", new ApiResponse().description("Server error")))));
-                    }
+                   
+                                
+                   
+                       // Add Flat File CSV Validation Endpoint
+                        openApi.getPaths().addPathItem("/flatfile/csv/Bundle/$validate", new PathItem()
+                                .post(new Operation()
+                                        .tags(List.of("Tech by Design Hub CSV Endpoints"))
+                                        .summary("CSV endpoint to validate a flat file CSV Bundle without storing or forwarding the payload.")
+                                        .description("CSV endpoint to validate a flat file CSV Bundle. The uploaded CSV file is validated without storing or forwarding the payload.")
+                                        .addParametersItem(new Parameter()
+                                                .name("X-TechBD-Tenant-ID")
+                                                .description("Mandatory header for Tenant ID")
+                                                .required(true)
+                                                .in("header")
+                                                .schema(new StringSchema()))
+                                        .addParametersItem(new Parameter()
+                                                .name("immediate")
+                                                .description("Specifies whether the validation should be performed immediately.")
+                                                .required(false)
+                                                .in("query")
+                                                .schema(new StringSchema()._default("true")))
+                                        .requestBody(new io.swagger.v3.oas.models.parameters.RequestBody()
+                                                .description("Multipart form-data containing the CSV file for validation.")
+                                                .required(true)
+                                                .content(new io.swagger.v3.oas.models.media.Content()
+                                                        .addMediaType("multipart/form-data",
+                                                                new io.swagger.v3.oas.models.media.MediaType()
+                                                                        .schema(new io.swagger.v3.oas.models.media.Schema<>()
+                                                                                .$ref("#/components/schemas/FileUpload")))))
+                                        .responses(new ApiResponses()
+                                                .addApiResponse("200",
+                                                        new ApiResponse()
+                                                                .description("Successful validation response"))
+                                                .addApiResponse("400",
+                                                        new ApiResponse()
+                                                                .description("Bad request"))
+                                                .addApiResponse("500",
+                                                        new ApiResponse()
+                                                                .description("Server error")))));
+
+
+                        openApi.getPaths().addPathItem("/flatfile/csv/Bundle/$validate/", new PathItem()
+                                .post(new Operation()
+                                        .tags(List.of("Tech by Design Hub CSV Endpoints"))
+                                        .summary("CSV endpoint to validate a flat file CSV Bundle without storing or forwarding the payload.")
+                                        .description("CSV endpoint to validate a flat file CSV Bundle. The uploaded CSV file is validated without storing or forwarding the payload.")
+                                        .addParametersItem(new Parameter()
+                                                .name("X-TechBD-Tenant-ID")
+                                                .description("Mandatory header for Tenant ID")
+                                                .required(true)
+                                                .in("header")
+                                                .schema(new StringSchema()))
+                                        .addParametersItem(new Parameter()
+                                                .name("immediate")
+                                                .description("Specifies whether the validation should be performed immediately.")
+                                                .required(false)
+                                                .in("query")
+                                                .schema(new StringSchema()._default("true")))
+                                        .requestBody(new io.swagger.v3.oas.models.parameters.RequestBody()
+                                                .description("Multipart form-data containing the CSV file for validation.")
+                                                .required(true)
+                                                .content(new io.swagger.v3.oas.models.media.Content()
+                                                        .addMediaType("multipart/form-data",
+                                                                new io.swagger.v3.oas.models.media.MediaType()
+                                                                        .schema(new io.swagger.v3.oas.models.media.Schema<>()
+                                                                                .$ref("#/components/schemas/FileUpload")))))
+                                        .responses(new ApiResponses()
+                                                .addApiResponse("200",
+                                                        new ApiResponse()
+                                                                .description("Successful validation response"))
+                                                .addApiResponse("400",
+                                                        new ApiResponse()
+                                                                .description("Bad request"))
+                                                .addApiResponse("500",
+                                                        new ApiResponse()
+                                                                .description("Server error")))));
+
+
+                        // Add Flat File CSV Bundle Endpoint
+                        openApi.getPaths().addPathItem("/flatfile/csv/Bundle", new PathItem()
+                                .post(new Operation()
+                                        .tags(List.of("Tech by Design Hub CSV Endpoints"))
+                                        .summary("Submit a flat file CSV or ZIP file for validation and processing.")
+                                        .description("Accepts a CSV or ZIP file, validates the contents, and processes the submission for the specified tenant.")
+                                        .addParametersItem(new Parameter()
+                                                .name("X-TechBD-Tenant-ID")
+                                                .description("Mandatory header for Tenant ID.")
+                                                .required(true)
+                                                .in("header")
+                                                .schema(new StringSchema()))
+                                        .addParametersItem(new Parameter()
+                                                .name("immediate")
+                                                .description("Specifies whether processing should be performed immediately.")
+                                                .required(false)
+                                                .in("query")
+                                                .schema(new io.swagger.v3.oas.models.media.BooleanSchema()._default(true)))
+                                        .addParametersItem(new Parameter()
+                                                .name("X-TechBD-DataLake-API-URL")
+                                                .description("Optional Data Lake API URL.")
+                                                .required(false)
+                                                .in("header")
+                                                .schema(new StringSchema()))
+                                        .addParametersItem(new Parameter()
+                                                .name("X-TechBD-Base-FHIR-URL")
+                                                .description("Optional base FHIR API URL.")
+                                                .required(false)
+                                                .in("header")
+                                                .schema(new StringSchema()))
+                                        .addParametersItem(new Parameter()
+                                                .name("X-TechBD-Validation-Severity-Level")
+                                                .description("Optional validation severity level: information, warning, error, or fatal.")
+                                                .required(false)
+                                                .in("header")
+                                                .schema(new StringSchema()))
+                                        .requestBody(new io.swagger.v3.oas.models.parameters.RequestBody()
+                                                .description("Multipart form-data containing a CSV file or ZIP archive for processing.")
+                                                .required(true)
+                                                .content(new io.swagger.v3.oas.models.media.Content()
+                                                        .addMediaType("multipart/form-data",
+                                                                new io.swagger.v3.oas.models.media.MediaType()
+                                                                        .schema(new io.swagger.v3.oas.models.media.Schema<>()
+                                                                                .$ref("#/components/schemas/FileUpload")))))
+                                        .responses(new ApiResponses()
+                                                .addApiResponse("200",
+                                                        new ApiResponse()
+                                                                .description("Submission processed successfully."))
+                                                .addApiResponse("400",
+                                                        new ApiResponse()
+                                                                .description("Bad request or validation failure."))
+                                                .addApiResponse("500",
+                                                        new ApiResponse()
+                                                                .description("Server error.")))));
+
+                                                                
+
+
+                        // Add Flat File CSV Bundle Endpoint
+                        openApi.getPaths().addPathItem("/flatfile/csv/Bundle/", new PathItem()
+                                .post(new Operation()
+                                        .tags(List.of("Tech by Design Hub CSV Endpoints"))
+                                        .summary("Submit a flat file CSV or ZIP file for validation and processing.")
+                                        .description("Accepts a CSV or ZIP file, validates the contents, and processes the submission for the specified tenant.")
+                                        .addParametersItem(new Parameter()
+                                                .name("X-TechBD-Tenant-ID")
+                                                .description("Mandatory header for Tenant ID.")
+                                                .required(true)
+                                                .in("header")
+                                                .schema(new StringSchema()))
+                                        .addParametersItem(new Parameter()
+                                                .name("immediate")
+                                                .description("Specifies whether processing should be performed immediately.")
+                                                .required(false)
+                                                .in("query")
+                                                .schema(new io.swagger.v3.oas.models.media.BooleanSchema()._default(true)))
+                                        .addParametersItem(new Parameter()
+                                                .name("X-TechBD-DataLake-API-URL")
+                                                .description("Optional Data Lake API URL.")
+                                                .required(false)
+                                                .in("header")
+                                                .schema(new StringSchema()))
+                                        .addParametersItem(new Parameter()
+                                                .name("X-TechBD-Base-FHIR-URL")
+                                                .description("Optional base FHIR API URL.")
+                                                .required(false)
+                                                .in("header")
+                                                .schema(new StringSchema()))
+                                        .addParametersItem(new Parameter()
+                                                .name("X-TechBD-Validation-Severity-Level")
+                                                .description("Optional validation severity level: information, warning, error, or fatal.")
+                                                .required(false)
+                                                .in("header")
+                                                .schema(new StringSchema()))
+                                        .requestBody(new io.swagger.v3.oas.models.parameters.RequestBody()
+                                                .description("Multipart form-data containing a CSV file or ZIP archive for processing.")
+                                                .required(true)
+                                                .content(new io.swagger.v3.oas.models.media.Content()
+                                                        .addMediaType("multipart/form-data",
+                                                                new io.swagger.v3.oas.models.media.MediaType()
+                                                                        .schema(new io.swagger.v3.oas.models.media.Schema<>()
+                                                                                .$ref("#/components/schemas/FileUpload")))))
+                                        .responses(new ApiResponses()
+                                                .addApiResponse("200",
+                                                        new ApiResponse()
+                                                                .description("Submission processed successfully."))
+                                                .addApiResponse("400",
+                                                        new ApiResponse()
+                                                                .description("Bad request or validation failure."))
+                                                .addApiResponse("500",
+                                                        new ApiResponse()
+                                                                .description("Server error.")))));
+
+
+
+                        // Add Bundle Replay Endpoint
+                        openApi.getPaths().addPathItem("/Bundle/replay/", new PathItem()
+                                .post(new Operation()
+                                        .tags(List.of("Tech by Design Hub FHIR Endpoints"))
+                                        .summary("Replay FHIR Bundles between a date or datetime range.")
+                                        .description("Accepts startDate and endDate.")
+                                        .addParametersItem(new Parameter()
+                                                .name("X-TechBD-StartDate")
+                                                .description("Start date for replay in DD-MM-YYYY format.")
+                                                .required(true)
+                                                .in("header")
+                                                .schema(new StringSchema()))
+                                        .addParametersItem(new Parameter()
+                                                .name("X-TechBD-EndDate")
+                                                .description("End date for replay in DD-MM-YYYY format.")
+                                                .required(true)
+                                                .in("header")
+                                                .schema(new StringSchema()))
+                                        .addParametersItem(new Parameter()
+                                                .name("X-TechBD-Tenant-ID")
+                                                .description("Mandatory header for Tenant ID.")
+                                                .required(true)
+                                                .in("header")
+                                                .schema(new StringSchema()))
+                                        .requestBody(new io.swagger.v3.oas.models.parameters.RequestBody()
+                                                .description("Empty request body for the replay operation.")
+                                                .required(false)
+                                                .content(new io.swagger.v3.oas.models.media.Content()
+                                                        .addMediaType("text/plain",
+                                                                new io.swagger.v3.oas.models.media.MediaType()
+                                                                        .schema(new StringSchema()))))
+                                        .responses(new ApiResponses()
+                                                .addApiResponse("200",
+                                                        new ApiResponse()
+                                                                .description("Replay request processed successfully."))
+                                                .addApiResponse("400",
+                                                        new ApiResponse()
+                                                                .description("Bad request."))
+                                                .addApiResponse("500",
+                                                        new ApiResponse()
+                                                                .description("Server error.")))));
+
+                                                                
+                        // Add Bundle Replay Endpoint
+                        openApi.getPaths().addPathItem("/Bundle/replay", new PathItem()
+                                .post(new Operation()
+                                        .tags(List.of("Tech by Design Hub FHIR Endpoints"))
+                                        .summary("Replay FHIR Bundles between a date or datetime range.")
+                                        .description("Accepts startDate and endDate")
+                                        .addParametersItem(new Parameter()
+                                                .name("X-TechBD-StartDate")
+                                                .description("Start date for replay in DD-MM-YYYY format.")
+                                                .required(true)
+                                                .in("header")
+                                                .schema(new StringSchema()))
+                                        .addParametersItem(new Parameter()
+                                                .name("X-TechBD-EndDate")
+                                                .description("End date for replay in DD-MM-YYYY format.")
+                                                .required(true)
+                                                .in("header")
+                                                .schema(new StringSchema()))
+                                        .addParametersItem(new Parameter()
+                                                .name("X-TechBD-Tenant-ID")
+                                                .description("Mandatory header for Tenant ID.")
+                                                .required(true)
+                                                .in("header")
+                                                .schema(new StringSchema()))
+                                        .requestBody(new io.swagger.v3.oas.models.parameters.RequestBody()
+                                                .description("Empty request body for the replay operation.")
+                                                .required(false)
+                                                .content(new io.swagger.v3.oas.models.media.Content()
+                                                        .addMediaType("text/plain",
+                                                                new io.swagger.v3.oas.models.media.MediaType()
+                                                                        .schema(new StringSchema()))))
+                                        .responses(new ApiResponses()
+                                                .addApiResponse("200",
+                                                        new ApiResponse()
+                                                                .description("Replay request processed successfully."))
+                                                .addApiResponse("400",
+                                                        new ApiResponse()
+                                                                .description("Bad request."))
+                                                .addApiResponse("500",
+                                                        new ApiResponse()
+                                                                .description("Server error.")))));
+
+
+
+
+
+
+                        // Add FHIR Bundle Validation Endpoint
+                        openApi.getPaths().addPathItem("/Bundle/$validate", new PathItem()
+                                .post(new Operation()
+                                        .tags(List.of("Tech by Design Hub FHIR Endpoints"))
+                                        .summary("Endpoint to validate but not store or forward a payload to SHIN-NY. If you want to validate a payload, store it and then forward it to SHIN-NY, use /Bundle not /Bundle/$validate.")
+                                        .description("Endpoint to validate but not store or forward a payload to SHIN-NY.")
+                                        .addParametersItem(new Parameter()
+                                                .name("X-TechBD-Tenant-ID")
+                                                .description("Mandatory header for Tenant ID.")
+                                                .required(true)
+                                                .in("header")
+                                                .schema(new StringSchema()))
+                                        .addParametersItem(new Parameter()
+                                                .name("X-SHIN-NY-IG-Version")
+                                                .description("SHIN-NY Implementation Guide version used for validation.")
+                                                .required(false)
+                                                .in("header")
+                                                .schema(new StringSchema()))
+                                        .requestBody(new io.swagger.v3.oas.models.parameters.RequestBody()
+                                                .description("JSON payload to validate.")
+                                                .required(true)
+                                                .content(new io.swagger.v3.oas.models.media.Content()
+                                                        .addMediaType("application/json",
+                                                                new io.swagger.v3.oas.models.media.MediaType()
+                                                                        .schema(new StringSchema()))))
+                                        .responses(new ApiResponses()
+                                                .addApiResponse("200",
+                                                        new ApiResponse()
+                                                                .description("Validation response returned successfully."))
+                                                .addApiResponse("400",
+                                                        new ApiResponse()
+                                                                .description("Bad request or validation failure."))
+                                                .addApiResponse("500",
+                                                        new ApiResponse()
+                                                                .description("Server error.")))));
+
+
+
+
+
+
+                                        
+ // Add FHIR Bundle Validation Endpoint
+                        openApi.getPaths().addPathItem("/Bundle/$validate/", new PathItem()
+                                .post(new Operation()
+                                        .tags(List.of("Tech by Design Hub FHIR Endpoints"))
+                                        .summary("Endpoint to validate but not store or forward a payload to SHIN-NY. If you want to validate a payload, store it and then forward it to SHIN-NY, use /Bundle not /Bundle/$validate.")
+                                        .description("Endpoint to validate but not store or forward a payload to SHIN-NY.")
+                                        .addParametersItem(new Parameter()
+                                                .name("X-TechBD-Tenant-ID")
+                                                .description("Mandatory header for Tenant ID.")
+                                                .required(true)
+                                                .in("header")
+                                                .schema(new StringSchema()))
+                                        .addParametersItem(new Parameter()
+                                                .name("X-SHIN-NY-IG-Version")
+                                                .description("SHIN-NY Implementation Guide version used for validation.")
+                                                .required(false)
+                                                .in("header")
+                                                .schema(new StringSchema()))
+                                        .requestBody(new io.swagger.v3.oas.models.parameters.RequestBody()
+                                                .description("JSON payload to validate.")
+                                                .required(true)
+                                                .content(new io.swagger.v3.oas.models.media.Content()
+                                                        .addMediaType("application/json",
+                                                                new io.swagger.v3.oas.models.media.MediaType()
+                                                                        .schema(new StringSchema()))))
+                                        .responses(new ApiResponses()
+                                                .addApiResponse("200",
+                                                        new ApiResponse()
+                                                                .description("Validation response returned successfully."))
+                                                .addApiResponse("400",
+                                                        new ApiResponse()
+                                                                .description("Bad request or validation failure."))
+                                                .addApiResponse("500",
+                                                        new ApiResponse()
+                                                                .description("Server error.")))));
+
+                                                                
+                        // Add FHIR Metadata Endpoint
+                        openApi.getPaths().addPathItem("/metadata", new PathItem()
+                                .get(new Operation()
+                                        .tags(List.of("Tech by Design Hub FHIR Endpoints"))
+                                        .summary("FHIR server's conformance statement")
+                                        .description("Returns the FHIR server's capability statement in XML format.")
+                                        .responses(new ApiResponses()
+                                                .addApiResponse("200",
+                                                        new ApiResponse()
+                                                                .description("FHIR server metadata returned successfully.")
+                                                                .content(new io.swagger.v3.oas.models.media.Content()
+                                                                        .addMediaType("application/xml",
+                                                                                new io.swagger.v3.oas.models.media.MediaType()
+                                                                                        .schema(new StringSchema()))))
+                                                .addApiResponse("500",
+                                                        new ApiResponse()
+                                                                .description("Server error.")))));
+
+
+                                                                
+                        // Add Bundle Operation Outcome Status Endpoint
+                        openApi.getPaths().addPathItem("/Bundles/status/operation-outcome", new PathItem()
+                                .get(new Operation()
+                                        .tags(List.of("Tech by Design Hub FHIR Endpoints"))
+                                        .summary("Retrieve OperationOutcome(s) for a Bundle or Interaction")
+                                        .description("Endpoint to fetch OperationOutcome resources for a given Bundle ID or Interaction ID. At least one of X-TechBD-Bundle-ID or X-TechBD-Interaction-ID must be provided.")
+                                        .addParametersItem(new Parameter()
+                                                .name("X-TechBD-Tenant-ID")
+                                                .description("Mandatory header for Tenant ID.")
+                                                .required(true)
+                                                .in("header")
+                                                .schema(new StringSchema()))
+                                        .addParametersItem(new Parameter()
+                                                .name("X-TechBD-Bundle-ID")
+                                                .description("Mandatory header for FHIR Bundle ID.")
+                                                .required(true)
+                                                .in("header")
+                                                .schema(new StringSchema()))
+                                        .addParametersItem(new Parameter()
+                                                .name("X-TechBD-Interaction-ID")
+                                                .description("Mandatory header for Interaction ID.")
+                                                .required(true)
+                                                .in("header")
+                                                .schema(new StringSchema()))
+                                        .responses(new ApiResponses()
+                                                .addApiResponse("200",
+                                                        new ApiResponse()
+                                                                .description("Operation outcome status retrieved successfully."))
+                                                .addApiResponse("400",
+                                                        new ApiResponse()
+                                                                .description("Bad request."))
+                                                .addApiResponse("404",
+                                                        new ApiResponse()
+                                                                .description("Bundle or interaction not found."))
+                                                .addApiResponse("500",
+                                                        new ApiResponse()
+                                                                .description("Server error.")))));
+
+
+
+
+
+
+                        // Add NYeC Submission Failed Status Endpoint
+                        openApi.getPaths().addPathItem("/Bundles/status/nyec-submission-failed", new PathItem()
+                                .get(new Operation()
+                                        .tags(List.of("Tech by Design Hub FHIR Endpoints"))
+                                        .summary("Retrieve FHIR Bundles that failed NYEC submission")
+                                        .description("Fetches bundles that failed NYEC submission within the specified date/datetime range. Optionally filter by tenant ID.")
+                                        .addParametersItem(new Parameter()
+                                                .name("X-TechBD-StartDate")
+                                                .description("Mandatory start date in DD-MM-YYYY format.")
+                                                .required(true)
+                                                .in("header")
+                                                .schema(new StringSchema()))
+                                        .addParametersItem(new Parameter()
+                                                .name("X-TechBD-EndDate")
+                                                .description("Mandatory end date in DD-MM-YYYY format.")
+                                                .required(true)
+                                                .in("header")
+                                                .schema(new StringSchema()))
+                                        .addParametersItem(new Parameter()
+                                                .name("X-TechBD-Tenant-ID")
+                                                .description("Mandatory header for Tenant ID.")
+                                                .required(true)
+                                                .in("header")
+                                                .schema(new StringSchema()))
+                                        .addParametersItem(new Parameter()
+                                                .name("X-TechBD-IncludeDetails")
+                                                .description("Optional header to control whether additional submission details are included.")
+                                                .required(false)
+                                                .in("header")
+                                                .schema(new StringSchema()))
+                                        .responses(new ApiResponses()
+                                                .addApiResponse("200",
+                                                        new ApiResponse()
+                                                                .description("Failed NYeC submission records retrieved successfully."))
+                                                .addApiResponse("400",
+                                                        new ApiResponse()
+                                                                .description("Bad request or invalid date range."))
+                                                .addApiResponse("500",
+                                                        new ApiResponse()
+                                                                .description("Server error.")))));
+
+
+
+
+                        // Add Bundle Status Endpoint
+                        openApi.getPaths().addPathItem("/Bundle/$status/{id}", new PathItem()
+                                .get(new Operation()
+                                        .tags(List.of("Tech by Design Hub FHIR Endpoints"))
+                                        .summary("Check the state/status of async operation")
+                                        .description("Retrieves the processing status of a FHIR Bundle using its identifier.")
+                                        .addParametersItem(new Parameter()
+                                                .name("id")
+                                                .description("FHIR Bundle identifier.")
+                                                .required(true)
+                                                .in("path")
+                                                .schema(new StringSchema()))
+                                        .responses(new ApiResponses()
+                                                .addApiResponse("200",
+                                                        new ApiResponse()
+                                                                .description("Bundle status retrieved successfully.")
+                                                                .content(new io.swagger.v3.oas.models.media.Content()
+                                                                        .addMediaType("application/json",
+                                                                                new io.swagger.v3.oas.models.media.MediaType()
+                                                                                        .schema(new StringSchema()))))
+                                                .addApiResponse("400",
+                                                        new ApiResponse()
+                                                                .description("Bad request."))
+                                                .addApiResponse("404",
+                                                        new ApiResponse()
+                                                                .description("Bundle not found."))
+                                                .addApiResponse("500",
+                                                        new ApiResponse()
+                                                                .description("Server error.")))));
+
+
+
+                        openApi.getPaths().addPathItem("/tenants", new PathItem()
+                                        .get(new Operation()
+                                                .tags(List.of("Tech by Design Hub Tenant Endpoints"))
+                                                .summary("List active tenants")
+                                                .description("Returns the list of tenants available in the system.")
+                                                .responses(new ApiResponses()
+                                                        .addApiResponse("200", new ApiResponse()
+                                                                .description("Tenants retrieved successfully.")
+                                                                .content(new Content()
+                                                                        .addMediaType("application/json",
+                                                                                new MediaType()
+                                                                                        .schema(new io.swagger.v3.oas.models.media.ArraySchema()
+                                                                                                .items(new io.swagger.v3.oas.models.media.Schema<>()
+                                                                                                        .type("object"))))))
+                                                        .addApiResponse("500", new ApiResponse()
+                                                                .description("Internal server error.")))));                          
+                   
+                  }
                 })
                 .build();
     }
