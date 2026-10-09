@@ -368,3 +368,12 @@ OBX|1|ST|12345-6^Question^LN||Answer Text||||||F
 - HL7 to FHIR Conversion: [FHIR HL7v2 Implementation Guide](https://build.fhir.org/ig/HL7/v2-to-fhir/)
 
 ---
+
+## 🔗 Related Documentation
+
+- [HL7v2 Schema Files](../hl7-techbd-schema-files/README.md)
+- [1115 Waiver Channels](../../README.md)
+- [RouterChannel](../../../router/README.md)
+- [Code Templates](../../../../code-templates/README.md)
+- [Lookup Manager](../../../../lookup-manager/README.md)
+- [Integration Artifacts Index](../../../../README.md)

@@ -226,3 +226,11 @@ curl -X GET http://localhost:9005/healthcheck
 - **Lookup Manager**: Configured with required lookup values (for FlatFileCsvBundle)
 
 ---
+
+## 🔗 Related Documentation
+
+- [1115 Waiver Channels](../README.md)
+- [RouterChannel](../../router/README.md)
+- [Code Templates](../../../code-templates/README.md)
+- [Lookup Manager](../../../lookup-manager/README.md)
+- [Integration Artifacts Index](../../../README.md)
