@@ -31,7 +31,7 @@
           <elementProp name="HTTPsampler.Files" elementType="HTTPFileArgs">
             <collectionProp name="HTTPFileArgs.files">
               <elementProp name="${FilePath}" elementType="HTTPFileArg">
-                <stringProp name="File.mimetype">application/zip</stringProp>
+                <stringProp name="File.mimetype">application/x-zip-compressed</stringProp>
                 <stringProp name="File.path">${FilePath}</stringProp>
                 <stringProp name="File.paramname">file</stringProp>
               </elementProp>
@@ -44,10 +44,9 @@
         </HTTPSamplerProxy>
         <hashTree>
           <JSR223PostProcessor guiclass="TestBeanGUI" testclass="JSR223PostProcessor" testname="JSR223 PostProcessor">
-            <stringProp name="scriptLanguage">groovy</stringProp>
-            <stringProp name="parameters"></stringProp>
-            <stringProp name="filename"></stringProp>
             <stringProp name="cacheKey">true</stringProp>
+            <stringProp name="filename"></stringProp>
+            <stringProp name="parameters"></stringProp>
             <stringProp name="script">if (prev.getResponseCode() != &apos;200&apos;) {
     log.error(&quot;&quot;&quot;
 ========== API ERROR ==========
@@ -60,6 +59,7 @@ ${prev.getResponseDataAsString()}
 ===============================
 &quot;&quot;&quot;)
 }</stringProp>
+            <stringProp name="scriptLanguage">groovy</stringProp>
           </JSR223PostProcessor>
           <hashTree/>
         </hashTree>
@@ -67,7 +67,7 @@ ${prev.getResponseDataAsString()}
           <collectionProp name="HeaderManager.headers">
             <elementProp name="" elementType="Header">
               <stringProp name="Header.name">X-TechBD-Tenant-ID</stringProp>
-              <stringProp name="Header.value">${TenantIds}</stringProp>
+              <stringProp name="Header.value">SmokeTest-csv-User1 </stringProp>
             </elementProp>
             <elementProp name="" elementType="Header">
               <stringProp name="Header.name">Accept-Encoding</stringProp>
@@ -80,14 +80,14 @@ ${prev.getResponseDataAsString()}
           </collectionProp>
         </HeaderManager>
         <hashTree/>
-        <ConfigTestElement guiclass="HttpDefaultsGui" testclass="ConfigTestElement" testname="HTTP Request Defaults" enabled="true">
+        <ConfigTestElement guiclass="HttpDefaultsGui" testclass="ConfigTestElement" testname="HTTP Request Defaults">
           <elementProp name="HTTPsampler.Arguments" elementType="Arguments" guiclass="HTTPArgumentsPanel" testclass="Arguments" testname="User Defined Variables">
             <collectionProp name="Arguments.arguments"/>
           </elementProp>
           <stringProp name="HTTPSampler.implementation">Java</stringProp>
         </ConfigTestElement>
         <hashTree/>
-        <ResultCollector guiclass="ViewResultsFullVisualizer" testclass="ResultCollector" testname="View Results Tree" enabled="false">
+        <ResultCollector guiclass="ViewResultsFullVisualizer" testclass="ResultCollector" testname="View Results Tree">
           <boolProp name="ResultCollector.error_logging">false</boolProp>
           <objProp>
             <name>saveConfig</name>
@@ -198,7 +198,7 @@ ${prev.getResponseDataAsString()}
           <stringProp name="filename"></stringProp>
         </ResultCollector>
         <hashTree/>
-        <CSVDataSet guiclass="TestBeanGUI" testclass="CSVDataSet" testname="Tenant ID CSV">
+        <CSVDataSet guiclass="TestBeanGUI" testclass="CSVDataSet" testname="Tenant ID CSV" enabled="false">
           <stringProp name="filename">./test-automation/CSV-Bundle-SmokeTest-PHI-QA/TenantIds.csv</stringProp>
           <stringProp name="fileEncoding"></stringProp>
           <stringProp name="variableNames">TenantIds</stringProp>
@@ -282,4 +282,3 @@ ${prev.getResponseDataAsString()}
     </hashTree>
   </hashTree>
 </jmeterTestPlan>
-
