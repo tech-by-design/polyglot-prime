@@ -15,7 +15,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.MimeTypeUtils;
 import org.techbd.conf.Configuration;
-import org.techbd.config.CoreAppConfig;
+import org.techbd.service.http.hub.prime.AppConfig;
 import org.techbd.service.constants.SourceType;
 import org.techbd.service.http.FusionAuthUserAuthorizationFilter;
 import org.techbd.service.http.GitHubUserAuthorizationFilter;
@@ -43,7 +43,7 @@ public class InteractionService {
     private DSLContext primaryDslContext;
 
     @Autowired
-    private CoreAppConfig coreAppConfig;
+    private AppConfig  coreAppConfig;
 
     @Value("${org.techbd.service.http.interactions.saveUserDataToInteractions:true}")
     private boolean saveUserDataToInteractions;
