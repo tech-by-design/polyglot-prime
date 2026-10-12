@@ -53,6 +53,11 @@ public class InteractionsFilter extends OncePerRequestFilter {
 
     private List<String> allowedHosts;
 
+    @Override
+    protected boolean shouldNotFilter(final HttpServletRequest request) {
+        return "/healthcheck".equals(request.getRequestURI());
+    }
+
     @PostConstruct
     private void init() {
         allowedHosts = Arrays.asList(allowedHostsString.split(","));
