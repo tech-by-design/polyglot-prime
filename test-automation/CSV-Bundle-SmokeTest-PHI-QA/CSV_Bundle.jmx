@@ -38,8 +38,7 @@ import java.time.Duration
 // ---- Settings (override with -J properties or JMeter variables) ----
 String url      = vars.get(&quot;apiUrl&quot;)   ?: &quot;https://phi.fhir.api.qa.techbd.org/flatfile/csv/Bundle&quot;
 String tenant   = vars.get(&quot;tenantId&quot;) ?: &quot;SmokeTest&quot;
-// String filePath = vars.get(&quot;zipPath&quot;) ?: &quot;./test-automation/CSV-Bundle-SmokeTest-PHI-QA/csv_zip_files/CorrectDataSingle.zip&quot;
-String filePath = vars.get(&quot;zipPath&quot;) ?: &quot;csv_zip_files/CorrectDataSingleSet.zip&quot;
+String filePath = vars.get(&quot;zipPath&quot;) ?: &quot;csv_zip_files/CorrectDataSingle.zip&quot;
 
 // ---- Read the zip ----
 File f = new File(filePath)
@@ -91,7 +90,7 @@ return resp.body()</stringProp>
           <stringProp name="scriptLanguage">groovy</stringProp>
         </JSR223Sampler>
         <hashTree>
-          <JSR223PostProcessor guiclass="TestBeanGUI" testclass="JSR223PostProcessor" testname="JSR223 PostProcessor">
+          <JSR223PostProcessor guiclass="TestBeanGUI" testclass="JSR223PostProcessor" testname="JSR223 PostProcessor" enabled="true">
             <stringProp name="scriptLanguage">groovy</stringProp>
             <stringProp name="parameters"></stringProp>
             <stringProp name="filename"></stringProp>
@@ -128,7 +127,7 @@ ${prev.getResponseDataAsString()}
 }</stringProp>
           </JSR223PostProcessor>
           <hashTree/>
-          <ResultCollector guiclass="ViewResultsFullVisualizer" testclass="ResultCollector" testname="View Results Tree">
+          <ResultCollector guiclass="ViewResultsFullVisualizer" testclass="ResultCollector" testname="View Results Tree" enabled="true">
             <boolProp name="ResultCollector.error_logging">false</boolProp>
             <objProp>
               <name>saveConfig</name>
