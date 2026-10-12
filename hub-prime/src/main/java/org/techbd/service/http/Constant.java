@@ -18,6 +18,7 @@ public class Constant {
     public static final String[] UNAUTHENTICATED_URLS = {
             "/login/**", "/oauth2/**",
             "/",
+            "/healthcheck",
             "/metadata",
             "/docs/api/interactive/swagger-ui/**", "/support/**",
             "/docs/api/interactive/**",
@@ -39,6 +40,7 @@ public class Constant {
         "/oauth2/authorization/**",
 
         "/",
+        "/healthcheck",
         "/public/**",
 
         "/error",

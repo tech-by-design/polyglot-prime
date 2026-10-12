@@ -43,6 +43,11 @@ public class GitHubRlsInitializationFilter extends OncePerRequestFilter {
     }
 
     @Override
+    protected boolean shouldNotFilter(HttpServletRequest request) {
+        return "/healthcheck".equals(request.getRequestURI());
+    }
+
+    @Override
     protected void doFilterInternal(HttpServletRequest request,
             HttpServletResponse response,
             FilterChain filterChain)
