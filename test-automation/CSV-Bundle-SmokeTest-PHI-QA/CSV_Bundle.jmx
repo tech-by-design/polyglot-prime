@@ -28,11 +28,12 @@
           <stringProp name="HTTPSampler.method">POST</stringProp>
           <boolProp name="HTTPSampler.use_keepalive">true</boolProp>
           <boolProp name="HTTPSampler.DO_MULTIPART_POST">true</boolProp>
+          <boolProp name="HTTPSampler.BROWSER_COMPATIBLE_MULTIPART">true</boolProp>
           <elementProp name="HTTPsampler.Files" elementType="HTTPFileArgs">
             <collectionProp name="HTTPFileArgs.files">
-              <elementProp name="./test-automation/CSV-Bundle-SmokeTest-PHI-QA/csv_zip_files/CorrectDataMultiple.zip" elementType="HTTPFileArg">
+              <elementProp name="./test-automation/CSV-Bundle-SmokeTest-PHI-QA/csv_zip_files/CorrectDataSingle.zip" elementType="HTTPFileArg">
                 <stringProp name="File.mimetype">application/zip</stringProp>
-                <stringProp name="File.path">./test-automation/CSV-Bundle-SmokeTest-PHI-QA/csv_zip_files/CorrectDataMultiple.zip</stringProp>
+                <stringProp name="File.path">./test-automation/CSV-Bundle-SmokeTest-PHI-QA/csv_zip_files/CorrectDataSingle.zip</stringProp>
                 <stringProp name="File.paramname">file</stringProp>
               </elementProp>
             </collectionProp>
@@ -41,7 +42,7 @@
           <elementProp name="HTTPsampler.Arguments" elementType="Arguments" guiclass="HTTPArgumentsPanel" testclass="Arguments" testname="User Defined Variables">
             <collectionProp name="Arguments.arguments"/>
           </elementProp>
-          <stringProp name="HTTPSampler.implementation">Java</stringProp>
+          <stringProp name="HTTPSampler.implementation">HttpClient4</stringProp>
         </HTTPSamplerProxy>
         <hashTree>
           <HeaderManager guiclass="HeaderPanel" testclass="HeaderManager" testname="HTTP Header Manager">
@@ -131,3 +132,4 @@ ${prev.getResponseDataAsString()}
     </hashTree>
   </hashTree>
 </jmeterTestPlan>
+
