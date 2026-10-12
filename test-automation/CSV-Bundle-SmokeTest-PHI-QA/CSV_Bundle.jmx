@@ -20,39 +20,112 @@
         </elementProp>
       </ThreadGroup>
       <hashTree>
-        <HTTPSamplerProxy guiclass="HttpTestSampleGui" testclass="HTTPSamplerProxy" testname="CSV_Bundle_Smoke_Test_UAT_Request">
-          <stringProp name="HTTPSampler.domain">phi.fhir.api.qa.techbd.org</stringProp>
-          <stringProp name="HTTPSampler.protocol">https</stringProp>
-          <stringProp name="HTTPSampler.path">/flatfile/csv/Bundle</stringProp>
-          <boolProp name="HTTPSampler.follow_redirects">true</boolProp>
-          <stringProp name="HTTPSampler.method">POST</stringProp>
-          <boolProp name="HTTPSampler.use_keepalive">true</boolProp>
-          <boolProp name="HTTPSampler.DO_MULTIPART_POST">true</boolProp>
-          <boolProp name="HTTPSampler.BROWSER_COMPATIBLE_MULTIPART">true</boolProp>
-          <elementProp name="HTTPsampler.Files" elementType="HTTPFileArgs">
-            <collectionProp name="HTTPFileArgs.files">
-              <elementProp name="./test-automation/CSV-Bundle-SmokeTest-PHI-QA/csv_zip_files/CorrectDataSingle.zip" elementType="HTTPFileArg">
-                <stringProp name="File.mimetype">application/zip</stringProp>
-                <stringProp name="File.path">./test-automation/CSV-Bundle-SmokeTest-PHI-QA/csv_zip_files/CorrectDataSingle.zip</stringProp>
-                <stringProp name="File.paramname">file</stringProp>
-              </elementProp>
-            </collectionProp>
-          </elementProp>
-          <boolProp name="HTTPSampler.postBodyRaw">false</boolProp>
-          <elementProp name="HTTPsampler.Arguments" elementType="Arguments" guiclass="HTTPArgumentsPanel" testclass="Arguments" testname="User Defined Variables">
-            <collectionProp name="Arguments.arguments"/>
-          </elementProp>
-          <stringProp name="HTTPSampler.implementation">HttpClient4</stringProp>
-        </HTTPSamplerProxy>
+        <JSR223Sampler guiclass="TestBeanGUI" testclass="JSR223Sampler" testname="CSV_Bundle_Smoke_Test_UAT_JSR223 Sampler">
+          <stringProp name="cacheKey">true</stringProp>
+          <stringProp name="filename"></stringProp>
+          <stringProp name="parameters"></stringProp>
+          <stringProp name="script">import java.net.URI
+import java.net.http.HttpClient
+import java.net.http.HttpRequest
+import java.net.http.HttpResponse
+import java.net.http.HttpRequest.BodyPublishers
+import java.io.ByteArrayOutputStream
+import java.nio.charset.StandardCharsets
+import java.nio.file.Files
+import java.nio.file.Paths
+import java.time.Duration
+
+// ---- Settings (override with -J properties or JMeter variables) ----
+String url      = vars.get(&quot;apiUrl&quot;)   ?: &quot;https://phi.fhir.api.qa.techbd.org/flatfile/csv/Bundle&quot;
+String tenant   = vars.get(&quot;tenantId&quot;) ?: &quot;SmokeTest&quot;
+String filePath = vars.get(&quot;zipPath&quot;) ?: &quot;./test-automation/CSV-Bundle-SmokeTest-PHI-QA/csv_zip_files/CorrectDataSingle.zip&quot;
+
+// ---- Read the zip ----
+File f = new File(filePath)
+if (!f.isAbsolute()) {
+    f = new File(org.apache.jmeter.services.FileServer.getFileServer().getBaseDir(), filePath)
+}
+byte[] fileBytes = Files.readAllBytes(f.toPath())
+
+// ---- Build multipart body (no Content-Transfer-Encoding header) ----
+String boundary = &quot;----JMeterBoundary&quot; + UUID.randomUUID().toString().replace(&quot;-&quot;, &quot;&quot;)
+String CRLF = &quot;\r\n&quot;
+
+ByteArrayOutputStream body = new ByteArrayOutputStream()
+body.write((&quot;--&quot; + boundary + CRLF).getBytes(StandardCharsets.UTF_8))
+body.write((&quot;Content-Disposition: form-data; name=\&quot;file\&quot;; filename=\&quot;&quot; + f.getName() + &quot;\&quot;&quot; + CRLF).getBytes(StandardCharsets.UTF_8))
+body.write((&quot;Content-Type: application/zip&quot; + CRLF + CRLF).getBytes(StandardCharsets.UTF_8))
+body.write(fileBytes)
+body.write((CRLF + &quot;--&quot; + boundary + &quot;--&quot; + CRLF).getBytes(StandardCharsets.UTF_8))
+byte[] bodyBytes = body.toByteArray()
+
+// ---- Send ----
+HttpClient client = HttpClient.newBuilder()
+        .version(HttpClient.Version.HTTP_1_1)
+        .connectTimeout(Duration.ofSeconds(30))
+        .build()
+
+HttpRequest request = HttpRequest.newBuilder()
+        .uri(URI.create(url))
+        .timeout(Duration.ofSeconds(120))
+        .header(&quot;Content-Type&quot;, &quot;multipart/form-data; boundary=&quot; + boundary)
+        .header(&quot;X-TechBD-Tenant-ID&quot;, tenant)
+        .header(&quot;Accept&quot;, &quot;*/*&quot;)
+        .POST(BodyPublishers.ofByteArray(bodyBytes))
+        .build()
+
+SampleResult.setSamplerData(&quot;POST &quot; + url + &quot;\nContent-Length: &quot; + bodyBytes.length + &quot;\nfile: &quot; + f.getAbsolutePath())
+SampleResult.setRequestHeaders(&quot;Content-Type: multipart/form-data; boundary=&quot; + boundary + &quot;\nX-TechBD-Tenant-ID: &quot; + tenant)
+
+HttpResponse&lt;String&gt; resp = client.send(request, HttpResponse.BodyHandlers.ofString())
+
+// ---- Report result to JMeter ----
+SampleResult.setResponseCode(String.valueOf(resp.statusCode()))
+SampleResult.setResponseMessage(&quot;HTTP &quot; + resp.statusCode())
+SampleResult.setResponseData(resp.body(), &quot;UTF-8&quot;)
+SampleResult.setSuccessful(resp.statusCode() &gt;= 200 &amp;&amp; resp.statusCode() &lt; 300)
+SampleResult.setDataType(org.apache.jmeter.samplers.SampleResult.TEXT)
+
+return resp.body()</stringProp>
+          <stringProp name="scriptLanguage">groovy</stringProp>
+        </JSR223Sampler>
         <hashTree>
-          <HeaderManager guiclass="HeaderPanel" testclass="HeaderManager" testname="HTTP Header Manager">
-            <collectionProp name="HeaderManager.headers">
-              <elementProp name="" elementType="Header">
-                <stringProp name="Header.name">X-TechBD-Tenant-ID</stringProp>
-                <stringProp name="Header.value">SmokeTest</stringProp>
-              </elementProp>
-            </collectionProp>
-          </HeaderManager>
+          <JSR223PostProcessor guiclass="TestBeanGUI" testclass="JSR223PostProcessor" testname="JSR223 PostProcessor">
+            <stringProp name="scriptLanguage">groovy</stringProp>
+            <stringProp name="parameters"></stringProp>
+            <stringProp name="filename"></stringProp>
+            <stringProp name="cacheKey">true</stringProp>
+            <stringProp name="script">log.info(&quot;========== HTTP REQUEST ==========&quot;)
+log.info(&quot;Sampler : &quot; + prev.getSampleLabel())
+
+log.info(&quot;----- Request (as described by sampler) -----&quot;)
+log.info(prev.getSamplerData() ?: &quot;(none)&quot;)
+
+log.info(&quot;----- Request Headers -----&quot;)
+log.info(prev.getRequestHeaders() ?: &quot;(none)&quot;)
+
+log.info(&quot;----- Response -----&quot;)
+log.info(&quot;Code    : &quot; + prev.getResponseCode())
+log.info(&quot;Message : &quot; + prev.getResponseMessage())
+log.info(&quot;Time    : &quot; + prev.getTime() + &quot; ms&quot;)
+log.info(&quot;Body    : &quot; + prev.getResponseDataAsString())
+log.info(&quot;=================================&quot;)
+
+if (!prev.isSuccessful()) {
+    log.error(&quot;&quot;&quot;
+========== API ERROR ==========
+Sampler       : ${prev.getSampleLabel()}
+Response Code : ${prev.getResponseCode()}
+Response Msg  : ${prev.getResponseMessage()}
+Response Time : ${prev.getTime()} ms
+Request       :
+${prev.getSamplerData()}
+Response Body :
+${prev.getResponseDataAsString()}
+===============================
+&quot;&quot;&quot;)
+}</stringProp>
+          </JSR223PostProcessor>
           <hashTree/>
           <ResultCollector guiclass="ViewResultsFullVisualizer" testclass="ResultCollector" testname="View Results Tree">
             <boolProp name="ResultCollector.error_logging">false</boolProp>
@@ -90,42 +163,6 @@
             </objProp>
             <stringProp name="filename"></stringProp>
           </ResultCollector>
-          <hashTree/>
-          <JSR223PostProcessor guiclass="TestBeanGUI" testclass="JSR223PostProcessor" testname="JSR223 PostProcessor">
-            <stringProp name="scriptLanguage">groovy</stringProp>
-            <stringProp name="parameters"></stringProp>
-            <stringProp name="filename"></stringProp>
-            <stringProp name="cacheKey">true</stringProp>
-            <stringProp name="script">log.info(&quot;========== HTTP REQUEST ==========&quot;)
-log.info(&quot;Method : &quot; + sampler.getMethod())
-log.info(&quot;URL    : &quot; + prev.getURL())
-
-log.info(&quot;----- Actual Request Headers (as sent) -----&quot;)
-log.info(prev.getRequestHeaders())
-
-log.info(&quot;----- Request Body (as sent) -----&quot;)
-log.info(prev.getSamplerData())
-
-log.info(&quot;----- Files configured on sampler -----&quot;)
-sampler.getHTTPFiles()?.each { f -&gt;
-    log.info(&quot;param=${f.getParamName()} path=${f.getPath()} mime=${f.getMimeType()}&quot;)
-}
-log.info(&quot;=================================&quot;)
-
-
-if (prev.getResponseCode() != &apos;200&apos;) {
-    log.error(&quot;&quot;&quot;
-========== API ERROR ==========
-URL          : ${prev.getURL()}
-Response Code: ${prev.getResponseCode()}
-Response Msg : ${prev.getResponseMessage()}
-Response Time: ${prev.getTime()} ms
-Response Body:
-${prev.getResponseDataAsString()}
-===============================
-&quot;&quot;&quot;)
-}</stringProp>
-          </JSR223PostProcessor>
           <hashTree/>
         </hashTree>
       </hashTree>
