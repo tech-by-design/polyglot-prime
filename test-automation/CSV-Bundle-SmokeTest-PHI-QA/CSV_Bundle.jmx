@@ -36,7 +36,7 @@ import java.nio.file.Paths
 import java.time.Duration
 
 // ---- Settings (override with -J properties or JMeter variables) ----
-String url      = vars.get(&quot;apiUrl&quot;)   ?: &quot;https://phi.fhir.api.qa.techbd.org/flatfile/csv/Bundle&quot;
+String url      = vars.get(&quot;apiUrl&quot;)   ?: &quot;https://1.nexus-txd-qa.techbd.org:9000/flatfile/csv/Bundle&quot;
 String tenant   = vars.get(&quot;tenantId&quot;) ?: &quot;SmokeTest&quot;
 String filePath = vars.get(&quot;zipPath&quot;) ?: &quot;csv_zip_files/CorrectDataSingle.zip&quot;
 
