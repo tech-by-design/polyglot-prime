@@ -30,27 +30,20 @@ import java.net.http.HttpRequest
 import java.net.http.HttpResponse
 import java.net.http.HttpRequest.BodyPublishers
 import java.io.ByteArrayOutputStream
-import java.io.ByteArrayInputStream
 import java.nio.charset.StandardCharsets
 import java.nio.file.Files
+import java.nio.file.Paths
 import java.time.Duration
-import java.util.zip.GZIPInputStream
-import java.util.zip.InflaterInputStream
 
 // ---- Settings (override with -J properties or JMeter variables) ----
-String url      = vars.get(&quot;apiUrl&quot;)   ?: &quot;https://phi.fhir.api.qa.techbd.org/flatfile/csv/Bundle&quot;
+String url      = vars.get(&quot;apiUrl&quot;)   ?: &quot;https://phi.fhir.api.qa.techbd.org/flatfile/csv/Bundle/&quot;
 String tenant   = vars.get(&quot;tenantId&quot;) ?: &quot;SmokeTest&quot;
 String filePath = vars.get(&quot;zipPath&quot;)  ?: &quot;csv_zip_files/CorrectDataSingle.zip&quot;
 
-// ---- Resolve the zip (absolute, then JMeter base dir, then working dir) ----
+// ---- Read the zip ----
 File f = new File(filePath)
 if (!f.isAbsolute()) {
-    def base = org.apache.jmeter.services.FileServer.getFileServer().getBaseDir()
-    def candidates = [new File(base, filePath), new File(System.getProperty(&quot;user.dir&quot;), filePath)]
-    f = candidates.find { it.exists() }
-    if (f == null) {
-        throw new FileNotFoundException(&quot;Zip not found. Tried: &quot; + candidates*.getAbsolutePath().join(&quot; | &quot;))
-    }
+    f = new File(org.apache.jmeter.services.FileServer.getFileServer().getBaseDir(), filePath)
 }
 byte[] fileBytes = Files.readAllBytes(f.toPath())
 
@@ -65,13 +58,6 @@ body.write((&quot;Content-Type: application/zip&quot; + CRLF + CRLF).getBytes(St
 body.write(fileBytes)
 body.write((CRLF + &quot;--&quot; + boundary + &quot;--&quot; + CRLF).getBytes(StandardCharsets.UTF_8))
 byte[] bodyBytes = body.toByteArray()
-
-// ---- Describe the request early so it&apos;s logged even if sending fails ----
-String reqHeaders = &quot;Content-Type: multipart/form-data; boundary=&quot; + boundary +
-        &quot;\nX-TechBD-Tenant-ID: &quot; + tenant +
-        &quot;\nAccept: */*&quot; +
-SampleResult.setSamplerData(&quot;POST &quot; + url + &quot;\nContent-Length: &quot; + bodyBytes.length + &quot;\nfile: &quot; + f.getAbsolutePath())
-SampleResult.setRequestHeaders(reqHeaders)
 
 // ---- Send ----
 HttpClient client = HttpClient.newBuilder()
@@ -88,31 +74,19 @@ HttpRequest request = HttpRequest.newBuilder()
         .POST(BodyPublishers.ofByteArray(bodyBytes))
         .build()
 
-HttpResponse&lt;byte[]&gt; resp = client.send(request, HttpResponse.BodyHandlers.ofByteArray())
+SampleResult.setSamplerData(&quot;POST &quot; + url + &quot;\nContent-Length: &quot; + bodyBytes.length + &quot;\nfile: &quot; + f.getAbsolutePath())
+SampleResult.setRequestHeaders(&quot;Content-Type: multipart/form-data; boundary=&quot; + boundary + &quot;\nX-TechBD-Tenant-ID: &quot; + tenant)
 
-// ---- Decode the response body (Java&apos;s HttpClient does not decompress) ----
-String encoding = resp.headers().firstValue(&quot;Content-Encoding&quot;).orElse(&quot;&quot;).toLowerCase()
-byte[] raw = resp.body()
-String respText
-if (encoding.contains(&quot;gzip&quot;)) {
-    respText = new String(new GZIPInputStream(new ByteArrayInputStream(raw)).readAllBytes(), StandardCharsets.UTF_8)
-} else if (encoding.contains(&quot;deflate&quot;)) {
-    respText = new String(new InflaterInputStream(new ByteArrayInputStream(raw)).readAllBytes(), StandardCharsets.UTF_8)
-} else if (encoding.contains(&quot;br&quot;)) {
-    respText = &quot;[Response is Brotli-compressed; plain Java cannot decode it. &quot; + raw.length + &quot; bytes received]&quot;
-} else {
-    respText = new String(raw, StandardCharsets.UTF_8)
-}
+HttpResponse&lt;String&gt; resp = client.send(request, HttpResponse.BodyHandlers.ofString())
 
 // ---- Report result to JMeter ----
 SampleResult.setResponseCode(String.valueOf(resp.statusCode()))
 SampleResult.setResponseMessage(&quot;HTTP &quot; + resp.statusCode())
-SampleResult.setResponseHeaders(resp.headers().map().collect { k, v -&gt; k + &quot;: &quot; + v.join(&quot;, &quot;) }.join(&quot;\n&quot;))
-SampleResult.setResponseData(respText, &quot;UTF-8&quot;)
+SampleResult.setResponseData(resp.body(), &quot;UTF-8&quot;)
 SampleResult.setSuccessful(resp.statusCode() &gt;= 200 &amp;&amp; resp.statusCode() &lt; 300)
 SampleResult.setDataType(org.apache.jmeter.samplers.SampleResult.TEXT)
 
-return respText</stringProp>
+return resp.body()</stringProp>
           <stringProp name="scriptLanguage">groovy</stringProp>
         </JSR223Sampler>
         <hashTree>
@@ -153,7 +127,7 @@ ${prev.getResponseDataAsString()}
 }</stringProp>
           </JSR223PostProcessor>
           <hashTree/>
-          <ResultCollector guiclass="ViewResultsFullVisualizer" testclass="ResultCollector" testname="View Results Tree" enabled="true">
+          <ResultCollector guiclass="ViewResultsFullVisualizer" testclass="ResultCollector" testname="View Results Tree">
             <boolProp name="ResultCollector.error_logging">false</boolProp>
             <objProp>
               <name>saveConfig</name>
@@ -195,4 +169,3 @@ ${prev.getResponseDataAsString()}
     </hashTree>
   </hashTree>
 </jmeterTestPlan>
-
