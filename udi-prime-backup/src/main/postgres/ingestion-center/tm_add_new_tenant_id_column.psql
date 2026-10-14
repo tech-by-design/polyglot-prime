@@ -1,0 +1,74 @@
+/* Purpose: 
+* 1. Rename tenant_id to tenant_name
+* 2. Add new tenant_id column
+*/
+DO $$
+        DECLARE
+            tbl TEXT;
+            tables TEXT[] := ARRAY[
+                'dashboard_widget_metadata',
+                'sat_csv_fhir_processing_errors',
+                'sat_diagnostic_dataledger_api',
+                'sat_diagnostic_exception',
+                'sat_diagnostic_log',
+                'sat_expectation_http_request',
+                'sat_interaction_ccda_request',
+                'sat_interaction_ccda_validation_errors',
+                'sat_interaction_fhir_request',
+                'sat_interaction_fhir_screening_info',
+                'sat_interaction_fhir_screening_organization',
+                'sat_interaction_fhir_screening_patient',
+                'sat_interaction_fhir_session_diagnostic',
+                'sat_interaction_fhir_validation_issue',
+                'sat_interaction_file_exchange',
+                'sat_interaction_flat_file_csv_request',
+                'sat_interaction_hl7_request',
+                'sat_interaction_hl7_validation_errors',
+                'sat_interaction_http_request',
+                'sat_interaction_user',
+                'sat_interaction_zip_file_request',
+                'users'
+            ];
+        BEGIN
+            FOREACH tbl IN ARRAY tables
+            LOOP
+                -- Rename tenant_id → tenant_name (only if needed)
+                IF EXISTS (
+                    SELECT 1
+                    FROM information_schema.columns
+                    WHERE table_schema = 'techbd_udi_ingress'
+                      AND table_name = tbl
+                      AND column_name = 'tenant_id'
+                )
+                AND NOT EXISTS (
+                    SELECT 1
+                    FROM information_schema.columns
+                    WHERE table_schema = 'techbd_udi_ingress'
+                      AND table_name = tbl
+                      AND column_name = 'tenant_name'
+                )
+                THEN
+                    EXECUTE format(
+                        'ALTER TABLE techbd_udi_ingress.%I RENAME COLUMN tenant_id TO tenant_name',
+                        tbl
+                    );
+                END IF;
+
+                -- Add new tenant_id column (only if missing)
+                IF NOT EXISTS (
+                    SELECT 1
+                    FROM information_schema.columns
+                    WHERE table_schema = 'techbd_udi_ingress'
+                      AND table_name = tbl
+                      AND column_name = 'tenant_id'
+                )
+                THEN
+                    EXECUTE format(
+                        'ALTER TABLE techbd_udi_ingress.%I ADD COLUMN tenant_id TEXT NOT NULL DEFAULT ''''',
+                        tbl
+                    );
+                END IF;
+
+            END LOOP;
+        END 
+      $$;

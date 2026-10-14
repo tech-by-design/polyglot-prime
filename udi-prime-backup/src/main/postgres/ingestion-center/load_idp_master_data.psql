@@ -1,0 +1,251 @@
+/* Menu insertion */
+IF EXISTS (SELECT 1 FROM techbd_udi_ingress.idp_menu WHERE mnu_code = 'mnu_Monitoring') THEN
+    TRUNCATE TABLE techbd_udi_ingress.idp_menu RESTART IDENTITY CASCADE;
+END IF;
+
+INSERT INTO techbd_udi_ingress.idp_menu
+(mnu_code, mnu_name, description, order_no, is_active, provenance, created_by)
+VALUES
+('mnu_dashboard', 'Dashboard', 'Dashboard menu', 1, TRUE, 'Hub UI Menu', CURRENT_USER),
+('mnu_Content', 'Content', 'Content menu', 2, TRUE, 'Hub UI Menu', CURRENT_USER),
+('mnu_DataQuality', 'Data Quality', 'Data Quality menu', 3, TRUE, 'Hub UI Menu', CURRENT_USER),
+('mnu_Interactions', 'Interactions', 'Interactions menu', 4, TRUE, 'Hub UI Menu', CURRENT_USER),
+('mnu_Documentation', 'Documentation', 'Documentation menu', 5, TRUE, 'Hub UI Menu', CURRENT_USER),
+('mnu_Console', 'Console', 'Console menu', 6, TRUE, 'Hub UI Menu', CURRENT_USER),
+('mnu_Settings', 'Settings', 'Settings menu', 7, TRUE, 'Hub UI Menu', CURRENT_USER),
+('mnu_Monitoring', 'Monitoring', 'Monitoring menu', 8, TRUE, 'Hub UI Menu', CURRENT_USER)
+ON CONFLICT (mnu_code) DO NOTHING;
+
+/* Role insertion */
+IF EXISTS (SELECT 1 FROM techbd_udi_ingress.idp_roles WHERE role_code = 'rl_base') THEN
+    TRUNCATE TABLE techbd_udi_ingress.idp_roles RESTART IDENTITY CASCADE;
+END IF;
+
+INSERT INTO techbd_udi_ingress.idp_roles
+(role_code, role_name, display_name, description, is_admin, is_active, provenance, created_by)
+VALUES
+('rl_1115_user', '1115 User', '1115 User', NULL, FALSE, TRUE, 'Fusion Auth', CURRENT_USER),
+('rl_nyec_admin', 'NYeC Admin', 'NYeC Admin', NULL, TRUE, TRUE, 'Fusion Auth', CURRENT_USER),
+('rl_offshore_admin', 'Offshore Admin', 'Offshore Admin', NULL, FALSE, TRUE, 'Fusion Auth', CURRENT_USER),
+('rl_tenant_admin', 'Tenant Admin', 'Tenant Admin', NULL, FALSE, TRUE, 'Fusion Auth', CURRENT_USER),
+('rl_super_admin', 'Super Admin', 'Super Admin', NULL, TRUE, TRUE, 'Fusion Auth', CURRENT_USER),
+('rl_mco_user', 'MCO User', 'MCO User', NULL, FALSE, TRUE, 'Fusion Auth', CURRENT_USER)
+ON CONFLICT (role_code) DO NOTHING;
+
+UPDATE techbd_udi_ingress.idp_roles
+SET role_name = REPLACE(role_name, '_', ' ')
+WHERE role_code IN (
+    'rl_1115_user',
+    'rl_nyec_admin',
+    'rl_offshore_admin',
+    'rl_tenant_admin',
+    'rl_super_admin',
+    'rl_mco_user'
+);
+
+/* Tenant insertion - QE*/
+INSERT INTO techbd_udi_ingress.tenants
+(tenant_id, tenant_name, tenant_displayname, is_active, created_by, provenance, fusion_auth_group_id)
+VALUES
+(gen_random_uuid()::text, 'netspective-qa', 'QA Netspective', true, CURRENT_USER, 'Fusion Auth', NULL),
+(gen_random_uuid()::text, 'netspective-dev', 'DEV Netspective', true, CURRENT_USER, 'Fusion Auth', NULL),
+(gen_random_uuid()::text, 'netspective', 'QA/DEV Netspective', true, CURRENT_USER, 'Fusion Auth', NULL),
+(gen_random_uuid()::text, 'partner-test', 'QA/DEV partner-test', true, CURRENT_USER, 'Fusion Auth', NULL),
+(gen_random_uuid()::text, 'partner-test-qa', 'QA/DEV partner-test-qa', true, CURRENT_USER, 'Fusion Auth', NULL),
+(gen_random_uuid()::text, 'healthix', 'Healthix', true, CURRENT_USER, 'Fusion Auth', NULL),
+(gen_random_uuid()::text, 'hecdcs', 'HECDCS', true, CURRENT_USER, 'Fusion Auth', NULL),
+(gen_random_uuid()::text, 'healthelink', 'HEALTHeLINK', true, CURRENT_USER, 'Fusion Auth', NULL),
+(gen_random_uuid()::text, 'hixny', 'HixNY', true, CURRENT_USER, 'Fusion Auth', NULL),
+(gen_random_uuid()::text, 'grrhio', 'GRRHIO', true, CURRENT_USER, 'Fusion Auth', NULL)
+ON CONFLICT (tenant_name) DO NOTHING;
+
+DELETE FROM techbd_udi_ingress.tenants
+WHERE tenant_name IN (
+    'bronx-fusion',
+    'grrhio-fusion',
+    'healtheconn-fusion',
+    'healthelink-fusion',
+    'healthix-fusion',
+    'hixny-fusion',
+	'qa_qa_12.4_csv_3',
+	'n/a'
+);
+
+UPDATE techbd_udi_ingress.tenants
+SET tenant_displayname = CASE tenant_name
+    WHEN 'netspective-qa' THEN 'QA Netspective'
+    WHEN 'netspective-dev' THEN 'DEV Netspective'
+    WHEN 'netspective' THEN 'QA/DEV Netspective'
+    WHEN 'partner-test' THEN 'QA/DEV partner-test'
+    WHEN 'partner-test-qa' THEN 'QA/DEV partner-test-qa'
+    WHEN 'qa_nexus_csv' THEN 'QA/DEV qa_nexus_CSV'
+END
+WHERE tenant_name IN (
+    'netspective-qa',
+    'netspective-dev',
+    'netspective',
+    'partner-test',
+    'partner-test-qa',
+    'qa_nexus_csv'
+);
+
+/* Tenant insertion - MCO*/
+INSERT INTO techbd_udi_ingress.tenants
+(tenant_id, tenant_name, tenant_displayname, is_active, created_by, provenance, tenant_type, tenant_short_code)
+VALUES
+(gen_random_uuid()::text, 'aet', 'Aetna', TRUE, CURRENT_USER, 'MCO Tenant', 'MCO', 'AET'),
+(gen_random_uuid()::text, 'ant', 'Anthem', TRUE, CURRENT_USER, 'MCO Tenant', 'MCO', 'ANT'),
+(gen_random_uuid()::text, 'ami', 'Amida Care', TRUE, CURRENT_USER, 'MCO Tenant', 'MCO', 'AMI'),
+(gen_random_uuid()::text, 'cdp', 'CDPHP', TRUE, CURRENT_USER, 'MCO Tenant', 'MCO', 'CDP'),
+(gen_random_uuid()::text, 'cen', 'Centers Plan', TRUE, CURRENT_USER, 'MCO Tenant', 'MCO', 'CEN'),
+(gen_random_uuid()::text, 'eld', 'ElderPlan', TRUE, CURRENT_USER, 'MCO Tenant', 'MCO', 'ELD'),
+(gen_random_uuid()::text, 'emb', 'Emblem', TRUE, CURRENT_USER, 'MCO Tenant', 'MCO', 'EMB'),
+(gen_random_uuid()::text, 'ehp', 'Excellus', TRUE, CURRENT_USER, 'MCO Tenant', 'MCO', 'EHP'),
+(gen_random_uuid()::text, 'fde', 'NYFIDE', TRUE, CURRENT_USER, 'MCO Tenant', 'MCO', 'FDE'),
+(gen_random_uuid()::text, 'fid', 'Fidelis', TRUE, CURRENT_USER, 'MCO Tenant', 'MCO', 'FID'),
+(gen_random_uuid()::text, 'ham', 'Hamaspik', TRUE, CURRENT_USER, 'MCO Tenant', 'MCO', 'HAM'),
+(gen_random_uuid()::text, 'hef', 'Healthfirst', TRUE, CURRENT_USER, 'MCO Tenant', 'MCO', 'HEF'),
+(gen_random_uuid()::text, 'idp', 'Independent Health', TRUE, CURRENT_USER, 'MCO Tenant', 'MCO', 'IDP'),
+(gen_random_uuid()::text, 'icl', 'iCircle', TRUE, CURRENT_USER, 'MCO Tenant', 'MCO', 'ICL'),
+(gen_random_uuid()::text, 'mol', 'Molina', TRUE, CURRENT_USER, 'MCO Tenant', 'MCO', 'MOL'),
+(gen_random_uuid()::text, 'mps', 'MetroPlus', TRUE, CURRENT_USER, 'MCO Tenant', 'MCO', 'MPS'),
+(gen_random_uuid()::text, 'mvp', 'MVP', TRUE, CURRENT_USER, 'MCO Tenant', 'MCO', 'MVP'),
+(gen_random_uuid()::text, 'nas', 'Nascentia', TRUE, CURRENT_USER, 'MCO Tenant', 'MCO', 'NAS'),
+(gen_random_uuid()::text, 'rsg', 'RiverSpring', TRUE, CURRENT_USER, 'MCO Tenant', 'MCO', 'RSG'),
+(gen_random_uuid()::text, 'utd', 'United', TRUE, CURRENT_USER, 'MCO Tenant', 'MCO', 'UTD'),
+(gen_random_uuid()::text, 'vic', 'VillageCare', TRUE, CURRENT_USER, 'MCO Tenant', 'MCO', 'VIC'),
+(gen_random_uuid()::text, 'vns', 'VNS', TRUE, CURRENT_USER, 'MCO Tenant', 'MCO', 'VNS'),
+(gen_random_uuid()::text, 'whb', 'Wellpoint/Highmark BCBS', TRUE, CURRENT_USER, 'MCO Tenant', 'MCO', 'WHB'),
+(gen_random_uuid()::text, 'wpn', 'WellPoint of NYS', TRUE, CURRENT_USER, 'MCO Tenant', 'MCO', 'WPN'),
+(gen_random_uuid()::text, 'txd', 'TxD', TRUE, CURRENT_USER, 'MCO Tenant', 'MCO', 'TXD')
+ON CONFLICT (tenant_name) DO NOTHING;
+
+
+UPDATE techbd_udi_ingress.tenants SET tenant_short_code = tenant_name WHERE tenant_type = 'QE';
+
+-- Step 2: Grant config access to Super Admin
+UPDATE techbd_udi_ingress.idp_roles
+SET config_access = TRUE
+WHERE role_code = 'rl_super_admin';
+ 
+-- Step 3: Grant is_admin to nyec admin
+UPDATE techbd_udi_ingress.idp_roles
+SET is_admin = TRUE
+WHERE role_code = 'rl_nyec_admin';
+
+UPDATE techbd_udi_ingress.idp_menu
+SET mnu_group = 'config'
+WHERE mnu_code  = 'mnu_Settings';
+
+
+/* Screen insertion */
+/* 2 insert statement commented due to serial no 35 in the menu table. */
+
+truncate table techbd_udi_ingress.idp_screens;
+
+ INSERT INTO techbd_udi_ingress.idp_screens (scr_id,scr_code,scr_name,description,scr_type,mnu_id,order_no,is_active,created_at,created_by,provenance,scr_group,parent_scr_id) VALUES
+	 (1,'scr_Monthly_Summary','Monthly Summary','Monthly Summary screen','page',8,1,true,'2026-07-29 08:49:36.521929+00',CURRENT_USER,'Hub UI','data',NULL),
+	 (2,'scr_Roles','Role Access Management','Roles configuration screen','page',7,2,true,'2026-07-29 08:49:36.521929+00',CURRENT_USER,'Hub UI','config',NULL),
+	 (3,'scr_CSV_via_HTTPS','CSV Submissions','CSV Submissions screen','page',4,3,true,'2026-07-29 08:49:36.521929+00',CURRENT_USER,'Hub UI','data',NULL),
+	 (4,'scr_Screening','Screenings','Screening screen','page',2,1,true,'2026-07-29 08:49:36.521929+00',CURRENT_USER,'Hub UI','data',NULL),
+	 (5,'scr_Patients','Patients','Patients screen','page',2,2,true,'2026-07-29 08:49:36.521929+00',CURRENT_USER,'Hub UI','data',NULL),
+	 (6,'scr_Organizations','Organizations','Organizations screen','page',2,3,true,'2026-07-29 08:49:36.521929+00',CURRENT_USER,'Hub UI','data',NULL),
+	 (7,'scr_Scn','SCN','SCN Screen','page',2,4,true,'2026-07-29 08:49:36.521929+00',CURRENT_USER,'Hub UI','data',NULL),
+	 (8,'scr_Hrsn_Data_Tracker','HRSN Data Tracker','HRSN Data Tracker screen','page',2,5,true,'2026-07-29 08:49:36.521929+00',CURRENT_USER,'Hub UI','data',NULL),
+	 (9,'scr_Need_Attention','Needs Attention','Needs Attention screen','page',3,1,true,'2026-07-29 08:49:36.521929+00',CURRENT_USER,'Hub UI','data',NULL),
+	 (10,'scr_FHIR_Data_Quality','FHIR Data Quality','FHIR Data Quality screen','page',3,2,true,'2026-07-29 08:49:36.521929+00',CURRENT_USER,'Hub UI','data',NULL) ON CONFLICT (scr_code) DO NOTHING;
+INSERT INTO techbd_udi_ingress.idp_screens (scr_id,scr_code,scr_name,description,scr_type,mnu_id,order_no,is_active,created_at,created_by,provenance,scr_group,parent_scr_id) VALUES
+	 (11,'scr_CSV_Data_Quality','CSV Data Quality','CSV Data Quality Screen','page',3,3,true,'2026-07-29 08:49:36.521929+00',CURRENT_USER,'Hub UI','data',NULL),
+	 (12,'scr_CCDA_Data_Quality','CCDA Data Quality','CCDA Data Quality Screen','page',3,4,true,'2026-07-29 08:49:36.521929+00',CURRENT_USER,'Hub UI','data',NULL),
+	 (13,'scr_HL7_Data_Quality','HL7v2 Data Quality','HL7v2 Data Quality Screen','page',3,5,true,'2026-07-29 08:49:36.521929+00',CURRENT_USER,'Hub UI','data',NULL),
+	 (14,'scr_IG_Publication_Issues','IG Publication Issues','IG Publication Issues screen','page',3,6,true,'2026-07-29 08:49:36.521929+00',CURRENT_USER,'Hub UI','data',NULL),
+	 (15,'scr_FHIR_via_HTTPS','FHIR Data','FHIR Data screen','page',4,1,true,'2026-07-29 08:49:36.521929+00',CURRENT_USER,'Hub UI','data',NULL),
+	 (16,'scr_FHIR_via_HTTPS_FAILED','FHIR Failed Submissions (Data Lake)','FHIR FAILED Submissions screen','page',4,2,true,'2026-07-29 08:49:36.521929+00',CURRENT_USER,'Hub UI','data',NULL),
+	 (17,'scr_CCDA_via_HTTPS','CCDA Submissions','CCDA Submissions screen','page',4,4,true,'2026-07-29 08:49:36.521929+00',CURRENT_USER,'Hub UI','data',NULL),
+	 (18,'scr_HL7V2_via_HTTPS','HL7v2 Submissions','HL7v2 Submissions screen','page',4,5,true,'2026-07-29 08:49:36.521929+00',CURRENT_USER,'Hub UI','data',NULL),
+	 (19,'scr_HTTP_Interactions','Hub Interactions','Hub Interactions screen','page',4,6,true,'2026-07-29 08:49:36.521929+00',CURRENT_USER,'Hub UI','data',NULL),
+	 (20,'scr_Provenance','Provenance','Provenance screen','page',4,9,true,'2026-07-29 08:49:36.521929+00',CURRENT_USER,'Hub UI','data',NULL) ON CONFLICT (scr_code) DO NOTHING;
+INSERT INTO techbd_udi_ingress.idp_screens (scr_id,scr_code,scr_name,description,scr_type,mnu_id,order_no,is_active,created_at,created_by,provenance,scr_group,parent_scr_id) VALUES
+	 (21,'scr_User_Sessions','User Sessions','User Sessions screen','page',4,10,true,'2026-07-29 08:49:36.521929+00',CURRENT_USER,'Hub UI','data',NULL),
+	 (22,'scr_Tech_By_Design_Hub','Tech by Design Hub','Tech By Design Hub screen','page',5,1,true,'2026-07-29 08:49:36.521929+00',CURRENT_USER,'Hub UI','data',NULL),
+	 (23,'scr_SHIN_NY_FHIR_IG','SHIN-NY FHIR IG','SHIN NY FHIR IG screen','page',5,2,true,'2026-07-29 08:49:36.521929+00',CURRENT_USER,'Hub UI','data',NULL),
+	 (24,'scr_Announcements','Announcements','Announcements screen','page',5,4,true,'2026-07-29 08:49:36.521929+00',CURRENT_USER,'Hub UI','data',NULL),
+	 (25,'scr_Health_Information','Health Information','Health Information screen','page',6,1,true,'2026-07-29 08:49:36.521929+00',CURRENT_USER,'Hub UI','data',NULL),
+	 (26,'scr_Project','Project','Project screen','page',6,2,true,'2026-07-29 08:49:36.521929+00',CURRENT_USER,'Hub UI','data',NULL),
+	 (27,'scr_Schema','Schema','Schema Screen','page',6,3,true,'2026-07-29 08:49:36.521929+00',CURRENT_USER,'Hub UI','data',NULL),
+	 (28,'scr_ISLM_Migration','ISLM Migration','ISLM Migration screen','page',6,4,true,'2026-07-29 08:49:36.521929+00',CURRENT_USER,'Hub UI','data',NULL),
+	 (29,'scr_pgTAP_Test_Results','pgTAP Test Results','pgTAP Test Results screen','page',6,5,true,'2026-07-29 08:49:36.521929+00',CURRENT_USER,'Hub UI','data',NULL),
+	 (30,'scr_Performance_Overview','Performance Overview','Performance Overview screen','page',4,7,true,'2026-07-29 08:49:36.521929+00',CURRENT_USER,'Hub UI','data',NULL) ON CONFLICT (scr_code) DO NOTHING;
+INSERT INTO techbd_udi_ingress.idp_screens (scr_id,scr_code,scr_name,description,scr_type,mnu_id,order_no,is_active,created_at,created_by,provenance,scr_group,parent_scr_id) VALUES
+	 (31,'scr_API','API','API','page',4,1,true,'2026-07-29 08:49:36.521929+00',CURRENT_USER,'Hub UI','data',30),
+	 (32,'scr_User_Interactions','User Interactions','User Interactions screen','page',4,2,true,'2026-07-29 08:49:36.521929+00',CURRENT_USER,'Hub UI','data',30),
+	 (33,'scr_CSV_Issues_Summary','CSV Issues Summary','CSV Issues Summary screen','page',3,8,true,'2026-07-29 08:49:36.521929+00',CURRENT_USER,'Hub UI','data',11),
+	 (34,'scr_CSV_Issues','CSV Issues','CSV Issues screen','page',3,9,true,'2026-07-29 08:49:36.521929+00',CURRENT_USER,'Hub UI','data',11),
+	 (35,'scr_OpenAPI_UI','OpenAPI UI','OpenAPI UI screen','page',5,5,true,'2026-07-29 08:49:36.521929+00',CURRENT_USER,'Hub UI','data',NULL),
+	 (36,'scr_Tech_by_Design_OpenAPI_UI','Tech by Design OpenAPI UI','Tech by Design OpenAPI UI screen','page',5,1,true,'2026-07-29 08:49:36.521929+00',CURRENT_USER,'Hub UI','data',35),
+	 (37,'scr_TechBD_Processing_Failures','Tech by Design – Processing Failures','Tech by Design – Processing Failures Screen','page',3,1,true,'2026-07-29 08:49:36.521929+00',CURRENT_USER,'Hub UI','data',9),
+	 (38,'scr_TechBD_Validation_Failures','Tech by Design – Validation Failures','Tech by Design – Validation Failures screen','page',3,2,true,'2026-07-29 08:49:36.521929+00',CURRENT_USER,'Hub UI','data',9),
+	 (39,'scr_SHINNY_Datalake_Failed_Submissions','SHIN-NY Data Lake – Failed Submissions','SHIN-NY Data Lake – Failed Submissions screen','page',3,3,true,'2026-07-29 08:49:36.521929+00',CURRENT_USER,'Hub UI','data',9),
+	 (40,'scr_Historical_Details','Historical Details','Historical Details screen','page',8,2,true,'2026-07-29 08:49:36.521929+00',CURRENT_USER,'Hub UI','data',NULL) ON CONFLICT (scr_code) DO NOTHING;
+INSERT INTO techbd_udi_ingress.idp_screens (scr_id,scr_code,scr_name,description,scr_type,mnu_id,order_no,is_active,created_at,created_by,provenance,scr_group,parent_scr_id) VALUES
+	 (41,'scr_FHIR_Rules','FHIR Rules','FHIR Rules screen','page',7,3,true,'2026-07-29 08:49:36.521929+00',CURRENT_USER,'Hub UI','config',NULL) ON CONFLICT (scr_code) DO NOTHING;
+INSERT INTO techbd_udi_ingress.idp_screens (scr_id,scr_code,scr_name,description,scr_type,mnu_id,order_no,is_active,created_at,created_by,provenance,scr_group,parent_scr_id) VALUES
+	 (42,'scr_Tenants','Tenants','Tenants screen','page',7,4,true,'2026-07-29 08:49:36.521929+00',CURRENT_USER,'Hub UI','config',NULL) ON CONFLICT (scr_code) DO NOTHING;
+INSERT INTO techbd_udi_ingress.idp_screens
+(scr_id, scr_code, scr_name, description, scr_type, mnu_id, order_no, is_active, created_at, created_by, provenance, scr_group, parent_scr_id)
+VALUES
+(43, 'scr_MCO_Summary_Metric', 'MCO Summary Metric', 'MCO Summary Metric screen', 'page', 1, 1, true, CURRENT_TIMESTAMP, CURRENT_USER, 'Hub UI', 'data', NULL),
+(44, 'scr_Most_Recent_MCO_Transactions', 'Most Recent MCO Transactions', 'Most Recent MCO Transactions screen', 'page', 1, 2, true, CURRENT_TIMESTAMP, CURRENT_USER, 'Hub UI', 'data', NULL),
+(45, 'scr_Most_Recent_QE_Transactions', 'Most Recent QE Transactions', 'Most Recent QE Transactions screen', 'page', 1, 3, true, CURRENT_TIMESTAMP, CURRENT_USER, 'Hub UI', 'data', NULL)
+ON CONFLICT (scr_code) DO NOTHING;	 
+
+/*Insert master data into screening_extracts tables*/
+-- 1. screening_error_types 
+INSERT INTO screening_extracts.screening_error_types 
+    (screening_error_type_name, is_active, created_on_utc) VALUES
+    ('INVALID_FILE', '1', NOW()),
+    ('INVALID_EXTENSION', '1', NOW()),
+    ('INVALID_HEADER', '1', NOW()), 
+    ('INVALID_RECORD', '1', NOW()),
+    ('DUPLICATE_RECORD', '1', NOW())
+    ON CONFLICT (screening_error_type_name) DO NOTHING;
+
+-- 2. Resource types 
+INSERT INTO screening_extracts.resource_types 
+    (resource_type_name, is_active, created_on_utc) VALUES
+    ('BUNDLE', '1', NOW()),
+    ('FLATFILE', '1', NOW())
+    ON CONFLICT (resource_type_name) DO NOTHING;
+
+-- 3. mco_screening_preferences
+INSERT INTO screening_extracts.mco_screening_preferences
+    (tenant_id, resource_type_id, is_active, created_on_utc)
+SELECT
+    t.tenant_id,
+    (SELECT resource_type_id
+     FROM screening_extracts.resource_types
+     WHERE UPPER(resource_type_name) = 'FLATFILE'),
+    '1',
+    NOW()
+FROM techbd_udi_ingress.tenants t
+WHERE UPPER(t.tenant_name) IN (
+    'AET', 'AMI', 'CDP', 'CEN', 'EMB', 'EHP',
+    'FID', 'HAM', 'IDP', 'ICL', 'MOL', 'MPS',
+    'NAS', 'RSG', 'UTD', 'VIC', 'VNS'
+)
+ON CONFLICT (tenant_id) DO NOTHING;
+
+INSERT INTO screening_extracts.mco_screening_preferences
+    (tenant_id, resource_type_id, is_active, created_on_utc)
+SELECT
+    t.tenant_id,
+    (SELECT resource_type_id
+     FROM screening_extracts.resource_types
+     WHERE UPPER(resource_type_name) = 'BUNDLE'),
+    '1',
+    NOW()
+FROM techbd_udi_ingress.tenants t
+WHERE UPPER(t.tenant_name) IN (
+    'ANT', 'ELD', 'HEF', 'MVP', 'WHB'
+)
+ON CONFLICT (tenant_id) DO NOTHING;

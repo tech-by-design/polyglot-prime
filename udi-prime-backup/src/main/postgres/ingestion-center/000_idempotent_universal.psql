@@ -1,0 +1,399 @@
+/**
+ * Function to register an exception and its diagnostics in the database.
+ * If you want to add more diagnostics to the same exception_id, just use
+ * the return value from the previous call and call register_issue multiple
+ * times with the same exception_id. 
+ *
+ * @param exception_id TEXT (nullable) - The unique ID for the exception. If NULL, a new UUID will be generated.
+ * @param exception_key TEXT - A key to identify the exception.
+ * @param error_msg TEXT - The error message associated with the exception.
+ * @param sqlstate TEXT - The SQL state code returned by the database.
+ * @param pg_detail TEXT - Detailed error message provided by PostgreSQL.
+ * @param pg_hint TEXT - Hint provided by PostgreSQL to resolve the error.
+ * @param pg_context TEXT - Context of the error as provided by PostgreSQL.
+ * @param created_by TEXT (nullable) - The user who created the record. Defaults to the current user if NULL.
+ * @param provenance TEXT (nullable) - The provenance of the record. Defaults to 'unknown' if NULL.
+ * @return TEXT - The ID of the registered exception.
+ */
+DROP FUNCTION IF EXISTS techbd_udi_ingress.register_issue(text, text, text, text, text, text, text, text, text);
+DROP FUNCTION IF EXISTS techbd_udi_ingress.register_issue(text, text, text, text, text, text, text, text, text, text, jsonb);
+DROP FUNCTION IF EXISTS techbd_udi_ingress.register_issue(text, text, text, text, text, text, text, text, text, text, jsonb, text, text);
+DROP FUNCTION IF EXISTS techbd_udi_ingress.register_issue(text, text, text, text, text, text, text, text, text, text, jsonb, text, text, text);
+CREATE OR REPLACE FUNCTION techbd_udi_ingress.register_issue(
+    IN exception_id TEXT,
+    IN exception_key TEXT,
+    IN error_msg TEXT,
+    IN exception_type TEXT,
+    IN sqlstate TEXT,
+    IN pg_detail TEXT,
+    IN pg_hint TEXT,
+    IN pg_context TEXT,
+    IN created_by TEXT DEFAULT NULL,
+    IN provenance TEXT DEFAULT NULL,
+    IN elaboration JSONB DEFAULT NULL,
+    IN p_tenant_name TEXT DEFAULT NULL::text,
+    IN p_tenant_id text DEFAULT NULL::text, 
+    IN p_hub_interaction_id text DEFAULT NULL::text
+)
+RETURNS TEXT
+LANGUAGE plpgsql
+AS $$
+DECLARE
+    v_exception_id TEXT := COALESCE(exception_id, gen_random_uuid()::text);
+    v_created_by TEXT := COALESCE(created_by, current_user);
+    v_provenance TEXT := COALESCE(provenance, 'unknown');
+BEGIN
+    -- Insert into hub_diagnostic, ignore conflicts
+    INSERT INTO techbd_udi_ingress.hub_diagnostic (hub_diagnostic_id, key, created_at, created_by, provenance)
+    VALUES (v_exception_id, exception_key, clock_timestamp(), v_created_by, v_provenance)
+    ON CONFLICT (hub_diagnostic_id) DO NOTHING;
+
+    -- Insert into sat_diagnostic_exception
+    INSERT INTO techbd_udi_ingress.sat_diagnostic_exception (
+        sat_diagnostic_exception_id, hub_diagnostic_id, exception_type, message, err_returned_sqlstate,
+        err_pg_exception_detail, err_pg_exception_hint, err_pg_exception_context, elaboration, created_at, created_by, provenance, tenant_name, tenant_id, hub_interaction_id
+    )
+    VALUES (
+        gen_random_uuid()::text, v_exception_id, exception_type, error_msg, sqlstate,
+        pg_detail, pg_hint, pg_context, elaboration, clock_timestamp(), v_created_by, v_provenance, p_tenant_name, p_tenant_id, p_hub_interaction_id
+    );
+
+    -- Return the exception ID
+    RETURN v_exception_id;
+END;
+$$;
+
+/*==============================================================================================================*/
+CREATE OR REPLACE FUNCTION techbd_udi_ingress.convert_csv_to_json(p_csv_data text, p_delimiter text DEFAULT ','::text)
+ RETURNS jsonb
+ LANGUAGE plpgsql
+AS $function$
+DECLARE
+  	json_result jsonb;
+	field_names text[];
+	sql_query text;
+	i int;
+	sample_json jsonb;
+	 first_line text;
+begin
+	
+-- Check if the delimiter is present in the CSV data
+  first_line := (SELECT unnest(string_to_array(p_csv_data, E'\n')) LIMIT 1);
+  IF position(p_delimiter in first_line) = 0 THEN
+    RAISE EXCEPTION 'Delimiter "%" not found in the CSV data.', p_delimiter;
+  END IF;
+ 
+  -- Wrap CTE in a subquery to avoid syntax error
+  WITH row_data AS (
+    SELECT jsonb_agg(
+      to_jsonb(
+        string_to_array(line, p_delimiter)
+      )
+    ) AS json_obj
+    FROM (
+      SELECT unnest(string_to_array(p_csv_data, E'\n')) AS line
+    ) AS s
+  )
+  -- Select the aggregated JSONB object into a variable
+  SELECT json_obj INTO json_result FROM row_data;
+  -- Return the aggregated JSONB object
+  RETURN json_result;
+END;
+$function$
+;
+
+/*==============================================================================================================*/
+CREATE OR REPLACE FUNCTION techbd_udi_ingress.generate_view_ddl(where_clause text DEFAULT 'content_type = ''text/csv'''::text)
+ RETURNS SETOF text
+ LANGUAGE plpgsql
+AS $function$
+DECLARE
+    rec RECORD;
+    view_ddl text := '';
+    column_names TEXT[];
+    view_name text := '';
+BEGIN
+    FOR rec IN EXECUTE 'SELECT artifact_id, content, provenance FROM artifact WHERE ' || where_clause
+    LOOP
+        -- Extract column names from the first row of content_json
+       	column_names := ARRAY(SELECT jsonb_array_elements_text((rec.content::jsonb)->0));
+        
+        -- Extract view name from provenance JSON
+        view_name := (rec.provenance::jsonb)->>'viewName';
+       
+        -- Generate the DROP VIEW IF EXISTS statement
+        view_ddl := 'DROP VIEW IF EXISTS ' || quote_ident(view_name) || ';';       	 
+        RETURN NEXT view_ddl;
+        
+        -- Generate the CREATE VIEW statement
+        view_ddl := 'CREATE VIEW ' || quote_ident(view_name) || ' AS SELECT ';
+        
+        -- Add column definitions to the CREATE VIEW statement
+        /*FOR i IN 1 .. array_length(column_names, 1)
+        LOOP
+            view_ddl := view_ddl || 'content::jsonb->>' || quote_ident(column_names[i]) || ' AS ' || quote_ident(column_names[i]);
+            IF i < array_length(column_names, 1) THEN
+                view_ddl := view_ddl || ', ';
+            END IF;
+        END LOOP;*/
+              
+		FOR i IN 1 .. array_length(column_names, 1)
+		LOOP
+		    view_ddl := view_ddl || 'json_data_array->>' || i-1 || ' AS ' || column_names[i];
+			IF i < array_length(column_names, 1) THEN
+			    view_ddl := view_ddl || ', ';
+			END IF;
+		END LOOP;
+        
+        -- Add the FROM clause with the artifact_id condition
+        --view_ddl := view_ddl || ' FROM artifact WHERE artifact_id = ' || quote_literal(rec.artifact_id) || ';';       
+       	--view_ddl := view_ddl || ' FROM artifact, jsonb_array_elements(content::jsonb) WITH ORDINALITY arr(json_data_array, ord) WHERE arr.ord > 1 and artifact_id = ' || quote_literal(rec.artifact_id) || ';';
+        
+        RETURN NEXT view_ddl;
+    END LOOP;
+    RETURN;
+END;
+$function$
+;
+
+DROP FUNCTION IF EXISTS techbd_udi_ingress.get_tenant_details(text, text, timestamp with time zone, text);
+CREATE OR REPLACE FUNCTION techbd_udi_ingress.get_tenant_details(
+    p_tenant_name text,
+    p_created_by  text DEFAULT NULL,
+    p_created_at  timestamp with time zone DEFAULT NULL,
+    p_provenance  text DEFAULT NULL
+)
+RETURNS JSON
+LANGUAGE plpgsql
+AS $$
+DECLARE
+    v_result JSON;
+    v_tenant_id UUID;
+BEGIN
+
+   IF (p_tenant_name IS NULL OR TRIM(p_tenant_name) = '') THEN
+      RETURN json_build_object(
+          'status','error',
+          'message','tenant name cannot be empty'
+      );
+   END IF;
+   
+   SELECT tenant_id INTO v_tenant_id
+   FROM techbd_udi_ingress.tenants
+   WHERE LOWER(tenant_name) = LOWER(p_tenant_name);
+   
+   IF v_tenant_id IS NULL THEN
+      IF p_provenance = 'register_user_interaction' THEN 
+			-- For the user UI interactions, no need to save a new tenant
+			RETURN json_build_object(
+		          'status','error',
+		          'message','Tenant Name not exists in the tenants table.'
+		      );
+	  END IF;
+
+      v_tenant_id := gen_random_uuid();
+
+      INSERT INTO techbd_udi_ingress.tenants (
+          tenant_id,
+          tenant_name,
+          tenant_displayname,
+          tenant_short_code,
+		  fusion_auth_group_id,
+          provenance,
+          created_at,
+          created_by
+      ) VALUES (
+          v_tenant_id,
+          LOWER(p_tenant_name),
+          p_tenant_name,
+          LOWER(p_tenant_name),
+		  NULL,
+          p_provenance,
+          COALESCE(p_created_at, CURRENT_TIMESTAMP),
+          p_created_by        
+      );
+
+      v_result := json_build_object(
+          'status','success',
+          'message','tenant created successfully',
+          'tenant_id', v_tenant_id
+      );
+
+   ELSE
+      v_result := json_build_object(
+          'status','success',
+          'message','tenant already exists',
+          'tenant_id', v_tenant_id
+      );
+   END IF;
+
+   RETURN v_result;
+
+EXCEPTION WHEN OTHERS THEN
+    RETURN json_build_object(
+        'status','error',
+        'message', SQLERRM,
+        'code', SQLSTATE
+    );
+END;
+$$;
+
+/*
+ * PostgreSQL function to insert or update user session details.
+ *
+ * - The session_id is of type UUID. It will be NULL during session creation
+ *   and generated during the insert operation.
+ *
+ * - The following fields are mandatory during session creation:
+ *     username, session_start_time, session_expiry_time, and source.
+ *
+ * - The session_end_time is updated when the user logs out.
+ *
+ * - The session_expiry_time is updated when the session is renewed
+ *   (e.g., during token refresh).
+ *
+ * - The session_id must be provided when updating session_end_time
+ *   or session_expiry_time.
+ * 
+ * - Session_id is getting as response when insert / update operation
+ */
+
+DROP FUNCTION IF EXISTS techbd_udi_ingress.upsert_user_session(TEXT, TEXT, TEXT, TIMESTAMPTZ, TIMESTAMPTZ, TIMESTAMPTZ, TEXT, JSON);
+DROP FUNCTION IF EXISTS techbd_udi_ingress.upsert_user_session(TEXT, TEXT, TEXT, TIMESTAMPTZ, TIMESTAMPTZ, TIMESTAMPTZ, TEXT, JSONB);
+DROP FUNCTION IF EXISTS techbd_udi_ingress.upsert_user_session(TEXT, TEXT, TEXT, TIMESTAMPTZ, TIMESTAMPTZ, TIMESTAMPTZ, TEXT, JSONB, JSONB);
+
+CREATE OR REPLACE FUNCTION techbd_udi_ingress.upsert_user_session(
+    p_session_id TEXT,
+    p_user_id TEXT,
+    p_username TEXT,    
+    p_session_start_time timestamp with time zone,
+    p_session_end_time timestamp with time zone,
+    p_session_expiry_time timestamp with time zone,
+    p_source TEXT,
+    p_provenance JSONB,
+    p_fusion_auth_response JSONB DEFAULT NULL
+)
+RETURNS JSONB
+LANGUAGE plpgsql
+AS $$
+DECLARE
+    v_result            JSONB 	:= NULL;
+    v_session_id        TEXT;
+    v_error_msg 		TEXT;
+    v_error_type 		TEXT;
+    v_sqlstate 			TEXT;
+    v_pg_detail 		TEXT;
+    v_pg_hint 			TEXT;
+    v_pg_context 		TEXT;
+    v_exception_id 		TEXT 	:= gen_random_uuid()::text;
+    --v_tenant_id 	  	TEXT	:= COALESCE(techbd_udi_ingress.get_tenant_details('N/A', CURRENT_USER, CURRENT_TIMESTAMP, 'upsert_user_session') ->> 'tenant_id', '');
+    v_updated_count     INT     := 0;
+BEGIN
+    /* If existing session_id is active during fresh login and session_end_time is null.It will update session_end_time 
+     * if session expiry is is less than current date time and freshs session will be created. */
+    IF p_session_id IS NOT NULL AND TRIM(p_session_id) <> '' AND p_session_end_time IS NULL THEN 
+            UPDATE techbd_udi_ingress.user_sessions
+            SET session_end_time = COALESCE(session_expiry_time, CURRENT_TIMESTAMP),
+                updated_at = CURRENT_TIMESTAMP,
+                updated_by = p_user_id
+            WHERE session_id = p_session_id::TEXT
+                AND session_end_time IS NULL
+                AND session_expiry_time < CURRENT_TIMESTAMP;
+            
+            GET DIAGNOSTICS v_updated_count = ROW_COUNT;
+        
+            IF v_updated_count > 0 THEN
+                p_session_id := NULL;
+                v_session_id := NULL;
+            END IF;       
+    END IF;
+    
+    IF (p_session_id IS NULL OR p_session_id = '') THEN
+            v_session_id := gen_random_uuid();
+    ELSE
+            v_session_id := p_session_id::UUID;
+    END IF;   
+
+    IF p_session_id IS NULL OR TRIM(p_session_id) = '' THEN        
+            INSERT INTO techbd_udi_ingress.user_sessions (
+                session_id,
+                user_id,
+                username,            
+                session_start_time,
+                session_end_time,
+                session_expiry_time,
+                source,
+                provenance,
+                created_at,
+                created_by,
+                fusion_auth_response
+            )
+            VALUES (
+                v_session_id::TEXT,
+                p_user_id,
+                p_username,            
+                p_session_start_time,
+                p_session_end_time,
+                p_session_expiry_time,
+                p_source,
+                p_provenance,
+                CURRENT_TIMESTAMP,
+                p_username,
+                p_fusion_auth_response
+            );
+
+            v_result := json_build_object(
+                'status','success',
+                'message','Session created successfully',
+                'session_id', v_session_id::TEXT
+            );
+
+    ELSE    
+            UPDATE techbd_udi_ingress.user_sessions
+            SET
+                session_end_time    = COALESCE(p_session_end_time, session_end_time),
+                session_expiry_time = COALESCE(p_session_expiry_time, session_expiry_time),
+                updated_at          = CURRENT_TIMESTAMP,
+                updated_by          = p_username
+            WHERE session_id = v_session_id::TEXT;
+        
+            v_result := json_build_object(
+                'status','success',
+                'message','Session updated successfully',
+                'session_id', v_session_id
+            );
+    END IF;
+
+    RETURN v_result;
+
+EXCEPTION WHEN OTHERS THEN
+    /*RETURN json_build_object(
+        'status','error',
+        'message', SQLERRM,
+        'code', SQLSTATE
+    );*/
+        -- Capture exception details
+        GET STACKED DIAGNOSTICS
+            v_error_msg = MESSAGE_TEXT,
+            v_sqlstate = RETURNED_SQLSTATE,
+            v_pg_detail = PG_EXCEPTION_DETAIL,
+            v_pg_hint = PG_EXCEPTION_HINT,
+            v_pg_context = PG_EXCEPTION_CONTEXT;
+            v_error_type = 'SQL';
+	
+	-- Save the log details into table
+	v_result := jsonb_build_object(
+								'status','error',
+                                'message', SQLERRM,
+                                'code', SQLSTATE,
+                                'error_message', v_error_msg,
+                                'user_id', p_user_id,
+                                'user_name', p_username
+								);
+
+	v_exception_id := techbd_udi_ingress.register_issue(
+        v_exception_id, 'session', v_error_msg, v_error_type, v_sqlstate, v_pg_detail, v_pg_hint, v_pg_context, COALESCE(p_user_id, p_username, CURRENT_USER), '', v_result, 'N/A', null, null
+    );
+   	RETURN v_result;
+END;
+$$;

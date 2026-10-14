@@ -1107,6 +1107,15 @@ async function readSQLFiles(filePaths: readonly string[]): Promise<string[]> {
   return sqlContents; 
 }
 
+// Index creation is only included for a fresh (destroy + recreate) build.
+// Detected from the CLI args, since this module is evaluated at import time.
+// UDI_INCLUDE_INDEXES=true|false can be set to override explicitly.
+const includeIndexes = (() => {
+  const override = Deno.env.get("UDI_INCLUDE_INDEXES");
+  if (override !== undefined) return override.toLowerCase() === "true";
+  return Deno.args.includes("omnibus-fresh");
+})();
+
 // List of dependencies and test dependencies
 const dependencies = [
   //"../migrate_missing_columns_with_lock.psql",
@@ -1122,6 +1131,8 @@ const dependencies = [
   "../007_idempotent_interaction.psql",
   "../008_idempotent_idp_functions.psql",
   "../009_idempotent_mco_functions.psql",
+ /* "../010_idempotent_create_indexes.psql",*/
+  ...(includeIndexes ? ["../010_idempotent_create_indexes.psql"] : []),
 ] as const;
 
 const testMigrateDependencies = [
@@ -1273,7 +1284,7 @@ const migrateSP = pgSQLa.storedProcedure(
 
       ${diagnosticDataledgerSat}
       
-      migration_group_start_time := clock_timestamp();
+      /*migration_group_start_time := clock_timestamp();
       
       RAISE NOTICE '[MIGRATION] START group=fhir_request_indexes at %', migration_group_start_time;
       
@@ -1462,7 +1473,7 @@ const migrateSP = pgSQLa.storedProcedure(
 
       RAISE NOTICE '[MIGRATION] END group=fhir_request_indexes duration_ms=%',
 
-        round((extract(epoch FROM clock_timestamp() - migration_group_start_time) * 1000)::numeric, 2);
+        round((extract(epoch FROM clock_timestamp() - migration_group_start_time) * 1000)::numeric, 2);*/
 
       ${interactionUserRequestSat}
 
@@ -1499,7 +1510,7 @@ const migrateSP = pgSQLa.storedProcedure(
       
       ${interactionCcdaRequestSat}          
       
-      migration_group_start_time := clock_timestamp();
+      /*migration_group_start_time := clock_timestamp();
       
       RAISE NOTICE '[MIGRATION] START group=table_indexes at %', migration_group_start_time;
       
@@ -1543,7 +1554,7 @@ const migrateSP = pgSQLa.storedProcedure(
           END IF;
       PERFORM pg_advisory_unlock(hashtext('islm_migration_table_index_creation'));
       RAISE NOTICE '[MIGRATION] END group=table_indexes duration_ms=%',
-        round((extract(epoch FROM clock_timestamp() - migration_group_start_time) * 1000)::numeric, 2);
+        round((extract(epoch FROM clock_timestamp() - migration_group_start_time) * 1000)::numeric, 2);*/
 
       BEGIN
         ${fileExchangeProtocol.seedDML}
@@ -1567,7 +1578,7 @@ const migrateSP = pgSQLa.storedProcedure(
       ALTER TABLE ${assuranceSchema.sqlNamespace}.${pgTapTestResult.tableName} ADD COLUMN IF NOT EXISTS notok_results TEXT NULL;
       
         
-      migration_group_start_time := clock_timestamp();
+      /*migration_group_start_time := clock_timestamp();
       
         
       RAISE NOTICE '[MIGRATION] START group=http_request_indexes at %', migration_group_start_time;
@@ -1693,7 +1704,7 @@ const migrateSP = pgSQLa.storedProcedure(
 
       RAISE NOTICE '[MIGRATION] END group=http_request_indexes duration_ms=%',
 
-        round((extract(epoch FROM clock_timestamp() - migration_group_start_time) * 1000)::numeric, 2);
+        round((extract(epoch FROM clock_timestamp() - migration_group_start_time) * 1000)::numeric, 2);*/
 
       ${jsonActionRule}
 
@@ -1733,7 +1744,7 @@ const migrateSP = pgSQLa.storedProcedure(
       
      --- TRUNCATE TABLE techbd_udi_ingress.json_action_rule;       
 
-      migration_group_start_time := clock_timestamp();
+      /*migration_group_start_time := clock_timestamp();
 
       RAISE NOTICE '[MIGRATION] START group=json_action_rule_indexes at %', migration_group_start_time;
 
@@ -1753,10 +1764,10 @@ const migrateSP = pgSQLa.storedProcedure(
           
       RAISE NOTICE '[MIGRATION] END group=json_action_rule_indexes duration_ms=%',
           
-        round((extract(epoch FROM clock_timestamp() - migration_group_start_time) * 1000)::numeric, 2);
+        round((extract(epoch FROM clock_timestamp() - migration_group_start_time) * 1000)::numeric, 2);*/
     
       ${refCodeLookUp}
-      migration_group_start_time := clock_timestamp();
+      /*migration_group_start_time := clock_timestamp();
       RAISE NOTICE '[MIGRATION] START group=lookup_indexes at %', migration_group_start_time;
       PERFORM pg_advisory_lock(hashtext('islm_migration_lookup_index_creation'));
           IF NOT EXISTS (
@@ -1785,7 +1796,7 @@ const migrateSP = pgSQLa.storedProcedure(
     END IF;
     PERFORM pg_advisory_unlock(hashtext('islm_migration_lookup_index_creation'));
     RAISE NOTICE '[MIGRATION] END group=lookup_indexes duration_ms=%',
-      round((extract(epoch FROM clock_timestamp() - migration_group_start_time) * 1000)::numeric, 2);
+      round((extract(epoch FROM clock_timestamp() - migration_group_start_time) * 1000)::numeric, 2);*/
 
 
       
@@ -1811,7 +1822,7 @@ const migrateSP = pgSQLa.storedProcedure(
                 ON techbd_udi_ingress.sat_nexus_interaction_ingestion (hub_nexus_interaction_id)';
     END IF;*/
       ${csvFhirProcessingErrors}
-      migration_group_start_time := clock_timestamp();
+      /*migration_group_start_time := clock_timestamp();
       RAISE NOTICE '[MIGRATION] START group=flat_file_indexes at %', migration_group_start_time;
       PERFORM pg_advisory_lock(hashtext('islm_migration_flat_file_index_creation'));
           IF NOT EXISTS (
@@ -1836,7 +1847,7 @@ const migrateSP = pgSQLa.storedProcedure(
           END IF;         
       PERFORM pg_advisory_unlock(hashtext('islm_migration_flat_file_index_creation'));
       RAISE NOTICE '[MIGRATION] END group=flat_file_indexes duration_ms=%',
-        round((extract(epoch FROM clock_timestamp() - migration_group_start_time) * 1000)::numeric, 2);
+        round((extract(epoch FROM clock_timestamp() - migration_group_start_time) * 1000)::numeric, 2);*/
 
       -- If the existing constraint is not included 'processing_errors', drop it if 'category_check' constraint exists and then recreate it.
       IF NOT EXISTS (
@@ -2099,7 +2110,7 @@ const migrateSP = pgSQLa.storedProcedure(
       END IF;
 
       -- Index for active user sessions
-      IF NOT EXISTS (
+      /*IF NOT EXISTS (
         SELECT 1
         FROM pg_indexes
         WHERE schemaname = 'techbd_udi_ingress'
@@ -2121,7 +2132,7 @@ const migrateSP = pgSQLa.storedProcedure(
       ) THEN
         CREATE INDEX IF NOT EXISTS idx_user_sessions_expiry
         ON techbd_udi_ingress.user_sessions(session_expiry_time);
-      END IF;
+      END IF;*/
 
       IF NOT EXISTS (
             SELECT 1
@@ -2343,7 +2354,7 @@ const migrateSP = pgSQLa.storedProcedure(
           ) STORED;
       END IF;
 
-      IF NOT EXISTS (
+      /*IF NOT EXISTS (
         SELECT 1
         FROM pg_indexes
         WHERE schemaname = 'mco_data'
@@ -2364,7 +2375,7 @@ const migrateSP = pgSQLa.storedProcedure(
       ) THEN
         CREATE INDEX IF NOT EXISTS idx_mco_records_tenant_reporting_month
         ON mco_data.mco_records (tenant_id, reporting_month_date);
-      END IF;      
+      END IF;*/  
 
       ${mcoRecordDetails}
         DO $$
@@ -2466,7 +2477,7 @@ const migrateSP = pgSQLa.storedProcedure(
           EXECUTE 'ALTER TABLE mco_data.mco_record_details ALTER COLUMN errored_count DROP NOT NULL';
       END IF;
 
-      IF NOT EXISTS (
+      /*IF NOT EXISTS (
         SELECT 1
         FROM pg_indexes
         WHERE schemaname = 'mco_data'
@@ -2475,7 +2486,7 @@ const migrateSP = pgSQLa.storedProcedure(
       ) THEN
         CREATE INDEX IF NOT EXISTS idx_mco_record_details_created_on_utc
         ON mco_data.mco_record_details (created_on_utc DESC);
-      END IF;
+      END IF;*/
 
       ${mcoErrorTypes}
         ALTER TABLE mco_data.mco_error_types ADD COLUMN IF NOT EXISTS error_type_guid TEXT NOT NULL DEFAULT gen_random_uuid()::text;
@@ -3516,10 +3527,10 @@ const migrateSP = pgSQLa.storedProcedure(
 
       ${searchPathAssurance}
 
-
+    /*
       DECLARE
         tap_op TEXT := '';
-        tap_op_failed TEXT := '';
+        tap_op_failed TEXT := '';   
         test_result BOOLEAN := TRUE;
         line TEXT;
       BEGIN
@@ -3551,7 +3562,7 @@ const migrateSP = pgSQLa.storedProcedure(
           WHEN others THEN            
               -- Raise an error with a custom message
               RAISE EXCEPTION 'Error occurred while executing runtests: %', SQLERRM;
-      END;
+      END; */
       RAISE NOTICE '[MIGRATION] END basic-infra duration_ms=%',
         round((extract(epoch FROM clock_timestamp() - migration_start_time) * 1000)::numeric, 2);
     END

@@ -1,0 +1,145 @@
+DROP FUNCTION IF EXISTS info_schema_lifecycle.test_all_migration_objects(text);
+CREATE OR REPLACE FUNCTION info_schema_lifecycle.test_all_migration_objects(schema_name_txt text DEFAULT 'info_schema_lifecycle'::text)
+RETURNS SETOF text
+LANGUAGE plpgsql
+AS $function$
+DECLARE
+    ddl_statement TEXT;
+    return_mig_status INT;
+    return_object_exists INT;
+    procedure_name TEXT;
+    schema_exists BOOLEAN;
+BEGIN
+
+		-- Check if schema exists
+    SELECT EXISTS (
+        SELECT 1
+        FROM information_schema.schemata
+        WHERE schema_name = schema_name_txt
+    ) INTO schema_exists;
+
+    IF NOT schema_exists THEN
+        RETURN NEXT 'Schema ' || quote_literal(p_schema_name) || ' does not exist';
+        RETURN;
+    END IF;
+
+		procedure_name := 'migrate_v2023_10_16_10_16_stateful_sample_status';
+		IF LENGTH(procedure_name) > 63 THEN
+        RETURN NEXT 'Procedure name ' || quote_literal(procedure_name) || ' has more than 64 characters';
+        RETURN;
+    END IF;
+
+    -- Mock the migration procedure
+    ddl_statement := '
+        CREATE OR REPLACE PROCEDURE ' || quote_ident(schema_name_txt) || '."migrate_v2023_10_16_10_16_stateful_sample"()
+        LANGUAGE plpgsql
+        AS $$
+        DECLARE
+            ddl_statement TEXT;
+        BEGIN
+            ddl_statement := ''
+                CREATE TABLE IF NOT EXISTS ' || quote_ident(schema_name_txt) || '.migration_test_table (
+                    id SERIAL PRIMARY KEY,
+                    description TEXT,
+                    status INT DEFAULT 0
+                )'';
+            EXECUTE ddl_statement;
+        END;
+        $$;';
+    
+    EXECUTE ddl_statement;
+   
+    RETURN NEXT has_function(
+        schema_name_txt,  -- Schema name
+        'migrate_v2023_10_16_10_16_stateful_sample',   -- Function name
+        'Stored procedure ''migrate_v2023_10_16_10_16_stateful_sample'' should exist'
+    );
+
+    RETURN NEXT ok('migrate_v2023_10_16_10_16_stateful_sample' SIMILAR TO 'migrate_v[0-9]{4}_[0-9]{2}_[0-9]{2}_[0-9]{2}_[0-9]{2}_(stateful|idempotent)_%', 
+                   'Procedure name matches the pattern migrate_vYYYY_MM_DD_HH_MM_<stateful|idempotent>_<arbitrarytext>');
+    
+    IF EXISTS (SELECT 1 FROM information_schema.routines 
+               WHERE routine_schema = schema_name_txt 
+               AND routine_name = 'migrate_v2023_10_16_10_16_stateful_sample' 
+               AND routine_type = 'PROCEDURE') THEN
+        EXECUTE 'CALL ' || quote_ident(schema_name_txt) || '."migrate_v2023_10_16_10_16_stateful_sample"()';
+    END IF;
+
+    RETURN NEXT has_table(schema_name_txt::name, 'migration_test_table'::name);
+
+    -- Mock the migration status function to return 0 (not executed)
+    ddl_statement := '
+        CREATE OR REPLACE FUNCTION ' || quote_ident(schema_name_txt) || '."migrate_v2023_10_16_10_16_stateful_sample_status"()
+        RETURNS INT AS $$
+        DECLARE
+            status INTEGER := 0; -- Initialize status to 0 (not executed)
+        BEGIN
+            IF EXISTS (
+                SELECT FROM information_schema.columns
+                WHERE table_schema = ' || quote_literal(schema_name_txt) || '
+                AND table_name = ''migration_test_table''
+            ) THEN
+                status := 1; -- Set status to 1 (already executed)
+            END IF;
+            RETURN status; -- Return the status
+        END;
+        $$ LANGUAGE plpgsql;';
+
+    EXECUTE ddl_statement;
+
+    RETURN NEXT has_function(
+        schema_name_txt,  -- Schema name
+        'migrate_v2023_10_16_10_16_stateful_sample_status',       -- Function name
+        'Stored function ''migrate_v2023_10_16_10_16_stateful_sample_status'' exists'
+    );
+
+    RETURN NEXT ok('migrate_v2023_10_16_10_16_stateful_sample_status' SIMILAR TO 'migrate_v[0-9]{4}_[0-9]{2}_[0-9]{2}_[0-9]{2}_[0-9]{2}_(stateful|idempotent)_%_status', 
+                   'Function name matches the pattern migrate_vYYYY_MM_DD_HH_MM_<stateful|idempotent>_<arbitrarytext>_status');
+        
+    IF EXISTS (SELECT 1 FROM information_schema.routines
+               WHERE routine_schema = schema_name_txt
+               AND routine_name = 'migrate_v2023_10_16_10_16_stateful_sample_status') THEN
+        EXECUTE 'SELECT ' || quote_ident(schema_name_txt) || '."migrate_v2023_10_16_10_16_stateful_sample_status"()' INTO return_mig_status;
+        
+        RETURN NEXT ok(return_mig_status IS NOT NULL, 'Function ''migrate_v2023_10_16_10_16_stateful_sample_status'' successfully executed with return value ' 
+                        || COALESCE(return_mig_status::text, ''));
+    END IF;
+
+    ddl_statement := '
+        CREATE OR REPLACE PROCEDURE ' || quote_ident(schema_name_txt) || '."migrate_v2023_10_16_10_16_stateful_sample_undo"()
+        LANGUAGE plpgsql
+        AS $$
+        DECLARE
+            ddl_statement TEXT;
+        BEGIN
+            ddl_statement := ''DROP TABLE IF EXISTS ' || quote_ident(schema_name_txt) || '.migration_test_table;'';
+            EXECUTE ddl_statement;
+        END;
+        $$;';
+    
+    EXECUTE ddl_statement;
+
+    RETURN NEXT has_function(
+        schema_name_txt,  -- Schema name
+        'migrate_v2023_10_16_10_16_stateful_sample_undo',       -- Function name
+        'Stored procedure ''migrate_v2023_10_16_10_16_stateful_sample_undo'' should exist'
+    );
+
+    RETURN NEXT ok('migrate_v2023_10_16_10_16_stateful_sample_undo' SIMILAR TO 'migrate_v[0-9]{4}_[0-9]{2}_[0-9]{2}_[0-9]{2}_[0-9]{2}_(stateful|idempotent)_%_undo', 
+                   'Procedure name matches the pattern migrate_vYYYY_MM_DD_HH_MM_<stateful|idempotent>_<arbitrarytext>_undo');
+
+    IF EXISTS (SELECT 1 FROM information_schema.routines 
+               WHERE routine_schema = schema_name_txt 
+               AND routine_name = 'migrate_v2023_10_16_10_16_stateful_sample_undo' 
+               AND routine_type = 'PROCEDURE') THEN
+        EXECUTE 'CALL ' || quote_ident(schema_name_txt) || '."migrate_v2023_10_16_10_16_stateful_sample_undo"()';
+        
+        IF NOT EXISTS (SELECT 1 FROM information_schema.tables 
+                       WHERE table_schema = schema_name_txt 
+                       AND table_name = 'migration_test_table') THEN 
+            RETURN NEXT ok(true, 'Procedure ''migrate_v2023_10_16_10_16_stateful_sample_undo'' successfully executed');
+        END IF;
+    END IF;
+
+END;
+$function$;
