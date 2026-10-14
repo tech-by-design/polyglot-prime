@@ -1,0 +1,19 @@
+CREATE SCHEMA IF NOT EXISTS "techbd_udi_assurance";
+
+CREATE EXTENSION IF NOT EXISTS pgtap SCHEMA techbd_udi_assurance;
+
+-- TODO: figure out why this is required; when search_path is not set then seeing:
+--       `ERROR:  42883: function findfuncs(name, unknown) does not exist`
+SET search_path TO techbd_udi_assurance;
+
+--\ir ./fixtures.sql
+
+--\ir ./000-idempotent-universal-unit-test.psql
+
+--\ir ./001-idempotent-interaction-unit-test.psql
+
+--\ir ./003-idempotent-interaction-view-explain-plan.psql
+
+\ir ./004-idempotent-migrate-unit-test.psql
+
+SELECT * FROM techbd_udi_assurance.runtests('info_schema_lifecycle'::name, 'test_all_migration_objects');

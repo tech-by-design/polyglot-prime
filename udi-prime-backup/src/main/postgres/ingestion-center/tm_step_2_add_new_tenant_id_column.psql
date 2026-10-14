@@ -1,0 +1,71 @@
+/* Tenant Master Implementation */
+/* ** STEP 2 ** ADD NEW tenant_id COLUMN */
+/* ------------------------------------- */
+SET lock_timeout = '5s';
+SET statement_timeout = '10min';
+
+ALTER TABLE techbd_udi_ingress.dashboard_widget_metadata
+ADD COLUMN IF NOT EXISTS tenant_id TEXT;
+
+ALTER TABLE techbd_udi_ingress.sat_csv_fhir_processing_errors
+ADD COLUMN IF NOT EXISTS tenant_id TEXT;
+
+ALTER TABLE techbd_udi_ingress.sat_diagnostic_dataledger_api
+ADD COLUMN IF NOT EXISTS tenant_id TEXT;
+
+ALTER TABLE techbd_udi_ingress.sat_diagnostic_exception
+ADD COLUMN IF NOT EXISTS tenant_id TEXT;
+
+ALTER TABLE techbd_udi_ingress.sat_diagnostic_log
+ADD COLUMN IF NOT EXISTS tenant_id TEXT;
+
+ALTER TABLE techbd_udi_ingress.sat_expectation_http_request
+ADD COLUMN IF NOT EXISTS tenant_id TEXT;
+
+ALTER TABLE techbd_udi_ingress.sat_interaction_ccda_request
+ADD COLUMN IF NOT EXISTS tenant_id TEXT;
+
+ALTER TABLE techbd_udi_ingress.sat_interaction_ccda_validation_errors
+ADD COLUMN IF NOT EXISTS tenant_id TEXT;
+
+ALTER TABLE techbd_udi_ingress.sat_interaction_fhir_request
+ADD COLUMN IF NOT EXISTS tenant_id TEXT;
+
+ALTER TABLE techbd_udi_ingress.sat_interaction_fhir_screening_info
+ADD COLUMN IF NOT EXISTS tenant_id TEXT;
+
+ALTER TABLE techbd_udi_ingress.sat_interaction_fhir_screening_organization
+ADD COLUMN IF NOT EXISTS tenant_id TEXT;
+
+ALTER TABLE techbd_udi_ingress.sat_interaction_fhir_screening_patient
+ADD COLUMN IF NOT EXISTS tenant_id TEXT;
+
+ALTER TABLE techbd_udi_ingress.sat_interaction_fhir_session_diagnostic
+ADD COLUMN IF NOT EXISTS tenant_id TEXT;
+
+ALTER TABLE techbd_udi_ingress.sat_interaction_fhir_validation_issue
+ADD COLUMN IF NOT EXISTS tenant_id TEXT;
+
+ALTER TABLE techbd_udi_ingress.sat_interaction_file_exchange
+ADD COLUMN IF NOT EXISTS tenant_id TEXT;
+
+ALTER TABLE techbd_udi_ingress.sat_interaction_flat_file_csv_request
+ADD COLUMN IF NOT EXISTS tenant_id TEXT;
+
+ALTER TABLE techbd_udi_ingress.sat_interaction_hl7_request
+ADD COLUMN IF NOT EXISTS tenant_id TEXT;
+
+ALTER TABLE techbd_udi_ingress.sat_interaction_hl7_validation_errors
+ADD COLUMN IF NOT EXISTS tenant_id TEXT;
+
+ALTER TABLE techbd_udi_ingress.sat_interaction_http_request
+ADD COLUMN IF NOT EXISTS tenant_id TEXT;
+
+ALTER TABLE techbd_udi_ingress.sat_interaction_user
+ADD COLUMN IF NOT EXISTS tenant_id TEXT;
+
+ALTER TABLE techbd_udi_ingress.sat_interaction_zip_file_request
+ADD COLUMN IF NOT EXISTS tenant_id TEXT;
+
+ALTER TABLE techbd_udi_ingress.users
+ADD COLUMN IF NOT EXISTS tenant_id TEXT;

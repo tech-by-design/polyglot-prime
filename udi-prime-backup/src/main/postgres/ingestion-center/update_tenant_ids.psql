@@ -1,0 +1,40 @@
+
+-- Purpose: Back fill the newly added 'tenant_id' columns for the following tables
+-- sat_diagnostic_dataledger_api 
+-- sat_diagnostic_exception 
+-- sat_diagnostic_log 
+-- sat_expectation_http_request 
+-- sat_interaction_fhir_validation_issue 
+-- sat_interaction_file_exchange 
+-- sat_interaction_fhir_screening_info 
+-- sat_interaction_fhir_screening_organization 
+-- sat_interaction_fhir_screening_patient 
+-- sat_interaction_http_request 
+
+UPDATE techbd_udi_ingress.sat_interaction_fhir_screening_info SET tenant_id = qe_name WHERE tenant_id IS NULL;
+UPDATE techbd_udi_ingress.sat_interaction_fhir_screening_organization SET tenant_id = qe_name WHERE tenant_id IS NULL;
+UPDATE techbd_udi_ingress.sat_interaction_fhir_screening_patient SET tenant_id = qe_name WHERE tenant_id IS NULL;
+
+UPDATE techbd_udi_ingress.sat_diagnostic_log 
+SET tenant_id = elaboration ->> 'tenant_id'
+WHERE elaboration ->> 'tenant_id' IS NOT NULL AND elaboration ->> 'tenant_id' != 'N/A' AND tenant_id IS NULL;
+
+UPDATE techbd_udi_ingress.sat_diagnostic_dataledger_api dl
+SET tenant_id = fhir.tenant_id
+FROM techbd_udi_ingress.sat_interaction_fhir_request fhir 
+WHERE dl.hub_interaction_id = fhir.hub_interaction_id 
+AND SOURCE = 'FHIR'
+AND dl.tenant_id IS NULL; 
+
+UPDATE techbd_udi_ingress.sat_diagnostic_dataledger_api dl
+SET tenant_id = fhir.tenant_id
+FROM techbd_udi_ingress.sat_interaction_zip_file_request fhir 
+WHERE dl.hub_interaction_id = fhir.hub_interaction_id 
+AND dl.SOURCE = 'CSV'
+AND dl.tenant_id IS NULL;  
+
+UPDATE techbd_udi_ingress.sat_interaction_file_exchange fe
+SET tenant_id = fhir.tenant_id
+FROM techbd_udi_ingress.sat_interaction_fhir_request fhir 
+WHERE fe.hub_interaction_id = fhir.hub_interaction_id
+AND fe.tenant_id IS NULL;  

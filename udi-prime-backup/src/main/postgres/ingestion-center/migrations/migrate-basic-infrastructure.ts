@@ -1,0 +1,3698 @@
+#!/usr/bin/env -S deno run --allow-all
+
+/**
+ * This TypeScript file implements a SQL migration feature for PostgreSQL databases using Deno.
+ * It provides methods for defining and executing migrations.
+ *
+ * @module Information_Schema_Lifecycle_Management_Migration
+ */
+
+import * as dvp from "https://raw.githubusercontent.com/netspective-labs/sql-aide/v0.13.34/pattern/data-vault/mod.ts";
+import { pgSQLa } from "https://raw.githubusercontent.com/netspective-labs/sql-aide/v0.13.34/pattern/pgdcp/deps.ts";
+import { serial } from "./migrate-ddl-stored-routine-interaction.ts";
+// import { pgSQLa } from "../../../../../../../../netspective-labs/sql-aide/pattern/pgdcp/deps.ts";
+
+// deconstructed modules provide convenient access to internal imports
+const { typical: typ, typical: { SQLa, ws } } = dvp;
+
+type EmitContext = dvp.typical.SQLa.SqlEmitContext;
+
+interface MigrationVersion {
+  readonly description: string;
+  readonly dateTime: Date;
+}
+
+enum StateStatus {
+  STATEFUL = "_stateful_",
+  IDEMPOTENT = "_idempotent_",
+}
+
+const prependMigrateSPText = "migrate_";
+const appendMigrateUndoSPText = "_undo";
+const appendMigrateStatusFnText = "_status";
+
+
+const ingressSchema = SQLa.sqlSchemaDefn("techbd_udi_ingress", {
+  isIdempotent: true,
+});
+
+const assuranceSchema = SQLa.sqlSchemaDefn("techbd_udi_assurance", {
+  isIdempotent: true,
+});
+
+const diagnosticsSchema = SQLa.sqlSchemaDefn("techbd_udi_diagnostics", {
+  isIdempotent: true,
+});
+export const dvts = dvp.dataVaultTemplateState<EmitContext>({
+  defaultNS: ingressSchema,
+});
+
+const mcoSchema = SQLa.sqlSchemaDefn("mco_data", {
+  isIdempotent: true,
+});
+
+const screeningExtractsSchema = SQLa.sqlSchemaDefn("screening_extracts", {
+  isIdempotent: true,
+});
+
+const {
+  text,
+  jsonbNullable,
+  jsonB,
+  boolean,
+  textNullable,
+  dateTime,
+  dateTimeNullable,
+  integer,
+   blobTextNullable
+} = dvts.domains;
+const { ulidPrimaryKey: primaryKey } = dvts.keys;
+
+const interactionHub = dvts.hubTable("interaction", {
+  hub_interaction_id: primaryKey(),
+  key: text(),
+  ...dvts.housekeeping.columns,
+});
+
+const interactionHttpRequestSat = interactionHub.satelliteTable(
+  "http_request",
+  {
+    sat_interaction_http_request_id: primaryKey(),
+    hub_interaction_id: interactionHub.references
+      .hub_interaction_id(),
+    nature: jsonbNullable(),
+    content_type: textNullable(),
+    payload: jsonB,
+    from_state: textNullable(),
+    to_state: textNullable(),
+    state_transition_reason: textNullable(),
+    elaboration: jsonbNullable(),
+    nature_denorm: textNullable(),
+    tenant_id_denorm : textNullable(),
+    payload_text : textNullable(),
+    request_source: textNullable(),
+    techbd_version_number: textNullable(),
+    tenant_id: textNullable(),
+    tenant_name: textNullable(),
+    ...dvts.housekeeping.columns,
+  },
+);
+
+const interactionFhirRequestSat = interactionHub.satelliteTable(
+  "fhir_request",
+  {
+    sat_interaction_fhir_request_id: primaryKey(),
+    hub_interaction_id: interactionHub.references
+      .hub_interaction_id(),
+    tenant_id: text(),
+    tenant_id_lower: textNullable(),
+    uri: text(),
+    nature: text(),
+    payload: jsonB,
+    client_ip_address: textNullable(),
+    user_agent: text(),
+    from_state: textNullable(),
+    to_state: textNullable(),
+    state_transition_reason: textNullable(),
+    outbound_http_message: textNullable(),
+    error_message: textNullable(),
+    issues_count: integer().default(0),
+    bundle_id: textNullable(),
+    bundle_session_id: textNullable(),
+    bundle_last_updated: dateTimeNullable(),
+    organization_id: textNullable(),
+    organization_name: textNullable(),
+    patient_id: textNullable(),
+    patient_mrn: textNullable(),
+    resource_type_set: textNullable(),
+    validation_initiated_at: dateTimeNullable(),
+    validation_completed_at: dateTimeNullable(),
+    interaction_start_time: dateTimeNullable(),
+    interaction_end_time: dateTimeNullable(),
+    validation_engine: textNullable(),
+    ig_version: textNullable(),
+    profile_url : textNullable(),
+    passed: boolean().default(false),
+    medicaid_cin: textNullable(),
+    elaboration: jsonbNullable(),
+    additional_details: jsonbNullable(),
+    techbd_disposition_action: textNullable(),
+    techbd_version_number: textNullable(),
+    patient_mrn_source_system: textNullable(),
+    source_type: textNullable(),
+    source_hub_interaction_id: textNullable(),
+    group_hub_interaction_id: textNullable(),
+    is_bundle_valid: boolean().default(false),
+    bundle_type: textNullable(),
+    replay_status: textNullable(), //True/False/Null
+    replay_on: dateTimeNullable(),
+    tenant_name: textNullable(),
+    ...dvts.housekeeping.columns,
+  },
+);
+
+const interactionUserRequestSat = interactionHub.satelliteTable(
+  "user",
+  {
+    sat_interaction_user_id: primaryKey(),
+    hub_interaction_id: interactionHub.references
+      .hub_interaction_id(),
+    uri: textNullable(),
+    nature: textNullable(),
+    tenant_id: textNullable(),
+    user_id: textNullable(),
+    user_name: textNullable(),
+    user_session: textNullable(),
+    user_role: textNullable(),
+    client_ip_address: textNullable(),
+    user_agent: textNullable(),
+    interaction_start_time: dateTimeNullable(),
+    interaction_end_time: dateTimeNullable(),
+    elaboration: jsonbNullable(),
+    user_session_hash: textNullable(),
+    techbd_version_number: textNullable(),
+    ig_version: textNullable(),
+    tenant_name: textNullable(),
+    ...dvts.housekeeping.columns,
+  },
+);
+
+const interactionUIUserSat = interactionHub.satelliteTable(
+  "ui_user",
+  {
+    sat_interaction_ui_user_id: primaryKey(),
+    hub_interaction_id: interactionHub.references
+      .hub_interaction_id(),
+    uri: textNullable(),
+    nature: textNullable(),
+    tenant_id: textNullable(),
+    user_id: textNullable(),
+    user_name: textNullable(),
+    user_session: textNullable(),
+    user_role: textNullable(),
+    client_ip_address: textNullable(),
+    user_agent: textNullable(),
+    interaction_start_time: dateTimeNullable(),
+    interaction_end_time: dateTimeNullable(),
+    elaboration: jsonbNullable(),
+    user_session_hash: textNullable(),
+    techbd_version_number: textNullable(),
+    ig_version: textNullable(),
+    tenant_name: textNullable(),
+    ...dvts.housekeeping.columns,
+  },
+);
+
+const interactionFhirSessionDiagnosticSat = interactionHub.satelliteTable(
+  "fhir_session_diagnostic",
+  {
+    sat_interaction_fhir_session_diagnostic_id: primaryKey(),
+    hub_interaction_id: interactionHub.references
+      .hub_interaction_id(),
+    tenant_id: text(),
+    uri: text(),
+    session_id: textNullable(),
+    severity: textNullable(),
+    message: textNullable(),
+    line: textNullable(),
+    column: textNullable(),
+    diagnostics: textNullable(),
+    encountered_at: textNullable(),
+    elaboration: jsonbNullable(),
+    ig_version: textNullable(),
+    validation_engine: textNullable(),
+    bundle_id: textNullable(),
+    techbd_version_number: textNullable(),
+    tenant_name: textNullable(),
+    ...dvts.housekeeping.columns,
+  },
+);
+
+
+const interactionFhirScreeningInfoSat = interactionHub.satelliteTable(
+  "fhir_screening_info",
+  {
+    sat_interaction_fhir_screening_info_id: primaryKey(),
+    hub_interaction_id: interactionHub.references
+      .hub_interaction_id(),
+    qe_name : text(),
+    submitted_date_time: dateTimeNullable(),
+    survey_date_time: textNullable(),
+    patient_mrn: textNullable(),
+    full_name: textNullable(),
+    last_name: textNullable(),
+    first_name: textNullable(),
+    org_id: textNullable(),
+    org_name: textNullable(),
+    total_safety_score: textNullable(),
+    areas_of_interest: textNullable(),
+    elaboration: jsonbNullable(),
+    tenant_id: textNullable(),
+    tenant_name: textNullable(),
+    ...dvts.housekeeping.columns,
+  },
+);
+
+
+const interactionFhirScreeningPatientSat = interactionHub.satelliteTable(
+  "fhir_screening_patient",
+  {
+    sat_interaction_fhir_screening_patient_id: primaryKey(),
+    hub_interaction_id: interactionHub.references
+      .hub_interaction_id(),
+    qe_name : text(),
+    patient_mrn: textNullable(),
+    patient_id: textNullable(),
+    patient_type: textNullable(),
+    patient_full_name: textNullable(),
+    patient_first_name: textNullable(),
+    patient_last_name: textNullable(),
+    patient_gender: textNullable(),
+    patient_birth_date: textNullable(),
+    patient_address: textNullable(),
+    patient_city: textNullable(),
+    patient_state: textNullable(),
+    patient_postal_code: textNullable(),
+    patient_language: textNullable(),
+    patient_ssn: textNullable(),
+    org_id: textNullable(),
+    elaboration: jsonbNullable(),
+    primary_org_id: textNullable(), 
+    tenant_id: textNullable(),
+    tenant_name: textNullable(),
+    ...dvts.housekeeping.columns,
+  },
+);
+
+
+const interactionFhirScreeninOrganizationSat = interactionHub.satelliteTable(
+  "fhir_screening_organization",
+  {
+    sat_interaction_fhir_screening_organization_id: primaryKey(),
+    hub_interaction_id: interactionHub.references
+      .hub_interaction_id(),
+    qe_name : text(),
+    org_id: textNullable(),
+    org_type: textNullable(),
+    org_name: textNullable(),
+    org_active: textNullable(),
+    org_address: textNullable(),
+    org_city: textNullable(),
+    org_state: textNullable(),
+    org_postal_code: textNullable(),
+    elaboration: jsonbNullable(),
+    tenant_id: textNullable(),
+    tenant_name: textNullable(),
+    ...dvts.housekeeping.columns,
+  },
+);
+
+
+const interactionFhirValidationIssueSat = interactionHub.satelliteTable(
+  "fhir_validation_issue",
+  {
+    sat_interaction_fhir_validation_issue_id: primaryKey(),
+    hub_interaction_id: interactionHub.references
+      .hub_interaction_id(),
+    issue : textNullable(),
+    date_time: dateTimeNullable(),
+    validation_engine: textNullable(),
+    ig_version: textNullable(),
+    elaboration: jsonbNullable(),
+    severity : textNullable(),
+    profile_url: textNullable(),
+    techbd_version_number: textNullable(),
+    tenant_id: textNullable(),
+    profile_url_domain: textNullable(),
+    tenant_name: textNullable(),
+    ...dvts.housekeeping.columns,
+  },
+);
+
+
+const interactionCsvRequestSat = interactionHub.satelliteTable(
+  "flat_file_csv_request",
+  {
+    sat_interaction_flat_file_csv_request_id: primaryKey(),
+    hub_interaction_id: interactionHub.references
+      .hub_interaction_id(),
+    tenant_id: text(),
+    tenant_id_lower: textNullable(),
+    uri: text(),
+    nature: text(),
+    group_id: textNullable(),
+    status: textNullable(),
+    validation_result_payload: jsonbNullable(),
+    demographic_data_payload_text: textNullable(),
+    qe_admin_data_payload_text: textNullable(),
+    demographic_data_file_name: textNullable(),
+    qe_admin_data_file_name: textNullable(),
+    client_ip_address: textNullable(),
+    user_agent: textNullable(),
+    from_state: textNullable(),
+    to_state: textNullable(),
+    state_transition_reason: textNullable(),
+    elaboration: jsonbNullable(),
+    screening_observation_data_payload_text: textNullable(),
+    screening_profile_data_payload_text: textNullable(),
+    screening_observation_data_file_name: textNullable(),
+    screening_profile_data_file_name: textNullable(),
+    zip_file_hub_interaction_id: textNullable(),
+    techbd_version_number: textNullable(),
+    tenant_name: textNullable(),
+    ...dvts.housekeeping.columns,
+  },
+);
+
+const interactionZipRequestSat = interactionHub.satelliteTable(
+  "zip_file_request",
+  {
+    sat_interaction_zip_file_request_id: primaryKey(),
+    hub_interaction_id: interactionHub.references
+      .hub_interaction_id(),
+    tenant_id: text(),
+    tenant_id_lower: textNullable(),
+    uri: text(),
+    nature: text(),
+    group_id: textNullable(),
+    status: textNullable(),
+    csv_zip_file_name: textNullable(),
+    client_ip_address: textNullable(),
+    user_agent: textNullable(),
+    elaboration: jsonbNullable(),    
+    origin: textNullable(),
+    validation_result_payload: jsonbNullable(),
+    sftp_session_id: textNullable(),
+    general_errors: jsonbNullable(),
+    techbd_version_number: textNullable(),
+    full_operation_outcome: jsonbNullable(),
+    total_number_of_files_in_zip_file: integer().default(0),
+    number_of_fhir_bundles_generated_from_zip_file: integer().default(0),
+    data_validation_status: textNullable(),
+    ig_version: textNullable(),
+    tenant_name: textNullable(),
+    ...dvts.housekeeping.columns,
+  },
+);
+
+enum EnumFileExchangeProtocol {
+  SFTP = "SFTP",
+  S3 = "S3",
+}
+
+const fileExchangeProtocol = typ.textEnumTable(
+  "file_exchange_protocol",
+  EnumFileExchangeProtocol,
+  { isIdempotent: true, sqlNS: ingressSchema },
+);
+
+const interactionfileExchangeSat = interactionHub.satelliteTable(
+  "file_exchange",
+  {
+    sat_interaction_file_exchange_id: primaryKey(),
+    hub_interaction_id: interactionHub.references
+      .hub_interaction_id(),
+    protocol: fileExchangeProtocol.references.code(),
+    elaboration: jsonbNullable(),
+    tenant_id: textNullable(),
+    tenant_name: textNullable(),
+    ...dvts.housekeeping.columns,
+  },
+);
+
+
+const hubExpectation = dvts.hubTable("expectation", {
+  hub_expectation_id: primaryKey(),
+  key: textNullable(),
+  ...dvts.housekeeping.columns,
+});
+
+const expectationHttpRequestSat = hubExpectation.satelliteTable(
+  "http_request",
+  {
+    sat_expectation_http_request_id: primaryKey(),
+    hub_expectation_id: hubExpectation.references.hub_expectation_id(),
+    content_type: textNullable(), // eg: Permission Denied to the file
+    payload: jsonB,
+    tenant_id: textNullable(),
+    tenant_name: textNullable(),
+    ...dvts.housekeeping.columns,
+  },
+);
+
+const hubDiagnostics = dvts.hubTable("diagnostic", {
+  hub_diagnostic_id: primaryKey(),
+  key: textNullable(),
+  ...dvts.housekeeping.columns,
+});
+
+const diagnosticsSat = hubDiagnostics.satelliteTable(
+  "log",
+  {
+    sat_diagnostic_log_id: primaryKey(),
+    hub_diagnostic_id: hubDiagnostics.references.hub_diagnostic_id(),
+    diagnostic_log_level: text(), 
+    diagnostic_log_message: text(),
+    user_id: text(),
+    status: text(),
+    parent_diagnostic_log_id: textNullable(),
+    hierarchy_level: integer().default(0),
+    elaboration: jsonbNullable(),
+    tenant_id: textNullable(),
+    hub_interaction_id: textNullable(),
+    tenant_name: textNullable(),
+    ...dvts.housekeeping.columns,
+  },
+);
+
+
+const exceptionDiagnosticSat = hubDiagnostics.satelliteTable(
+  "exception",
+  {
+    sat_diagnostic_exception_id: primaryKey(),
+    hub_diagnostic_id: hubDiagnostics.references.hub_diagnostic_id(),
+    exception_type: text(),
+    message: text(), // eg: Permission Denied to the file
+    err_returned_sqlstate: textNullable(),
+    err_pg_exception_detail: textNullable(),
+    err_pg_exception_hint: textNullable(),
+    err_pg_exception_context: textNullable(),
+    elaboration: jsonbNullable(),
+    tenant_id: textNullable(),
+    hub_interaction_id: textNullable(),
+    tenant_name: textNullable(),
+    ...dvts.housekeeping.columns,
+  },
+);
+
+
+const diagnosticDataledgerSat = hubDiagnostics.satelliteTable(
+  "dataledger_api",
+  {
+	sat_diagnostic_dataledger_api_id: primaryKey(),
+	hub_diagnostic_id: hubDiagnostics.references.hub_diagnostic_id(),
+	hub_interaction_id: interactionHub.references.hub_interaction_id(),
+	dataledger_url: text(),	
+	source_hub_interaction_id: textNullable(),
+	group_hub_interaction_id: textNullable(),
+	received_payload: jsonbNullable(),
+	received_status: textNullable(),
+	received_reason: textNullable(),	
+	dataledger_received_status_code: textNullable(),
+	dataledger_received_response: jsonbNullable(),
+	sent_payload: jsonbNullable(),
+	sent_status: textNullable(),
+	sent_reason: textNullable(),
+	dataledger_sent_response: jsonbNullable(),
+	dataledger_sent_status_code: textNullable(),
+	source: textNullable(),
+	additional_details: jsonbNullable(),
+  tenant_id: textNullable(),
+  tenant_name: textNullable(),
+  	...dvts.housekeeping.columns,
+},
+);
+
+
+const pgTapFixturesJSON = SQLa.tableDefinition("pgtap_fixtures_json", {
+  name: textNullable(),
+  jsonb: jsonbNullable(),
+}, {
+  isIdempotent: true,
+  sqlNS: assuranceSchema,
+  constraints: (props, tableName) => {
+    const c = SQLa.tableConstraints(tableName, props);
+    return [
+      c.unique("name"),
+    ];
+  },
+});
+
+const jsonActionRule = SQLa.tableDefinition("json_action_rule", {
+  action_rule_id: text(),
+  namespace: textNullable(),
+  json_path: textNullable(),
+  action: textNullable(),
+  condition: jsonbNullable(),
+  reject_json: jsonbNullable(),
+  modify_json: jsonbNullable(),
+  priority: integer().default(0),
+  updated_at: dateTime(),
+  updated_by: textNullable(),
+  last_applied_at: dateTimeNullable(),
+  description : textNullable(),
+  ...dvts.housekeeping.columns
+}, {
+  isIdempotent: true,
+  sqlNS: ingressSchema
+});
+
+
+const interactionHl7RequestSat = interactionHub.satelliteTable(
+  "hl7_request",
+  {
+    sat_interaction_hl7_request_id: primaryKey(),
+    hub_interaction_id: interactionHub.references
+      .hub_interaction_id(),
+    tenant_id: text(),
+    tenant_id_lower: textNullable(),
+    uri: text(),
+    nature: text(),
+    payload: jsonbNullable(),
+    client_ip_address: textNullable(),
+    user_agent: textNullable(),
+    from_state: textNullable(),
+    to_state: textNullable(),
+    state_transition_reason: textNullable(),
+    elaboration: jsonbNullable(),
+    hl7_payload_text: textNullable(),
+    origin: textNullable(),
+    techbd_version_number: textNullable(),
+    file_name: textNullable(),
+    ig_version: textNullable(),
+    tenant_name: textNullable(),
+    ...dvts.housekeeping.columns,
+  },
+);
+
+
+const interactionCcdaRequestSat = interactionHub.satelliteTable(
+  "ccda_request",
+  {
+    sat_interaction_ccda_request_id: primaryKey(),
+    hub_interaction_id: interactionHub.references
+      .hub_interaction_id(),
+    tenant_id: text(),
+    tenant_id_lower: textNullable(),
+    uri: text(),
+    nature: text(),
+    payload: jsonbNullable(),
+    ccda_payload_text: textNullable(),
+    client_ip_address: textNullable(),
+    user_agent: textNullable(),
+    from_state: textNullable(),
+    to_state: textNullable(),
+    state_transition_reason: textNullable(),
+    elaboration: jsonbNullable(),
+    origin: textNullable(),
+    techbd_version_number: textNullable(),
+    file_name: textNullable(),
+    ig_version: textNullable(),
+    ccda_authoring_device: textNullable(),
+    tenant_name: textNullable(),
+    ...dvts.housekeeping.columns,
+  },
+);
+
+const refCodeLookUp = SQLa.tableDefinition("ref_code_lookup", {
+  ref_code_lookup_id: primaryKey(),
+  code_type: text(),
+  code: text(),
+  display_string: textNullable(),
+  system_value: textNullable(),
+  description: textNullable(),
+  ig_version: textNullable(),
+  ...dvts.housekeeping.columns
+}, {
+  isIdempotent: true,
+  sqlNS: ingressSchema
+});
+
+const ccdaReplayDetails = SQLa.tableDefinition("ccda_replay_details", {
+  bundle_id: text(),
+  hub_interaction_id: textNullable(),
+  retry_interaction_id: textNullable(),
+  is_valid: boolean().default(false),
+  error_message: jsonbNullable(),
+  elaboration: jsonbNullable(),
+  retry_master_interaction_id: textNullable(),
+  new_bundle_generated: jsonbNullable(),
+  corrected_bundle: jsonbNullable(),
+  original_ccda_file: textNullable(),
+  ...dvts.housekeeping.columns
+}, {
+  isIdempotent: true,
+  sqlNS: ingressSchema
+});
+
+const csvFhirProcessingErrors = SQLa.tableDefinition("sat_csv_fhir_processing_errors", {
+  sat_validation_and_fhir_conversion_errors_id: primaryKey(),
+  category: text(),
+  flat_file_hub_interaction_id: textNullable(),
+  tenant_id: textNullable(),
+  uri: text(),
+  zip_file_hub_interaction_id: textNullable(),
+  group_id: textNullable(),
+  section: textNullable(),
+  field_name: textNullable(),
+  value: textNullable(),
+  error_type: textNullable(),
+  error_subtype: textNullable(),
+  error: textNullable(),
+  description: textNullable(),
+  row_number: textNullable(),
+  field_number: textNullable(),
+  zip_file_name: textNullable(),
+  file_name: textNullable(),
+  origin: textNullable(),
+  user_agent: textNullable(),
+  techbd_version_number: textNullable(),
+  tenant_name: textNullable(),
+  ...dvts.housekeeping.columns
+}, {
+  isIdempotent: true,
+  sqlNS: ingressSchema
+});
+
+const ccdaValidationErrorsSat = interactionHub.satelliteTable(
+  "ccda_validation_errors",
+  {
+    sat_ccda_validation_errors_id: primaryKey(),
+    hub_interaction_id: interactionHub.references
+      .hub_interaction_id(),
+    tenant_id: text(),
+    uri: text(),
+    error_type: textNullable(),
+    error: textNullable(),
+    file_name: textNullable(),
+    origin: textNullable(),
+    user_agent: textNullable(),
+    techbd_version_number: textNullable(),
+    ig_version: textNullable(),
+    tenant_name: textNullable(),
+    ...dvts.housekeeping.columns,
+  },
+);
+
+
+const hl7ValidationErrorsSat = interactionHub.satelliteTable(
+  "hl7_validation_errors",
+  {
+    sat_hl7_validation_errors_id: primaryKey(),
+    hub_interaction_id: interactionHub.references
+      .hub_interaction_id(),
+    tenant_id: text(),
+    uri: text(),
+    error_type: textNullable(),
+    error: textNullable(),
+    file_name: textNullable(),
+    origin: textNullable(),
+    user_agent: textNullable(),
+    techbd_version_number: textNullable(),
+    ig_version: textNullable(),
+    tenant_name: textNullable(),
+    ...dvts.housekeeping.columns,
+  },
+);
+
+const users = SQLa.tableDefinition("users", {
+    id: primaryKey(),
+    github_id:text(),
+    name:text(),
+    tenant_id:textNullable(),
+    role:textNullable(),
+    tenant_name: textNullable(),
+    ...dvts.housekeeping.columns
+  }, {
+    isIdempotent: true,
+    sqlNS: ingressSchema,
+    constraints: (props, tableName) => {
+    const c = SQLa.tableConstraints(tableName, props);
+    return [
+      c.unique("github_id"),
+    ];
+  },
+});
+
+const fhirReplayDetails = SQLa.tableDefinition("fhir_replay_details", {
+    bundle_id:text(),
+    hub_interaction_id:text(),
+    replay_master_id:text(),
+    replay_status:textNullable(),
+    error_message:textNullable(),
+    elaboration:jsonbNullable(),
+    nyec_error_message: textNullable(),
+    ...dvts.housekeeping.columns
+  }, {
+  isIdempotent: true,
+  sqlNS: ingressSchema
+});
+
+// For Tenant Master Implementation
+const tenant = SQLa.tableDefinition("tenants", {
+    tenant_id: primaryKey(),
+    tenant_name:text(),
+    tenant_displayname:textNullable(),
+    is_active:boolean().default(true),
+    fusion_auth_group_id:textNullable(),
+    //offshore_access_allowed:boolean().default(true),
+    tenant_type:textNullable().default("QE"),
+    tenant_short_code:textNullable(),
+    elaboration:jsonbNullable(),
+    description:textNullable(),
+    updated_at: dateTimeNullable(),
+    updated_by: textNullable(),
+    ...dvts.housekeeping.columns
+  }, {
+  isIdempotent: true,
+  sqlNS: ingressSchema,
+    constraints: (props, tableName) => {
+    const c = SQLa.tableConstraints(tableName, props);
+    return [
+      c.unique("tenant_name"),
+    ];
+  },
+});
+
+// User Sessions Table
+const userSessions = SQLa.tableDefinition("user_sessions", {
+    session_id: primaryKey(),
+    user_id: text(),
+    username: text(),
+    session_start_time: dateTime(),
+    session_end_time: dateTimeNullable(),
+    session_expiry_time: dateTime(),
+    source: textNullable(), // IDP Provider (GIT or FusionAuth)
+    updated_at: dateTimeNullable(),
+    updated_by: textNullable(),
+    fusion_auth_response: jsonbNullable(),
+    ...dvts.housekeeping.columns,
+}, {
+    isIdempotent: true,
+    sqlNS: ingressSchema
+});
+
+//IDP Integration Tables
+const idpRoles = SQLa.tableDefinition("idp_roles", {
+    role_id: serial(),
+    role_code:text(),
+    role_name:text(),
+    display_name:text(),
+    description:textNullable(),
+    is_admin:boolean().default(false),
+    is_active:boolean().default(true),
+    //apply_tenant_exclusions:boolean().default(false),
+    ...dvts.housekeeping.columns
+  }, {
+  isIdempotent: true,
+  sqlNS: ingressSchema,
+    constraints: (props, tableName) => {
+    const c = SQLa.tableConstraints(tableName, props);
+    return [
+      c.unique("role_code"),
+      c.unique("role_id"),
+    ];
+  },
+});
+
+const idpMenu = SQLa.tableDefinition("idp_menu", {
+    mnu_id: serial(),
+    mnu_code:text(),
+    mnu_name:text(),
+    description:text(),
+    order_no:integer(),
+    is_active:boolean().default(true),
+    ...dvts.housekeeping.columns
+  }, {
+  isIdempotent: true,
+  sqlNS: ingressSchema,
+    constraints: (props, tableName) => {
+    const c = SQLa.tableConstraints(tableName, props);
+    return [
+      c.unique("mnu_code"),
+      c.unique("mnu_id"),
+    ];
+  },
+});
+
+const idpScreens = SQLa.tableDefinition("idp_screens", {
+    scr_id: serial(),
+    scr_code:text(),
+    scr_name:text(),
+    description:text(),
+    scr_type:text(),
+    mnu_id: integer(), //idpMenu.references.mnu_id(),
+    order_no:integer(),
+    is_active:boolean().default(true),
+    ...dvts.housekeeping.columns
+  }, {
+  isIdempotent: true,
+  sqlNS: ingressSchema,
+    constraints: (props, tableName) => {
+    const c = SQLa.tableConstraints(tableName, props);
+    return [
+      c.unique("scr_code"),
+      c.unique("scr_id"),
+    ];
+  },
+});
+
+const idpRoleTenantPermission = SQLa.tableDefinition("idp_role_tenant_permission", {
+    permission_id: serial(),
+    role_id: integer(), //idpRoles.references.role_id(),
+    mnu_id: integer(), //idpMenu.references.mnu_id(),
+    scr_id: integer(), //idpScreens.references.scr_id(),
+    ...dvts.housekeeping.columns
+  }, {
+  isIdempotent: true,
+  sqlNS: ingressSchema,
+});
+
+//MCO Integration Tables
+const mcoRecords = SQLa.tableDefinition("mco_records", {
+  // batch_guid: text().default("techbd_udi_ingress.uuid_generate_v4()"),
+  // batch_guid: text().default("gen_random_uuid()::TEXT"),
+  // batch_id: serial(),
+  batch_id: integer(),
+  root_file_name: textNullable(),
+  created_on_utc: dateTime(),
+  updated_on_utc: dateTimeNullable(),
+  total_records: integer(),
+  processed_count: integer().default(0),
+  errored_count: integer().default(0),
+  is_active: boolean(),
+  status: textNullable(),
+  tenant_id: text(),
+  file_size_in_kb: textNullable(),
+  resubmitted_count: integer().default(0),
+  sent_to_datalake_time: dateTimeNullable(),
+  qa_completed_time: dateTimeNullable(),
+  sent_to_mco_time: dateTimeNullable(),
+  reporting_month: textNullable(),
+}, {
+  isIdempotent: true,
+  sqlNS: mcoSchema,
+  constraints: (props, tableName) => {
+    const c = SQLa.tableConstraints(tableName, props);
+    return [
+      c.unique("batch_id"),
+    ];
+  },
+});
+
+const mcoRecordDetails = SQLa.tableDefinition("mco_record_details", {
+  //batch_details_guid: text().default("gen_random_uuid()::TEXT"),
+  // batch_details_id: serial(),
+  batch_details_id: integer(),
+  current_file_name: textNullable(),
+  file_size_in_kb: textNullable(),
+  total_records: integer(),
+  processed_count: integer().default(0),
+  errored_count: integer().default(0),
+  qa_completed_time: dateTimeNullable(),
+  sent_to_datalake_time: dateTimeNullable(),
+  sent_to_mco_time: dateTimeNullable(),
+  created_on_utc: dateTimeNullable(),
+  updated_on_utc: dateTimeNullable(),
+  is_active: boolean(),
+  status: textNullable(),
+  batch_id: integer(),
+  reporting_month: textNullable(),
+  tenant_id: text(),
+}, {
+  isIdempotent: true,
+  sqlNS: mcoSchema
+});
+
+const mcoErrorTypes = SQLa.tableDefinition("mco_error_types", {
+  //error_type_guid: text().default("gen_random_uuid()::TEXT"),
+  error_type_id: serial(),
+  error_type_name: textNullable(),
+  error_type_description: textNullable(),
+  is_active: boolean(),
+  created_on_utc: dateTimeNullable(),
+  updated_on_utc: dateTimeNullable(),
+}, {
+  isIdempotent: true,
+  sqlNS: mcoSchema,
+  constraints: (props, tableName) => {
+    const c = SQLa.tableConstraints(tableName, props);
+    return [
+      c.unique("error_type_id"),
+      c.unique("error_type_name"),
+    ];
+  },
+});
+
+const mcoRecordErrorLogs = SQLa.tableDefinition("mco_record_error_logs", {
+  //error_log_guid: text().default("gen_random_uuid()::TEXT"),
+  // error_log_id: serial(),
+  error_log_id: integer(),
+  batch_id: integer(),
+  error_json: jsonB,
+  created_on_utc: dateTimeNullable(),
+  updated_on_utc: dateTimeNullable(),
+  batch_details_id: integer(),
+  is_active: boolean(),
+  error_type_id: integer(),
+  tenant_id: text(),
+}, {
+  isIdempotent: true,
+  sqlNS: mcoSchema
+});
+
+// screening_extracts Tables
+const resourceTypes = SQLa.tableDefinition("resource_types", {
+  resource_type_guid: primaryKey().default("techbd_udi_ingress.uuid_generate_v4()"),
+  //resource_type_id: serial(),
+  resource_type_id: integer(),
+  resource_type_name: textNullable(),
+  is_active: boolean(),
+  created_on_utc: dateTimeNullable(),
+  update_on_utc: dateTimeNullable(),
+}, {
+  isIdempotent: true,
+  sqlNS: screeningExtractsSchema,
+  constraints: (props, tableName) => {
+    const c = SQLa.tableConstraints(tableName, props);
+    return [
+      c.unique("resource_type_id"),
+    ];
+  },
+});
+
+const screeningErrorTypes = SQLa.tableDefinition("screening_error_types", {
+  screening_error_type_guid: primaryKey().default(
+    "techbd_udi_ingress.uuid_generate_v4()"
+  ),
+  screening_error_type_id: integer(),
+  screening_error_type_name: textNullable(),
+  screening_error_type_description: textNullable(),
+
+  is_active: boolean(),
+  created_on_utc: dateTimeNullable(),
+  updated_on_utc: dateTimeNullable(),
+}, {
+  isIdempotent: true,
+  sqlNS: screeningExtractsSchema,
+  constraints: (props, tableName) => {
+    const c = SQLa.tableConstraints(tableName, props);
+    return [
+      c.unique("screening_error_type_id"),
+    ];
+  },
+});
+
+const mcoScreeningExtracts = SQLa.tableDefinition("mco_screening_extracts", {
+  mco_screening_guid: primaryKey().default(
+    "techbd_udi_ingress.uuid_generate_v4()"
+  ),
+  mco_screening_id: integer(),
+
+  tenant_id: textNullable(),
+  resource_type_id: integer(),
+  is_active: boolean(),
+  created_on_utc: dateTimeNullable(),
+  updated_on_utc: dateTimeNullable(),
+
+  status: textNullable(),
+  control_file_name: textNullable(),
+  request_bundle_id: textNullable(),
+  sent_to_mco: dateTimeNullable(),
+  acknowledge_time: dateTimeNullable(),
+  received_file_size_in_kb: textNullable(),
+  response_bundle_id: textNullable(),
+  sent_file_name: textNullable(),
+}, {
+  isIdempotent: true,
+  sqlNS: screeningExtractsSchema,
+});
+
+const mcoScreeningExtractsDetails = SQLa.tableDefinition(
+  "mco_screening_extracts_details",
+  {
+    mco_screening_extracts_details_guid: primaryKey().default(
+      "techbd_udi_ingress.uuid_generate_v4()"
+    ),
+    mco_screening_extracts_details_id: integer(),
+
+    mco_screening_id: integer(),
+    reprocess_count: integer(),
+    resource_type_id: integer(),
+
+    is_active: boolean(),
+    file_name: textNullable(),
+    notification_doc: jsonbNullable(),
+    record_count: integer(),
+
+    created_on_utc: dateTimeNullable(),
+    updated_on_utc: dateTimeNullable(),
+
+    status: textNullable(),
+    received_data_file_size_in_kb: textNullable(),
+  },
+  {
+    isIdempotent: true,
+    sqlNS: screeningExtractsSchema,
+  },
+);
+
+const mcoScreeningExtractsErrorLogs = SQLa.tableDefinition(
+  "mco_screening_extracts_error_logs",
+  {
+    mco_screening_extracts_error_log_guid: primaryKey().default(
+      "techbd_udi_ingress.uuid_generate_v4()"
+    ),
+    mco_screening_extracts_error_log_id: integer(),
+
+    mco_screening_id: integer(),
+    error_json: textNullable(),
+
+    created_on_utc: dateTimeNullable(),
+    updated_on_utc: dateTimeNullable(),
+
+    mco_screening_extracts_details_id: integer(),
+    is_active: boolean(),
+    screening_error_type_id: integer(),
+  },
+  {
+    isIdempotent: true,
+    sqlNS: screeningExtractsSchema,
+  },
+);
+
+const mcoScreeningPreferences = SQLa.tableDefinition(
+  "mco_screening_preferences",
+  {
+    mco_screening_preferences_guid: primaryKey().default(
+      "techbd_udi_ingress.uuid_generate_v4()"
+    ),
+    mco_screening_preferences_id: integer(),
+
+    tenant_id: text(),
+    resource_type_id: integer(),
+    is_active: boolean(),
+    created_on_utc: dateTime(),
+    deactivated_on_utc: dateTimeNullable(),
+  },
+  {
+    isIdempotent: true,
+    sqlNS: screeningExtractsSchema,
+  },
+);
+
+// Function to read SQL from a list of .psql files
+async function readSQLFiles(filePaths: readonly string[]): Promise<string[]> {
+  const sqlContents = [];
+  for (const filePath of filePaths) {
+    try {
+      const absolutePath = new URL(filePath, import.meta.url).pathname;
+      const data = await Deno.readTextFile(absolutePath);
+      sqlContents.push(data);
+    } catch (err) {
+      console.error(`Error reading file ${filePath}:`, err);
+      throw err;
+    }
+  }
+  return sqlContents; 
+}
+
+// List of dependencies and test dependencies
+const dependencies = [
+  //"../migrate_missing_columns_with_lock.psql",
+  "../tm_step_1_rename_tenant_id_column.psql",
+  "../tm_step_2_add_new_tenant_id_column.psql",
+  "../tm_step_3_set_default_for_new_tenant_id_column.psql",
+  "../000_idempotent_universal.psql",
+  "../001_idempotent_interaction.psql",
+  "../002_idempotent_diagnostics.psql",
+  "../003_idempotent_migration.psql",
+  "../load_ref_code_lookup.psql", 
+  "../load_idp_master_data.psql",
+  "../007_idempotent_interaction.psql",
+  "../008_idempotent_idp_functions.psql",
+  "../009_idempotent_mco_functions.psql",
+] as const;
+
+const testMigrateDependencies = [
+  "../../../../test/postgres/ingestion-center/001-idempotent-interaction-unit-test.psql",
+  "../../../../test/postgres/ingestion-center/003-idempotent-interaction-view-explain-plan.psql",
+  "../../../../test/postgres/ingestion-center/004-idempotent-migrate-unit-test.psql",
+  "../../../../test/postgres/ingestion-center/fixtures.sql",
+] as const;
+
+// Read SQL queries from files
+const dependenciesSQL = await readSQLFiles(dependencies);
+const testDependenciesSQL = await readSQLFiles(testMigrateDependencies);
+const testMigrateDependenciesWithPgtap = [
+  ...testMigrateDependencies,
+  "../../../../test/postgres/ingestion-center/suite.pgtap.psql",
+] as const;
+
+const ctx = SQLa.typicalSqlEmitContext({
+  sqlDialect: SQLa.postgreSqlDialect(),
+});
+
+const infoSchemaLifecycle = SQLa.sqlSchemaDefn("info_schema_lifecycle", {
+  isIdempotent: true,
+});
+
+const searchPathAssurance = pgSQLa.pgSearchPath<
+  typeof assuranceSchema.sqlNamespace,
+  EmitContext
+>(
+  assuranceSchema,
+);
+
+const pgTapTestResult = SQLa.tableDefinition("pgtap_test_result", {
+  sat_pgtap_test_result_id: textNullable(),
+  migration_version: text(),
+  test_name: text(),
+  tap_output: textNullable(),
+  success: boolean(),
+  techbd_version_number: textNullable(),
+  notok_results: textNullable(),
+  ...dvts.housekeeping.columns,
+}, {
+  isIdempotent: true,
+  sqlNS: assuranceSchema,
+});
+
+export const migrationInput: MigrationVersion = {
+  description: "basic-infra",
+  dateTime: new Date(2024, 6, 28, 13, 16),
+};
+function formatDateToCustomString(date: Date): string {
+  const year = date.getFullYear();
+  const month = String(date.getMonth()).padStart(2, "0"); // Month is zero-based
+  const day = String(date.getDate()).padStart(2, "0");
+  const hours = String(date.getHours()).padStart(2, "0");
+  const minutes = String(date.getMinutes()).padStart(2, "0");
+
+  return `${year}_${month}_${day}_${hours}_${minutes}`;
+}
+
+export const migrateVersion = formatDateToCustomString(migrationInput.dateTime);
+
+
+
+const migrateSP = pgSQLa.storedProcedure(
+  prependMigrateSPText + "v" + migrateVersion + StateStatus.IDEMPOTENT +
+    migrationInput.description,
+  {},
+  (name, args, _) =>
+    pgSQLa.typedPlPgSqlBody(name, args, ctx, {
+      autoBeginEnd: false,
+    }),
+  {
+    embeddedStsOptions: SQLa.typicalSqlTextSupplierOptions(),
+    autoBeginEnd: false,
+    isIdempotent: true,
+    sqlNS: infoSchemaLifecycle,
+    headerBodySeparator: "$migrateVersionSP$",
+  },
+)`
+    DECLARE
+      migration_start_time TIMESTAMPTZ;
+      migration_group_start_time TIMESTAMPTZ;
+      migration_index_start_time TIMESTAMPTZ;
+    BEGIN
+      migration_start_time := clock_timestamp();
+      RAISE NOTICE '[MIGRATION] START basic-infra at %', migration_start_time;
+
+      ${ingressSchema}
+
+      CREATE EXTENSION IF NOT EXISTS "uuid-ossp" SCHEMA ${ingressSchema.sqlNamespace};
+
+      CREATE EXTENSION IF NOT EXISTS "pg_trgm" SCHEMA ${ingressSchema.sqlNamespace};
+
+      CREATE SCHEMA IF NOT EXISTS mco_data;
+
+      CREATE SCHEMA IF NOT EXISTS screening_extracts;
+
+
+      ${assuranceSchema}
+
+
+      ${diagnosticsSchema}
+
+      ${hubDiagnostics}
+
+      ${diagnosticsSat}
+
+      ${exceptionDiagnosticSat}
+
+      ${interactionHub}
+
+      ${interactionHttpRequestSat}
+
+      ${interactionFhirRequestSat}   
+      IF EXISTS (
+          SELECT 1
+          FROM information_schema.columns
+          WHERE table_schema = 'techbd_udi_ingress'
+            AND table_name = 'sat_interaction_fhir_request'
+            AND column_name = 'passed'
+            AND is_nullable = 'NO'
+      ) THEN
+          EXECUTE 'ALTER TABLE techbd_udi_ingress.sat_interaction_fhir_request ALTER COLUMN passed DROP NOT NULL';
+      END IF;      
+  
+      IF EXISTS (
+          SELECT 1 FROM information_schema.columns
+          WHERE table_schema='techbd_udi_ingress'
+            AND table_name='sat_interaction_fhir_request'
+            AND column_name='is_bundle_valid'
+            AND is_nullable = 'NO'
+      ) THEN
+          EXECUTE 'ALTER TABLE techbd_udi_ingress.sat_interaction_fhir_request ALTER COLUMN is_bundle_valid DROP NOT NULL';
+      END IF;   
+
+      /* -- Need to SET NOT NULL for nature column after backfilling the data with default values, which will be done in a separate migration to avoid long-running migration
+      IF EXISTS (
+          SELECT 1
+          FROM information_schema.columns
+          WHERE table_schema = 'techbd_udi_ingress'
+            AND table_name = 'sat_interaction_http_request'
+            AND column_name = 'nature'
+            AND is_nullable = 'YES'
+      ) THEN
+          ALTER TABLE techbd_udi_ingress.sat_interaction_http_request
+          ALTER COLUMN nature SET NOT NULL;
+      END IF;*/
+
+      ${diagnosticDataledgerSat}
+      
+      migration_group_start_time := clock_timestamp();
+      
+      RAISE NOTICE '[MIGRATION] START group=fhir_request_indexes at %', migration_group_start_time;
+      
+      PERFORM pg_advisory_lock(hashtext('islm_migration_fhir_request_index_creation'));
+          IF NOT EXISTS (
+              SELECT 1 FROM pg_indexes
+              WHERE schemaname = 'techbd_udi_ingress'
+                AND tablename = 'sat_interaction_fhir_request'
+                AND indexname = 'sat_int_fhir_req_uq_hub_int_tnt_nat'
+          ) THEN
+              CREATE UNIQUE INDEX IF NOT EXISTS sat_int_fhir_req_uq_hub_int_tnt_nat 
+              ON techbd_udi_ingress.sat_interaction_fhir_request (hub_interaction_id, tenant_id, nature);
+          END IF;
+
+          -- Add idx_fhir_req_cover index if not exists
+          IF NOT EXISTS (
+            SELECT 1 FROM pg_indexes
+            WHERE schemaname = 'techbd_udi_ingress'
+            AND tablename = 'sat_interaction_fhir_request'
+            AND indexname = 'idx_fhir_req_cover'
+          ) THEN
+            CREATE INDEX idx_fhir_req_cover ON techbd_udi_ingress.sat_interaction_fhir_request USING btree (created_at DESC) WHERE (nature = 'Original FHIR Payload');
+          END IF;
+
+          -- Add idx_interaction_id_trgm_partial index if not exists
+          IF NOT EXISTS (
+            SELECT 1 FROM pg_indexes
+            WHERE schemaname = 'techbd_udi_ingress'
+            AND tablename = 'sat_interaction_fhir_request'
+            AND indexname = 'idx_interaction_id_trgm_partial'
+          ) THEN
+            migration_index_start_time := clock_timestamp();
+            RAISE NOTICE '[MIGRATION] START index=idx_interaction_id_trgm_partial at %', migration_index_start_time;
+            CREATE INDEX idx_interaction_id_trgm_partial
+            ON techbd_udi_ingress.sat_interaction_fhir_request
+            USING gin ((hub_interaction_id) techbd_udi_ingress.gin_trgm_ops)
+            WHERE nature = 'Original FHIR Payload';
+            RAISE NOTICE '[MIGRATION] END index=idx_interaction_id_trgm_partial duration_ms=%',
+              round((extract(epoch FROM clock_timestamp() - migration_index_start_time) * 1000)::numeric, 2);
+          END IF;
+
+          -- Add idx_bundle_id_trgm_partial index if not exists
+          IF NOT EXISTS (
+            SELECT 1 FROM pg_indexes
+            WHERE schemaname = 'techbd_udi_ingress'
+            AND tablename = 'sat_interaction_fhir_request'
+            AND indexname = 'idx_bundle_id_trgm_partial'
+          ) THEN
+            migration_index_start_time := clock_timestamp();
+            RAISE NOTICE '[MIGRATION] START index=idx_bundle_id_trgm_partial at %', migration_index_start_time;
+            CREATE INDEX idx_bundle_id_trgm_partial
+            ON techbd_udi_ingress.sat_interaction_fhir_request
+            USING gin ((bundle_id) techbd_udi_ingress.gin_trgm_ops)
+            WHERE nature = 'Original FHIR Payload';
+            RAISE NOTICE '[MIGRATION] END index=idx_bundle_id_trgm_partial duration_ms=%',
+              round((extract(epoch FROM clock_timestamp() - migration_index_start_time) * 1000)::numeric, 2);
+          END IF;
+
+          IF NOT EXISTS (
+              SELECT 1 FROM pg_indexes
+              WHERE schemaname = 'techbd_udi_ingress'
+                AND tablename = 'sat_interaction_fhir_request'
+                AND indexname = 'sat_inter_fhir_req_hub_inter_id_idx'
+          ) THEN
+              CREATE INDEX IF NOT EXISTS sat_inter_fhir_req_hub_inter_id_idx ON techbd_udi_ingress.sat_interaction_fhir_request USING btree (hub_interaction_id);
+          END IF;
+
+          IF NOT EXISTS (
+              SELECT 1 FROM pg_indexes
+              WHERE schemaname = 'techbd_udi_ingress'
+                AND tablename = 'sat_interaction_fhir_request'
+                AND indexname = 'sat_inter_fhir_req_hub_inter_created_idx'
+          ) THEN
+              CREATE INDEX IF NOT EXISTS sat_inter_fhir_req_hub_inter_created_idx ON techbd_udi_ingress.sat_interaction_fhir_request USING btree (hub_interaction_id, created_at DESC);
+          END IF;
+
+          IF NOT EXISTS (
+              SELECT 1 FROM pg_indexes
+              WHERE schemaname = 'techbd_udi_ingress'
+                AND tablename = 'sat_interaction_fhir_request'
+                AND indexname = 'sat_inter_fhir_req_created_idx'
+          ) THEN
+              CREATE INDEX IF NOT EXISTS sat_inter_fhir_req_created_idx ON techbd_udi_ingress.sat_interaction_fhir_request (created_at timestamptz_ops DESC);
+          END IF;          
+          
+          IF NOT EXISTS (
+              SELECT 1 FROM pg_indexes
+              WHERE schemaname = 'techbd_udi_ingress'
+                AND tablename = 'sat_interaction_fhir_request'
+                AND indexname = 'sat_inter_fhir_req_to_state_idx'
+          ) THEN
+              CREATE INDEX IF NOT EXISTS sat_inter_fhir_req_to_state_idx ON techbd_udi_ingress.sat_interaction_fhir_request USING btree (to_state);
+          END IF;
+          
+          IF NOT EXISTS (
+              SELECT 1 FROM pg_indexes
+              WHERE schemaname = 'techbd_udi_ingress'
+                AND tablename = 'sat_interaction_fhir_request'
+                AND indexname = 'sat_inter_fhir_req_nature_idx'
+          ) THEN
+              CREATE INDEX IF NOT EXISTS sat_inter_fhir_req_nature_idx ON techbd_udi_ingress.sat_interaction_fhir_request USING btree (nature);
+          END IF;         
+          
+          IF NOT EXISTS (
+              SELECT 1 FROM pg_indexes
+              WHERE schemaname = 'techbd_udi_ingress'
+                AND tablename = 'sat_interaction_fhir_request'
+                AND indexname = 'sat_inter_fhir_req_provenance_idx'
+          ) THEN
+              CREATE INDEX IF NOT EXISTS sat_inter_fhir_req_provenance_idx ON techbd_udi_ingress.sat_interaction_fhir_request USING btree (provenance);
+          END IF;
+          
+          IF NOT EXISTS (
+              SELECT 1 FROM pg_indexes
+              WHERE schemaname = 'techbd_udi_ingress'
+                AND tablename = 'sat_interaction_fhir_request'
+                AND indexname = 'sat_inter_fhir_req_bund_id_idx'
+          ) THEN
+              CREATE INDEX IF NOT EXISTS sat_inter_fhir_req_bund_id_idx ON techbd_udi_ingress.sat_interaction_fhir_request USING btree (bundle_id);
+          END IF;          
+          
+          IF NOT EXISTS (
+              SELECT 1 FROM pg_indexes
+              WHERE schemaname = 'techbd_udi_ingress'
+                AND tablename = 'sat_interaction_fhir_request'
+                AND indexname = 'sat_inter_fhir_req_org_id_idx'
+          ) THEN
+              CREATE INDEX IF NOT EXISTS sat_inter_fhir_req_org_id_idx ON techbd_udi_ingress.sat_interaction_fhir_request USING btree (organization_id);
+          END IF;
+
+          IF NOT EXISTS (
+              SELECT 1
+              FROM pg_indexes
+              WHERE schemaname = 'techbd_udi_ingress'
+                AND tablename = 'sat_interaction_fhir_request'
+                AND indexname = 'idx_sifr_hub_org'
+          ) THEN
+              CREATE INDEX IF NOT EXISTS idx_sifr_hub_org
+              ON techbd_udi_ingress.sat_interaction_fhir_request
+              USING btree (
+                  hub_interaction_id,
+                  organization_id
+              );
+          END IF;
+
+          IF NOT EXISTS (
+              SELECT 1 FROM pg_indexes
+              WHERE schemaname = 'techbd_udi_ingress'
+                AND tablename = 'sat_diagnostic_dataledger_api'
+                AND indexname = 'sat_diagnostic_dataledger_api_uq_hub_int'
+          ) THEN
+              CREATE UNIQUE INDEX IF NOT EXISTS sat_diagnostic_dataledger_api_uq_hub_int ON techbd_udi_ingress.sat_diagnostic_dataledger_api USING btree (hub_interaction_id);
+          END IF;
+
+          IF NOT EXISTS (
+                SELECT 1 FROM pg_indexes
+                WHERE schemaname = 'techbd_udi_ingress'
+                  AND tablename = 'sat_diagnostic_log'
+                  AND indexname = 'idx_sat_diagnostic_log_created_at_desc'
+          ) THEN
+                CREATE INDEX idx_sat_diagnostic_log_created_at_desc
+                    ON techbd_udi_ingress.sat_diagnostic_log (created_at DESC);
+          END IF;
+
+          IF NOT EXISTS (
+              SELECT 1 FROM pg_indexes
+              WHERE schemaname = 'techbd_udi_ingress'
+                AND tablename = 'sat_diagnostic_exception'
+                AND indexname = 'idx_sat_diagnostic_exception_created_at_desc'
+          ) THEN
+              CREATE INDEX idx_sat_diagnostic_exception_created_at_desc
+                  ON techbd_udi_ingress.sat_diagnostic_exception (created_at DESC);
+          END IF;
+
+          IF NOT EXISTS (
+              SELECT 1 FROM pg_indexes
+              WHERE schemaname = 'techbd_udi_ingress'
+                AND tablename = 'sat_diagnostic_exception'
+                AND indexname = 'idx_sat_diagnostic_exception_created_at_desc'
+          ) THEN
+              CREATE INDEX idx_sat_diagnostic_exception_created_at_desc
+                  ON techbd_udi_ingress.sat_diagnostic_exception (created_at DESC);
+          END IF;          
+
+      PERFORM pg_advisory_unlock(hashtext('islm_migration_fhir_request_index_creation'));
+
+      RAISE NOTICE '[MIGRATION] END group=fhir_request_indexes duration_ms=%',
+
+        round((extract(epoch FROM clock_timestamp() - migration_group_start_time) * 1000)::numeric, 2);
+
+      ${interactionUserRequestSat}
+
+      ${interactionUIUserSat}
+
+      ${interactionFhirSessionDiagnosticSat}
+      
+      ${interactionFhirScreeningInfoSat}
+
+      ${interactionFhirScreeningPatientSat}
+
+      ${interactionFhirScreeninOrganizationSat}
+
+      ${interactionFhirValidationIssueSat}
+
+      ${interactionCsvRequestSat}
+
+      ${interactionZipRequestSat}
+
+       -- Add csv_zip_file_content column if not exists
+      IF NOT EXISTS (
+          SELECT 1
+          FROM information_schema.columns
+          WHERE table_schema = 'techbd_udi_ingress'
+              AND table_name = 'sat_interaction_zip_file_request'
+              AND column_name = 'csv_zip_file_content'
+      ) THEN
+          ALTER TABLE techbd_udi_ingress.sat_interaction_zip_file_request ADD COLUMN csv_zip_file_content Bytea NULL;
+      END IF; 
+
+      ${fileExchangeProtocol}
+      
+      ${interactionHl7RequestSat}    
+      
+      ${interactionCcdaRequestSat}          
+      
+      migration_group_start_time := clock_timestamp();
+      
+      RAISE NOTICE '[MIGRATION] START group=table_indexes at %', migration_group_start_time;
+      
+      PERFORM pg_advisory_lock(hashtext('islm_migration_table_index_creation'));
+          -- HL7 indexes         
+
+          IF NOT EXISTS (SELECT 1 FROM pg_indexes WHERE schemaname='techbd_udi_ingress' AND indexname='sat_inter_hl7_req_created_at_idx') THEN
+              EXECUTE 'CREATE INDEX sat_inter_hl7_req_created_at_idx ON techbd_udi_ingress.sat_interaction_hl7_request USING btree (created_at DESC)';
+          END IF;
+
+          IF NOT EXISTS (SELECT 1 FROM pg_indexes WHERE schemaname='techbd_udi_ingress' AND indexname='sat_inter_hl7_req_hub_inter_id_idx') THEN
+              EXECUTE 'CREATE INDEX sat_inter_hl7_req_hub_inter_id_idx ON techbd_udi_ingress.sat_interaction_hl7_request USING btree (hub_interaction_id)';
+          END IF;          
+          
+          IF NOT EXISTS (SELECT 1 FROM pg_indexes WHERE schemaname='techbd_udi_ingress' AND indexname='sat_interaction_fhir_session_diagnostic_severity_lower') THEN
+              EXECUTE 'CREATE INDEX sat_interaction_fhir_session_diagnostic_severity_lower ON techbd_udi_ingress.sat_interaction_fhir_session_diagnostic USING btree (LOWER(severity))';
+          END IF;
+
+          -- CCDA indexes
+         
+          IF NOT EXISTS (SELECT 1 FROM pg_indexes WHERE schemaname='techbd_udi_ingress' AND indexname='sat_inter_ccda_req_hub_inter_id_idx') THEN
+              EXECUTE 'CREATE INDEX sat_inter_ccda_req_hub_inter_id_idx ON techbd_udi_ingress.sat_interaction_ccda_request USING btree (hub_interaction_id)';
+          END IF;
+
+          IF NOT EXISTS (SELECT 1 FROM pg_indexes WHERE schemaname='techbd_udi_ingress' AND indexname='sat_inter_ccda_req_to_state_idx') THEN
+              EXECUTE 'CREATE INDEX sat_inter_ccda_req_to_state_idx ON techbd_udi_ingress.sat_interaction_ccda_request USING btree (to_state)';
+          END IF;
+
+          -- Other indexes
+          IF NOT EXISTS (SELECT 1 FROM pg_indexes WHERE schemaname='techbd_udi_ingress' AND indexname='idx_sat_interaction_user_created_at_desc') THEN
+              EXECUTE 'CREATE INDEX idx_sat_interaction_user_created_at_desc ON techbd_udi_ingress.sat_interaction_user (created_at DESC)';
+          END IF;
+
+          IF NOT EXISTS (SELECT 1 FROM pg_indexes WHERE schemaname='techbd_udi_ingress' AND indexname='sat_interaction_fhir_screening_info_submitted_date_time_idx') THEN
+              EXECUTE 'CREATE INDEX sat_interaction_fhir_screening_info_submitted_date_time_idx ON techbd_udi_ingress.sat_interaction_fhir_screening_info (submitted_date_time DESC)';
+          END IF;
+
+          --  Zip file request by hub_interaction_id
+          IF NOT EXISTS (SELECT 1 FROM pg_indexes WHERE schemaname = 'techbd_udi_ingress' AND indexname = 'idx_sat_interaction_zip_file_request_hub_interaction_id') THEN
+              EXECUTE 'CREATE INDEX idx_sat_interaction_zip_file_request_hub_interaction_id ON techbd_udi_ingress.sat_interaction_zip_file_request USING btree (hub_interaction_id)';
+          END IF;
+      PERFORM pg_advisory_unlock(hashtext('islm_migration_table_index_creation'));
+      RAISE NOTICE '[MIGRATION] END group=table_indexes duration_ms=%',
+        round((extract(epoch FROM clock_timestamp() - migration_group_start_time) * 1000)::numeric, 2);
+
+      BEGIN
+        ${fileExchangeProtocol.seedDML}
+      EXCEPTION
+          WHEN unique_violation THEN
+              RAISE NOTICE 'Enum already exists. Insert skipped.';
+      END;
+
+      ${interactionfileExchangeSat}
+
+      ${hubExpectation}
+
+      ${expectationHttpRequestSat}
+
+      ${pgTapFixturesJSON}
+
+      ${pgTapTestResult}   
+      
+      ALTER TABLE ${assuranceSchema.sqlNamespace}.${pgTapTestResult.tableName} ADD COLUMN IF NOT EXISTS sat_pgtap_test_result_id TEXT NULL; 
+      ALTER TABLE ${assuranceSchema.sqlNamespace}.${pgTapTestResult.tableName} ADD COLUMN IF NOT EXISTS techbd_version_number TEXT NULL; 
+      ALTER TABLE ${assuranceSchema.sqlNamespace}.${pgTapTestResult.tableName} ADD COLUMN IF NOT EXISTS notok_results TEXT NULL;
+      
+        
+      migration_group_start_time := clock_timestamp();
+      
+        
+      RAISE NOTICE '[MIGRATION] START group=http_request_indexes at %', migration_group_start_time;
+      
+        
+      PERFORM pg_advisory_lock(hashtext('islm_migration_http_request_index_creation'));
+          IF NOT EXISTS (
+              SELECT 1
+              FROM pg_indexes
+              WHERE schemaname = 'techbd_udi_ingress'
+                AND tablename = 'sat_interaction_http_request'
+                AND indexname = 'sat_interaction_http_request_hub_interaction_id_idx'
+          ) THEN
+              EXECUTE 'CREATE INDEX sat_interaction_http_request_hub_interaction_id_idx 
+                      ON techbd_udi_ingress.sat_interaction_http_request USING btree (hub_interaction_id)';
+          END IF;
+          
+          IF NOT EXISTS (
+              SELECT 1
+              FROM pg_indexes
+              WHERE schemaname = 'techbd_udi_ingress'
+                AND tablename = 'sat_interaction_http_request'
+                AND indexname = 'sat_interaction_http_request_from_state_idx'
+          ) THEN
+              EXECUTE 'CREATE INDEX sat_interaction_http_request_from_state_idx 
+                      ON techbd_udi_ingress.sat_interaction_http_request USING btree (from_state)';
+          END IF;
+
+          IF NOT EXISTS (
+              SELECT 1
+              FROM pg_indexes
+              WHERE schemaname = 'techbd_udi_ingress'
+                AND tablename = 'sat_interaction_http_request'
+                AND indexname = 'sat_interaction_http_request_to_state_idx'
+          ) THEN
+              EXECUTE 'CREATE INDEX sat_interaction_http_request_to_state_idx 
+                      ON techbd_udi_ingress.sat_interaction_http_request USING btree (to_state)';
+          END IF;
+
+          IF NOT EXISTS (
+              SELECT 1
+              FROM pg_indexes
+              WHERE schemaname = 'techbd_udi_ingress'
+                AND tablename = 'sat_interaction_http_request'
+                AND indexname = 'sat_interaction_http_request_provenance_idx'
+          ) THEN
+              EXECUTE 'CREATE INDEX sat_interaction_http_request_provenance_idx 
+                      ON techbd_udi_ingress.sat_interaction_http_request USING btree (provenance)';
+          END IF;
+         
+          --ANALYZE techbd_udi_ingress.sat_interaction_http_request;
+
+          IF NOT EXISTS (
+              SELECT 1 FROM pg_indexes
+              WHERE schemaname = 'techbd_udi_ingress'
+                AND tablename = 'sat_interaction_user'
+                AND indexname = 'idx_sat_interaction_user_start_time'
+          ) THEN
+              CREATE INDEX idx_sat_interaction_user_start_time
+                  ON techbd_udi_ingress.sat_interaction_user (interaction_start_time);
+          END IF;
+
+          IF NOT EXISTS (
+              SELECT 1 FROM pg_indexes
+              WHERE schemaname = 'techbd_udi_ingress'
+                AND tablename = 'sat_interaction_user'
+                AND indexname = 'idx_sat_interaction_user_hub_id'
+          ) THEN
+              CREATE INDEX idx_sat_interaction_user_hub_id
+                  ON techbd_udi_ingress.sat_interaction_user (hub_interaction_id);
+          END IF;
+
+          IF NOT EXISTS (
+              SELECT 1 FROM pg_indexes
+              WHERE schemaname = 'techbd_udi_ingress'
+                AND tablename = 'sat_interaction_ui_user'
+                AND indexname = 'idx_sat_interaction_ui_user_start_time'
+          ) THEN
+              CREATE INDEX idx_sat_interaction_ui_user_start_time
+                  ON techbd_udi_ingress.sat_interaction_ui_user (interaction_start_time);
+          END IF;
+
+          IF NOT EXISTS (
+              SELECT 1 FROM pg_indexes
+              WHERE schemaname = 'techbd_udi_ingress'
+                AND tablename = 'sat_interaction_ui_user'
+                AND indexname = 'idx_sat_interaction_ui_user_hub_id'
+          ) THEN
+              CREATE INDEX idx_sat_interaction_ui_user_hub_id
+                  ON techbd_udi_ingress.sat_interaction_ui_user (hub_interaction_id);
+          END IF;
+
+
+          IF NOT EXISTS (
+              SELECT 1 FROM pg_indexes
+              WHERE schemaname = 'techbd_udi_ingress'
+                AND tablename = 'sat_interaction_fhir_request'
+                AND indexname = 'idx_sat_interaction_fhir_request_start_time'
+          ) THEN
+              CREATE INDEX idx_sat_interaction_fhir_request_start_time
+                  ON techbd_udi_ingress.sat_interaction_fhir_request (interaction_start_time);
+          END IF;   
+          
+    IF NOT EXISTS (
+        SELECT 1
+        FROM pg_indexes
+        WHERE schemaname = 'techbd_udi_ingress'
+          AND tablename = 'sat_interaction_fhir_request'
+          AND indexname = 'idx_sat_interaction_fhir_request_csv_only'
+    ) THEN
+
+        CREATE INDEX idx_sat_interaction_fhir_request_csv_only
+        ON techbd_udi_ingress.sat_interaction_fhir_request (
+            source_hub_interaction_id,
+            bundle_id,
+            created_at DESC
+        )
+        WHERE source_type = 'CSV';
+
+    END IF;          
+
+      PERFORM pg_advisory_unlock(hashtext('islm_migration_http_request_index_creation'));
+
+      RAISE NOTICE '[MIGRATION] END group=http_request_indexes duration_ms=%',
+
+        round((extract(epoch FROM clock_timestamp() - migration_group_start_time) * 1000)::numeric, 2);
+
+      ${jsonActionRule}
+
+      -- Add new column is_deleted  
+        IF NOT EXISTS (
+            SELECT 1
+            FROM information_schema.columns
+            WHERE table_schema = 'techbd_udi_ingress'
+              AND table_name = 'json_action_rule'
+              AND column_name = 'is_deleted'
+        ) THEN
+            ALTER TABLE techbd_udi_ingress.json_action_rule
+            ADD COLUMN is_deleted BOOLEAN DEFAULT FALSE;
+        END IF; 
+            
+      -- Create action_check constraint
+      IF NOT EXISTS (
+          SELECT 1
+          FROM information_schema.table_constraints
+          WHERE table_schema = 'techbd_udi_ingress'
+            AND table_name = 'json_action_rule'
+            AND constraint_name = 'json_action_rule_action_check'
+      ) THEN
+          ALTER TABLE techbd_udi_ingress.json_action_rule ADD CONSTRAINT json_action_rule_action_check CHECK ((action = ANY (ARRAY['accept'::text, 'reject'::text, 'modify'::text, 'discard'::text])));
+      END IF;
+      
+      -- Create primary key constraint
+      IF NOT EXISTS (
+          SELECT 1
+          FROM information_schema.table_constraints
+          WHERE table_schema = 'techbd_udi_ingress'
+            AND table_name = 'json_action_rule'
+            AND constraint_name = 'json_action_rule_action_rule_id_pkey'
+      ) THEN
+          ALTER TABLE techbd_udi_ingress.json_action_rule ADD CONSTRAINT json_action_rule_action_rule_id_pkey PRIMARY KEY (action_rule_id);
+      END IF;        
+      
+     --- TRUNCATE TABLE techbd_udi_ingress.json_action_rule;       
+
+      migration_group_start_time := clock_timestamp();
+
+      RAISE NOTICE '[MIGRATION] START group=json_action_rule_indexes at %', migration_group_start_time;
+
+      PERFORM pg_advisory_lock(hashtext('islm_migration_json_action_rule_index_creation'));          
+
+          IF NOT EXISTS (
+              SELECT 1
+              FROM pg_indexes
+              WHERE schemaname = 'techbd_udi_ingress'
+                AND indexname = 'json_action_rule_json_path_idx'
+          ) THEN
+              EXECUTE 'CREATE INDEX json_action_rule_json_path_idx 
+                      ON techbd_udi_ingress.json_action_rule USING btree (json_path)';
+          END IF;          
+          
+      PERFORM pg_advisory_unlock(hashtext('islm_migration_json_action_rule_index_creation'));
+          
+      RAISE NOTICE '[MIGRATION] END group=json_action_rule_indexes duration_ms=%',
+          
+        round((extract(epoch FROM clock_timestamp() - migration_group_start_time) * 1000)::numeric, 2);
+    
+      ${refCodeLookUp}
+      migration_group_start_time := clock_timestamp();
+      RAISE NOTICE '[MIGRATION] START group=lookup_indexes at %', migration_group_start_time;
+      PERFORM pg_advisory_lock(hashtext('islm_migration_lookup_index_creation'));
+          IF NOT EXISTS (
+              SELECT 1
+              FROM pg_indexes
+              WHERE schemaname = 'techbd_udi_ingress'
+                AND indexname = 'ref_code_lookup_code_type_idx'
+          ) THEN
+              EXECUTE 'CREATE INDEX ref_code_lookup_code_type_idx 
+                      ON techbd_udi_ingress.ref_code_lookup USING btree (code_type)';
+          END IF;
+    
+    -- Create NULL-safe UNIQUE index if it does not exist
+    IF NOT EXISTS (
+        SELECT 1
+        FROM pg_indexes
+        WHERE schemaname = 'techbd_udi_ingress'
+          AND indexname = 'ref_code_lookup_unique_code_type_system_value_idx'
+    ) THEN
+        CREATE UNIQUE INDEX ref_code_lookup_unique_code_type_system_value_idx
+        ON techbd_udi_ingress.ref_code_lookup (
+            code,
+            code_type,
+            COALESCE(system_value, '__NULL__')
+        );
+    END IF;
+    PERFORM pg_advisory_unlock(hashtext('islm_migration_lookup_index_creation'));
+    RAISE NOTICE '[MIGRATION] END group=lookup_indexes duration_ms=%',
+      round((extract(epoch FROM clock_timestamp() - migration_group_start_time) * 1000)::numeric, 2);
+
+
+      
+    /*IF NOT EXISTS (
+        SELECT 1
+        FROM information_schema.columns
+        WHERE table_schema = 'techbd_udi_ingress'
+            AND table_name = 'sat_nexus_interaction_ingestion'
+            AND column_name = 'payload'
+     ) THEN
+        ALTER TABLE techbd_udi_ingress.sat_nexus_interaction_ingestion ADD COLUMN payload Bytea NOT NULL;  
+     END IF; 
+
+      -- 2. Regular index: sat_inter_nexus_req_hub_nexus_inter_id_idx
+    IF NOT EXISTS (
+        SELECT 1
+        FROM pg_indexes
+        WHERE schemaname = 'techbd_udi_ingress'
+          AND tablename = 'sat_nexus_interaction_ingestion'
+          AND indexname = 'sat_inter_nexus_req_hub_nexus_inter_id_idx'
+    ) THEN
+        EXECUTE 'CREATE INDEX sat_inter_nexus_req_hub_nexus_inter_id_idx 
+                ON techbd_udi_ingress.sat_nexus_interaction_ingestion (hub_nexus_interaction_id)';
+    END IF;*/
+      ${csvFhirProcessingErrors}
+      migration_group_start_time := clock_timestamp();
+      RAISE NOTICE '[MIGRATION] START group=flat_file_indexes at %', migration_group_start_time;
+      PERFORM pg_advisory_lock(hashtext('islm_migration_flat_file_index_creation'));
+          IF NOT EXISTS (
+              SELECT 1
+              FROM pg_indexes
+              WHERE schemaname = 'techbd_udi_ingress'
+                AND tablename = 'sat_csv_fhir_processing_errors'
+                AND indexname = 'idx_sat_csv_fhir_processing_errors_flat_file_hub_interaction_id'
+          ) THEN
+              EXECUTE 'CREATE INDEX idx_sat_csv_fhir_processing_errors_flat_file_hub_interaction_id
+                      ON techbd_udi_ingress.sat_csv_fhir_processing_errors (flat_file_hub_interaction_id)';
+          END IF;
+
+          IF NOT EXISTS (
+              SELECT 1
+              FROM pg_indexes
+              WHERE schemaname = 'techbd_udi_ingress'
+                AND indexname = 'idx_sat_csv_fhir_processing_errors_zip_file_hub_interaction_id'
+          ) THEN
+              EXECUTE 'CREATE INDEX idx_sat_csv_fhir_processing_errors_zip_file_hub_interaction_id
+                      ON techbd_udi_ingress.sat_csv_fhir_processing_errors (zip_file_hub_interaction_id)';
+          END IF;         
+      PERFORM pg_advisory_unlock(hashtext('islm_migration_flat_file_index_creation'));
+      RAISE NOTICE '[MIGRATION] END group=flat_file_indexes duration_ms=%',
+        round((extract(epoch FROM clock_timestamp() - migration_group_start_time) * 1000)::numeric, 2);
+
+      -- If the existing constraint is not included 'processing_errors', drop it if 'category_check' constraint exists and then recreate it.
+      IF NOT EXISTS (
+          SELECT 1
+          FROM pg_constraint
+          WHERE conrelid = 'techbd_udi_ingress.sat_csv_fhir_processing_errors'::regclass
+            AND contype = 'c'
+            AND pg_get_constraintdef(oid) LIKE '%processing_errors%'
+      ) THEN
+          IF EXISTS ( -- check if 'category_check' constraint exists, only then drop it
+              SELECT 1
+              FROM pg_constraint
+              WHERE conrelid = 'techbd_udi_ingress.sat_csv_fhir_processing_errors'::regclass
+                AND conname = 'category_check'
+          ) THEN
+              ALTER TABLE techbd_udi_ingress.sat_csv_fhir_processing_errors
+              DROP CONSTRAINT category_check;
+          END IF;
+      END IF;
+
+      IF NOT EXISTS (
+          SELECT 1
+          FROM pg_constraint
+          WHERE conname = 'category_check'
+            AND conrelid = 'techbd_udi_ingress.sat_csv_fhir_processing_errors'::regclass
+      ) THEN
+        ALTER TABLE techbd_udi_ingress.sat_csv_fhir_processing_errors ADD CONSTRAINT category_check CHECK (category = ANY (ARRAY['data_integrity', 'file_not_processed', 'incomplete_groups', 'processing_errors']));
+      END IF;
+
+      ${users}
+
+      ${fhirReplayDetails}
+      IF EXISTS (
+              SELECT 1
+              FROM pg_constraint
+              WHERE conname = 'fhir_replay_details_bundle_id_key'
+                AND conrelid = 'techbd_udi_ingress.fhir_replay_details'::regclass
+          ) THEN
+              ALTER TABLE techbd_udi_ingress.fhir_replay_details
+              DROP CONSTRAINT fhir_replay_details_bundle_id_key;
+      END IF;
+
+      IF NOT EXISTS (
+              SELECT 1
+              FROM pg_constraint
+              WHERE conname = 'fhir_replay_details_unique_combo_key'
+                AND conrelid = 'techbd_udi_ingress.fhir_replay_details'::regclass
+          ) THEN
+              ALTER TABLE techbd_udi_ingress.fhir_replay_details
+              ADD CONSTRAINT fhir_replay_details_unique_combo_key
+              UNIQUE (bundle_id, hub_interaction_id, replay_master_id);
+      END IF;      
+      
+      ${ccdaValidationErrorsSat}    
+      ${hl7ValidationErrorsSat}        
+
+      /*IF NOT EXISTS (
+          SELECT 1
+          FROM pg_constraint
+          WHERE conname = 'link_nexus_interaction_pkey'
+      ) THEN
+          ALTER TABLE techbd_udi_ingress.link_nexus_interaction
+          ADD CONSTRAINT link_nexus_interaction_pkey
+          PRIMARY KEY (hub_nexus_interaction_id, hub_interaction_id);
+      END IF;*/
+
+      ${ccdaReplayDetails}
+      PERFORM pg_advisory_lock(hashtext('ccda_replay_details'));
+          ALTER TABLE techbd_udi_ingress.ccda_replay_details ADD COLUMN IF NOT EXISTS reply_id TEXT NOT NULL DEFAULT gen_random_uuid()::text;              
+      PERFORM pg_advisory_unlock(hashtext('ccda_replay_details'));
+
+      IF NOT EXISTS (
+          SELECT 1
+          FROM pg_constraint
+          WHERE conname = 'sat_interaction_flat_file_csv_request_hub_interaction_id_fkey'
+      ) THEN
+          ALTER TABLE sat_interaction_flat_file_csv_request
+          ADD CONSTRAINT sat_interaction_flat_file_csv_request_hub_interaction_id_fkey
+          FOREIGN KEY (hub_interaction_id)
+          REFERENCES hub_interaction(id);
+      END IF;
+
+      IF NOT EXISTS (
+          SELECT 1
+          FROM pg_constraint
+          WHERE conname = 'sat_interaction_hl7_request_hub_interaction_id_fkey'
+      ) THEN
+          ALTER TABLE techbd_udi_ingress.sat_interaction_hl7_request ADD CONSTRAINT sat_interaction_hl7_request_hub_interaction_id_fkey FOREIGN KEY (hub_interaction_id) REFERENCES techbd_udi_ingress.hub_interaction(hub_interaction_id);
+      END IF;
+
+      IF NOT EXISTS (
+          SELECT 1
+          FROM pg_constraint
+          WHERE conname = 'sat_interaction_zip_file_request_hub_interaction_id_fkey'
+      ) THEN
+        ALTER TABLE techbd_udi_ingress.sat_interaction_zip_file_request ADD CONSTRAINT sat_interaction_zip_file_request_hub_interaction_id_fkey FOREIGN KEY (hub_interaction_id) REFERENCES techbd_udi_ingress.hub_interaction(hub_interaction_id);
+      END IF;
+
+      IF EXISTS (
+          SELECT 1
+          FROM pg_constraint
+          WHERE conname = 'sat_interaction_flat_file_csv_request_zip_file_sat_interaction_id_fkey'
+      ) THEN
+          ALTER TABLE techbd_udi_ingress.sat_interaction_flat_file_csv_request 
+          DROP CONSTRAINT IF EXISTS sat_interaction_flat_file_csv_request_zip_file_sat_interaction_id_fkey;
+      END IF;
+
+      CREATE TABLE IF NOT EXISTS techbd_udi_ingress.dashboard_widget_metadata (
+          id TEXT NOT NULL PRIMARY KEY,
+          widget_name TEXT NOT NULL CHECK (widget_name IN ('FHIR', 'CSV', 'CCDA', 'HL7V2')),
+          tenant_id TEXT NOT NULL,
+          last_updated_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
+          last_updated_by TEXT DEFAULT CURRENT_USER,
+          CONSTRAINT uq_dashboard_widget_tenant UNIQUE (widget_name, tenant_id)
+      );
+
+      IF EXISTS (
+          SELECT 1
+          FROM information_schema.columns
+          WHERE table_schema = 'techbd_udi_ingress'
+            AND table_name = 'sat_interaction_fhir_screening_patient'
+            AND column_name = 'patient_mrn'
+            AND is_nullable = 'NO'
+      ) THEN
+          ALTER TABLE techbd_udi_ingress.sat_interaction_fhir_screening_patient ALTER COLUMN patient_mrn DROP NOT NULL;
+      END IF;
+
+      IF EXISTS (
+          SELECT 1
+          FROM information_schema.columns
+          WHERE table_schema = 'techbd_udi_ingress'
+            AND table_name = 'sat_interaction_fhir_session_diagnostic'
+            AND column_name = 'session_id'
+            AND is_nullable = 'NO'
+      ) THEN
+          ALTER TABLE techbd_udi_ingress.sat_interaction_fhir_session_diagnostic ALTER COLUMN session_id DROP NOT NULL;
+      END IF;
+
+      IF EXISTS (
+          SELECT 1
+          FROM information_schema.columns
+          WHERE table_schema = 'techbd_udi_ingress'
+            AND table_name = 'sat_interaction_fhir_validation_issue'
+            AND column_name = 'issue'
+            AND is_nullable = 'NO'
+      ) THEN
+          ALTER TABLE techbd_udi_ingress.sat_interaction_fhir_validation_issue ALTER COLUMN issue DROP NOT NULL;
+      END IF;
+
+      ${tenant}
+      IF NOT EXISTS (
+          SELECT 1
+          FROM pg_constraint
+          WHERE conname = 'tenants_pkey'
+            AND conrelid = 'techbd_udi_ingress.tenants'::regclass
+      ) THEN
+          ALTER TABLE techbd_udi_ingress.tenants
+          ADD CONSTRAINT tenants_pkey
+          PRIMARY KEY (tenant_id);
+      END IF;
+
+      IF NOT EXISTS (
+            SELECT 1
+            FROM information_schema.columns
+            WHERE table_schema = 'techbd_udi_ingress'
+                AND table_name = 'tenants'
+                AND column_name = 'fusion_auth_group_id'
+      ) THEN
+            ALTER TABLE techbd_udi_ingress.tenants ADD COLUMN IF NOT EXISTS fusion_auth_group_id TEXT;
+      END IF;
+
+      IF NOT EXISTS (
+            SELECT 1
+            FROM information_schema.columns
+            WHERE table_schema = 'techbd_udi_ingress'
+                AND table_name = 'tenants'
+                AND column_name = 'tenant_type'
+      ) THEN
+            ALTER TABLE techbd_udi_ingress.tenants ADD COLUMN IF NOT EXISTS tenant_type TEXT DEFAULT 'QE';
+      END IF;
+
+      IF NOT EXISTS (
+            SELECT 1
+            FROM information_schema.columns
+            WHERE table_schema = 'techbd_udi_ingress'
+                AND table_name = 'tenants'
+                AND column_name = 'tenant_short_code'
+      ) THEN
+            ALTER TABLE techbd_udi_ingress.tenants ADD COLUMN IF NOT EXISTS tenant_short_code TEXT;
+      END IF;
+
+      IF NOT EXISTS (
+            SELECT 1
+            FROM information_schema.columns
+            WHERE table_schema = 'techbd_udi_ingress'
+                AND table_name = 'tenants'
+                AND column_name = 'elaboration'
+      ) THEN
+            ALTER TABLE techbd_udi_ingress.tenants ADD COLUMN IF NOT EXISTS elaboration jsonb;
+      END IF;
+
+      IF NOT EXISTS (
+            SELECT 1
+            FROM information_schema.columns
+            WHERE table_schema = 'techbd_udi_ingress'
+                AND table_name = 'tenants'
+                AND column_name = 'description'
+      ) THEN
+            ALTER TABLE techbd_udi_ingress.tenants ADD COLUMN IF NOT EXISTS description TEXT;
+      END IF;
+
+      IF NOT EXISTS (
+            SELECT 1
+            FROM information_schema.columns
+            WHERE table_schema = 'techbd_udi_ingress'
+                AND table_name = 'tenants'
+                AND column_name = 'updated_at'
+      ) THEN
+            ALTER TABLE techbd_udi_ingress.tenants ADD COLUMN IF NOT EXISTS updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP;
+      END IF;
+
+      IF NOT EXISTS (
+            SELECT 1
+            FROM information_schema.columns
+            WHERE table_schema = 'techbd_udi_ingress'
+                AND table_name = 'tenants'
+                AND column_name = 'updated_by'
+      ) THEN
+            ALTER TABLE techbd_udi_ingress.tenants ADD COLUMN IF NOT EXISTS updated_by TEXT;
+      END IF;
+
+      ${userSessions}
+      IF NOT EXISTS (
+          SELECT 1
+          FROM information_schema.table_constraints
+          WHERE table_schema = 'techbd_udi_ingress'
+            AND table_name = 'user_sessions'
+            AND constraint_name = 'chk_session_time_valid'
+      ) THEN
+          ALTER TABLE techbd_udi_ingress.user_sessions
+          ADD CONSTRAINT chk_session_time_valid
+          CHECK (
+              session_end_time IS NULL
+              OR session_end_time >= session_start_time
+          );
+      END IF;
+
+      IF NOT EXISTS (
+          SELECT 1
+          FROM information_schema.table_constraints
+          WHERE table_schema = 'techbd_udi_ingress'
+            AND table_name = 'user_sessions'
+            AND constraint_name = 'chk_expiry_after_start'
+      ) THEN
+          ALTER TABLE techbd_udi_ingress.user_sessions
+          ADD CONSTRAINT chk_expiry_after_start
+          CHECK (
+              session_expiry_time >= session_start_time
+          );
+      END IF;
+
+      -- Index for active user sessions
+      IF NOT EXISTS (
+        SELECT 1
+        FROM pg_indexes
+        WHERE schemaname = 'techbd_udi_ingress'
+          AND tablename = 'user_sessions'
+          AND indexname = 'idx_active_user_session'
+      ) THEN
+        CREATE INDEX IF NOT EXISTS idx_active_user_session
+        ON techbd_udi_ingress.user_sessions(user_id)
+        WHERE session_end_time IS NULL;
+      END IF;
+
+      -- Index for session expiry lookup
+      IF NOT EXISTS (
+        SELECT 1
+        FROM pg_indexes
+        WHERE schemaname = 'techbd_udi_ingress'
+          AND tablename = 'user_sessions'
+          AND indexname = 'idx_user_sessions_expiry'
+      ) THEN
+        CREATE INDEX IF NOT EXISTS idx_user_sessions_expiry
+        ON techbd_udi_ingress.user_sessions(session_expiry_time);
+      END IF;
+
+      IF NOT EXISTS (
+            SELECT 1
+            FROM information_schema.columns
+            WHERE table_schema = 'techbd_udi_ingress'
+                AND table_name = 'user_sessions'
+                AND column_name = 'fusion_auth_response'
+      ) THEN
+            ALTER TABLE techbd_udi_ingress.user_sessions ADD COLUMN IF NOT EXISTS fusion_auth_response jsonb;
+      END IF;
+
+      ${idpRoles}
+          IF NOT EXISTS (
+              SELECT 1
+              FROM pg_constraint
+              WHERE conname = 'idp_roles_pkey'
+          ) THEN
+              ALTER TABLE techbd_udi_ingress.idp_roles
+              ADD CONSTRAINT idp_roles_pkey PRIMARY KEY (role_id);
+          END IF;
+
+          IF NOT EXISTS (
+              SELECT 1
+              FROM information_schema.columns
+              WHERE table_schema = 'techbd_udi_ingress'
+                AND table_name = 'idp_roles'
+                AND column_name = 'config_access'
+          ) THEN
+              ALTER TABLE techbd_udi_ingress.idp_roles
+              ADD COLUMN config_access BOOLEAN NOT NULL DEFAULT FALSE;
+          END IF;
+      
+      ${idpMenu}
+          IF NOT EXISTS (
+              SELECT 1
+              FROM pg_constraint
+              WHERE conname = 'idp_menu_pkey'
+          ) THEN
+              ALTER TABLE techbd_udi_ingress.idp_menu
+              ADD CONSTRAINT idp_menu_pkey PRIMARY KEY (mnu_id);
+          END IF;
+
+          IF NOT EXISTS (
+              SELECT 1
+              FROM information_schema.columns
+              WHERE table_schema = 'techbd_udi_ingress'
+                AND table_name = 'idp_menu'
+                AND column_name = 'mnu_group'
+          ) THEN
+              ALTER TABLE techbd_udi_ingress.idp_menu
+              ADD COLUMN mnu_group TEXT NOT NULL DEFAULT 'data';
+          END IF;          
+      
+      ${idpScreens}
+          IF NOT EXISTS (
+              SELECT 1
+              FROM pg_constraint
+              WHERE conname = 'idp_screens_pkey'
+          ) THEN
+              ALTER TABLE techbd_udi_ingress.idp_screens
+              ADD CONSTRAINT idp_screens_pkey PRIMARY KEY (scr_id);
+          END IF;
+
+          IF NOT EXISTS (
+              SELECT 1
+              FROM information_schema.columns
+              WHERE table_schema = 'techbd_udi_ingress'
+                AND table_name = 'idp_screens'
+                AND column_name = 'scr_group'
+          ) THEN
+              ALTER TABLE techbd_udi_ingress.idp_screens
+              ADD COLUMN scr_group TEXT NOT NULL DEFAULT 'data';
+          END IF;       
+          
+          IF NOT EXISTS (
+                  SELECT 1
+                  FROM information_schema.columns
+                  WHERE table_schema = 'techbd_udi_ingress'
+                  AND table_name = 'idp_screens'
+                  AND column_name = 'parent_scr_id'
+              ) THEN
+                  ALTER TABLE techbd_udi_ingress.idp_screens
+                  ADD COLUMN parent_scr_id INT NULL;
+          END IF;
+
+      ${idpRoleTenantPermission}
+          IF NOT EXISTS (
+              SELECT 1
+              FROM pg_constraint
+              WHERE conname = 'idp_role_tenant_permission_pkey'
+          ) THEN
+              ALTER TABLE techbd_udi_ingress.idp_role_tenant_permission
+              ADD CONSTRAINT idp_role_tenant_permission_pkey PRIMARY KEY (permission_id);
+          END IF;
+
+      ${mcoRecords}
+        DO $$
+        DECLARE
+            sequence_created boolean := false;
+        BEGIN
+            -- Create new BIGINT sequence
+            IF NOT EXISTS (
+                SELECT 1
+                FROM pg_class
+                WHERE relkind = 'S'
+                  AND relnamespace = 'mco_data'::regnamespace
+                  AND relname = 'mco_records_batch_id_bigint_seq'
+            ) THEN
+                CREATE SEQUENCE mco_data.mco_records_batch_id_bigint_seq
+                    AS bigint;
+
+                sequence_created := true;
+            END IF;
+
+            -- Convert batch_id from INTEGER to BIGINT
+            IF EXISTS (
+                SELECT 1
+                FROM information_schema.columns
+                WHERE table_schema = 'mco_data'
+                  AND table_name = 'mco_records'
+                  AND column_name = 'batch_id'
+                  AND data_type <> 'bigint'
+            ) THEN
+                -- 1. Drop dependent view
+                DROP VIEW IF EXISTS mco_data.get_source_monitoring CASCADE;
+
+                -- 2. Change batch_id to BIGINT
+                ALTER TABLE mco_data.mco_records
+                    ALTER COLUMN batch_id TYPE bigint;
+            END IF;
+
+            -- Point batch_id to the new BIGINT sequence
+            ALTER TABLE mco_data.mco_records
+                ALTER COLUMN batch_id
+                SET DEFAULT nextval(
+                    'mco_data.mco_records_batch_id_bigint_seq'::regclass
+                );
+
+            -- Associate sequence with batch_id
+            ALTER SEQUENCE mco_data.mco_records_batch_id_bigint_seq
+                OWNED BY mco_data.mco_records.batch_id;
+
+            -- Initialize sequence only when newly created
+            IF sequence_created THEN
+                PERFORM setval(
+                    'mco_data.mco_records_batch_id_bigint_seq',
+                    COALESCE(
+                        (
+                            SELECT MAX(batch_id)
+                            FROM mco_data.mco_records
+                        ),
+                        0
+                    ) + 1,
+                    false
+                );
+            END IF;
+        END $$;
+
+        ALTER TABLE mco_data.mco_records ADD COLUMN IF NOT EXISTS batch_guid TEXT NOT NULL DEFAULT gen_random_uuid()::text;
+        IF NOT EXISTS (
+            SELECT 1
+            FROM pg_constraint
+            WHERE conname = 'fk_mco_record_tenant'
+        ) THEN
+            ALTER TABLE mco_data.mco_records
+            ADD CONSTRAINT fk_mco_record_tenant
+            FOREIGN KEY (tenant_id)
+            REFERENCES techbd_udi_ingress.tenants (tenant_id);
+        END IF;
+
+        IF EXISTS (
+          SELECT 1
+          FROM information_schema.columns
+          WHERE table_schema = 'mco_data'
+            AND table_name = 'mco_records'
+            AND column_name = 'processed_count'
+            AND is_nullable = 'NO'
+      ) THEN
+          EXECUTE 'ALTER TABLE mco_data.mco_records ALTER COLUMN processed_count DROP NOT NULL';
+      END IF; 
+
+      IF EXISTS (
+          SELECT 1
+          FROM information_schema.columns
+          WHERE table_schema = 'mco_data'
+            AND table_name = 'mco_records'
+            AND column_name = 'errored_count'
+            AND is_nullable = 'NO'
+      ) THEN
+          EXECUTE 'ALTER TABLE mco_data.mco_records ALTER COLUMN errored_count DROP NOT NULL';
+      END IF;
+
+      IF EXISTS (
+          SELECT 1
+          FROM information_schema.columns
+          WHERE table_schema = 'mco_data'
+            AND table_name = 'mco_records'
+            AND column_name = 'resubmitted_count'
+            AND is_nullable = 'NO'
+      ) THEN
+          EXECUTE 'ALTER TABLE mco_data.mco_records ALTER COLUMN resubmitted_count DROP NOT NULL';
+      END IF;
+
+      IF NOT EXISTS (
+          SELECT 1
+          FROM information_schema.columns
+          WHERE table_schema = 'mco_data'
+            AND table_name = 'mco_records'
+            AND column_name = 'reporting_month_date'
+      ) THEN
+          ALTER TABLE mco_data.mco_records
+          ADD COLUMN reporting_month_date date
+          GENERATED ALWAYS AS (
+              make_date(
+                  substring(trim(reporting_month) from 4 for 4)::int,
+                  substring(trim(reporting_month) from 1 for 2)::int,
+                  1
+              )
+          ) STORED;
+      END IF;
+
+      IF NOT EXISTS (
+        SELECT 1
+        FROM pg_indexes
+        WHERE schemaname = 'mco_data'
+          AND tablename = 'mco_records'
+          AND indexname = 'idx_mco_records_reporting_month_date'
+      ) THEN
+        CREATE INDEX IF NOT EXISTS idx_mco_records_reporting_month_date
+        ON mco_data.mco_records (reporting_month_date);
+      END IF;
+
+
+      IF NOT EXISTS (
+        SELECT 1
+        FROM pg_indexes
+        WHERE schemaname = 'mco_data'
+          AND tablename = 'mco_records'
+          AND indexname = 'idx_mco_records_tenant_reporting_month'
+      ) THEN
+        CREATE INDEX IF NOT EXISTS idx_mco_records_tenant_reporting_month
+        ON mco_data.mco_records (tenant_id, reporting_month_date);
+      END IF;      
+
+      ${mcoRecordDetails}
+        DO $$
+        DECLARE
+            sequence_created boolean := false;
+        BEGIN
+            -- Create new BIGINT sequence if it does not exist
+            IF NOT EXISTS (
+                SELECT 1
+                FROM pg_class
+                WHERE relkind = 'S'
+                  AND relnamespace = 'mco_data'::regnamespace
+                  AND relname = 'mco_record_details_batch_details_id_bigint_seq'
+            ) THEN
+                CREATE SEQUENCE
+                    mco_data.mco_record_details_batch_details_id_bigint_seq
+                    AS bigint;
+
+                sequence_created := true;
+            END IF;
+
+            -- Convert batch_details_id to BIGINT only if required
+            IF EXISTS (
+                SELECT 1
+                FROM information_schema.columns
+                WHERE table_schema = 'mco_data'
+                  AND table_name = 'mco_record_details'
+                  AND column_name = 'batch_details_id'
+                  AND data_type <> 'bigint'
+            ) THEN
+                -- 1. Drop dependent view
+                DROP VIEW IF EXISTS mco_data.v_source_monitoring_details CASCADE;
+
+                -- 2. Change batch_details_id to BIGINT
+                ALTER TABLE mco_data.mco_record_details
+                    ALTER COLUMN batch_details_id TYPE bigint;
+            END IF;
+
+            -- Set the new BIGINT sequence as the default
+            ALTER TABLE mco_data.mco_record_details
+                ALTER COLUMN batch_details_id
+                SET DEFAULT nextval(
+                    'mco_data.mco_record_details_batch_details_id_bigint_seq'::regclass
+                );
+
+            -- Associate the sequence with batch_details_id
+            ALTER SEQUENCE
+                mco_data.mco_record_details_batch_details_id_bigint_seq
+                OWNED BY
+                mco_data.mco_record_details.batch_details_id;
+
+            -- Synchronize sequence only when it was newly created
+            IF sequence_created THEN
+                PERFORM setval(
+                    'mco_data.mco_record_details_batch_details_id_bigint_seq',
+                    COALESCE(
+                        (
+                            SELECT MAX(batch_details_id)
+                            FROM mco_data.mco_record_details
+                        ),
+                        0
+                    ) + 1,
+                    false
+                );
+            END IF;
+        END $$;
+
+        ALTER TABLE mco_data.mco_record_details ADD COLUMN IF NOT EXISTS batch_details_guid TEXT NOT NULL DEFAULT gen_random_uuid()::text;
+        IF NOT EXISTS (
+            SELECT 1
+            FROM pg_constraint
+            WHERE conname = 'fk_mco_record_details_tenant'
+        ) THEN
+            ALTER TABLE mco_data.mco_record_details
+            ADD CONSTRAINT fk_mco_record_details_tenant
+            FOREIGN KEY (tenant_id)
+            REFERENCES techbd_udi_ingress.tenants (tenant_id);
+        END IF;
+
+        IF EXISTS (
+          SELECT 1
+          FROM information_schema.columns
+          WHERE table_schema = 'mco_data'
+            AND table_name = 'mco_record_details'
+            AND column_name = 'processed_count'
+            AND is_nullable = 'NO'
+      ) THEN
+          EXECUTE 'ALTER TABLE mco_data.mco_record_details ALTER COLUMN processed_count DROP NOT NULL';
+      END IF; 
+
+      IF EXISTS (
+          SELECT 1
+          FROM information_schema.columns
+          WHERE table_schema = 'mco_data'
+            AND table_name = 'mco_record_details'
+            AND column_name = 'errored_count'
+            AND is_nullable = 'NO'
+      ) THEN
+          EXECUTE 'ALTER TABLE mco_data.mco_record_details ALTER COLUMN errored_count DROP NOT NULL';
+      END IF;
+
+      IF NOT EXISTS (
+        SELECT 1
+        FROM pg_indexes
+        WHERE schemaname = 'mco_data'
+          AND tablename = 'mco_record_details'
+          AND indexname = 'idx_mco_record_details_created_on_utc'
+      ) THEN
+        CREATE INDEX IF NOT EXISTS idx_mco_record_details_created_on_utc
+        ON mco_data.mco_record_details (created_on_utc DESC);
+      END IF;
+
+      ${mcoErrorTypes}
+        ALTER TABLE mco_data.mco_error_types ADD COLUMN IF NOT EXISTS error_type_guid TEXT NOT NULL DEFAULT gen_random_uuid()::text;
+
+        IF NOT EXISTS (
+            SELECT 1
+            FROM pg_constraint
+            WHERE conname = 'uq_mco_error_types_error_type_name'
+        ) THEN
+            ALTER TABLE mco_data.mco_error_types
+            ADD CONSTRAINT uq_mco_error_types_error_type_name
+            UNIQUE (error_type_name);
+        END IF;
+
+      ${mcoRecordErrorLogs}
+        DO $$
+        DECLARE
+            sequence_created boolean := false;
+        BEGIN
+            -- Create a new BIGINT sequence for the production column
+            IF NOT EXISTS (
+                SELECT 1
+                FROM pg_class
+                WHERE relkind = 'S'
+                  AND relnamespace = 'mco_data'::regnamespace
+                  AND relname = 'mco_record_error_logs_error_log_id_bigint_seq'
+            ) THEN
+                CREATE SEQUENCE
+                    mco_data.mco_record_error_logs_error_log_id_bigint_seq
+                    AS bigint;
+
+                sequence_created := true;
+            END IF;
+
+            -- Convert error_log_id to BIGINT only if required
+            IF EXISTS (
+                SELECT 1
+                FROM information_schema.columns
+                WHERE table_schema = 'mco_data'
+                  AND table_name = 'mco_record_error_logs'
+                  AND column_name = 'error_log_id'
+                  AND data_type <> 'bigint'
+            ) THEN
+                ALTER TABLE mco_data.mco_record_error_logs
+                    ALTER COLUMN error_log_id TYPE bigint;
+            END IF;
+
+            -- Use the new BIGINT sequence
+            ALTER TABLE mco_data.mco_record_error_logs
+                ALTER COLUMN error_log_id
+                SET DEFAULT nextval(
+                    'mco_data.mco_record_error_logs_error_log_id_bigint_seq'::regclass
+                );
+
+            -- Make the sequence owned by the column
+            ALTER SEQUENCE
+                mco_data.mco_record_error_logs_error_log_id_bigint_seq
+                OWNED BY
+                mco_data.mco_record_error_logs.error_log_id;
+
+            -- Initialize the sequence only when it was newly created
+            IF sequence_created THEN
+                PERFORM setval(
+                    'mco_data.mco_record_error_logs_error_log_id_bigint_seq',
+                    COALESCE(
+                        (
+                            SELECT MAX(error_log_id)
+                            FROM mco_data.mco_record_error_logs
+                        ),
+                        0
+                    ) + 1,
+                    false
+                );
+            END IF;
+        END $$;
+
+        ALTER TABLE mco_data.mco_record_error_logs ADD COLUMN IF NOT EXISTS error_log_guid TEXT NOT NULL DEFAULT gen_random_uuid()::text;
+        IF NOT EXISTS (
+            SELECT 1
+            FROM pg_constraint
+            WHERE conname = 'fk_mco_record_error_logs_tenant'
+        ) THEN
+            ALTER TABLE mco_data.mco_record_error_logs
+            ADD CONSTRAINT fk_mco_record_error_logs_tenant
+            FOREIGN KEY (tenant_id)
+            REFERENCES techbd_udi_ingress.tenants (tenant_id);
+        END IF;
+
+      ${resourceTypes}
+      DO $$
+      DECLARE
+          sequence_created boolean := false;
+      BEGIN
+          -- Create BIGINT sequence if it does not exist
+          IF NOT EXISTS (
+              SELECT 1
+              FROM pg_class
+              WHERE relkind = 'S'
+                AND relnamespace = 'screening_extracts'::regnamespace
+                AND relname = 'resource_type_resource_type_id_seq'
+          ) THEN
+              CREATE SEQUENCE
+                  screening_extracts.resource_type_resource_type_id_seq
+                  AS bigint;
+            
+              sequence_created := true;
+          END IF;
+
+          -- Convert ID to BIGINT only if required
+          IF EXISTS (
+              SELECT 1
+              FROM information_schema.columns
+              WHERE table_schema = 'screening_extracts'
+                AND table_name = 'resource_types'
+                AND column_name = 'resource_type_id'
+                AND data_type <> 'bigint'
+          ) THEN
+              ALTER TABLE screening_extracts.resource_types
+                  ALTER COLUMN resource_type_id TYPE bigint;
+          END IF;
+
+          -- Set BIGINT sequence as the default
+          ALTER TABLE screening_extracts.resource_types
+              ALTER COLUMN resource_type_id
+              SET DEFAULT nextval(
+                  'screening_extracts.resource_type_resource_type_id_seq'::regclass
+              );
+
+          -- Associate sequence with the ID column
+          ALTER SEQUENCE screening_extracts.resource_type_resource_type_id_seq
+              OWNED BY screening_extracts.resource_types.resource_type_id;
+
+          -- Synchronize sequence only when it was newly created
+          IF sequence_created THEN
+              PERFORM setval(
+                  'screening_extracts.resource_type_resource_type_id_seq',
+                  COALESCE(
+                      (
+                          SELECT MAX(resource_type_id)
+                          FROM screening_extracts.resource_types
+                      ),
+                      0
+                  ) + 1,
+                  false
+              );
+          END IF;
+      END $$;
+
+      -- Primary key
+      IF NOT EXISTS (
+          SELECT 1
+          FROM pg_constraint
+          WHERE conname = 'resource_type_guid_pkey'
+            AND conrelid = 'screening_extracts.resource_types'::regclass
+      ) THEN
+          ALTER TABLE screening_extracts.resource_types
+              ADD CONSTRAINT resource_type_guid_pkey
+              PRIMARY KEY (resource_type_guid);
+      END IF;
+
+      -- Resource type name unique key
+      IF NOT EXISTS (
+          SELECT 1
+          FROM pg_constraint
+          WHERE conname = 'resource_types_resource_type_name_unqky'
+            AND conrelid = 'screening_extracts.resource_types'::regclass
+      ) THEN
+          ALTER TABLE screening_extracts.resource_types
+              ADD CONSTRAINT resource_types_resource_type_name_unqky
+              UNIQUE (resource_type_name);
+      END IF;
+
+      IF EXISTS (
+          SELECT 1
+          FROM information_schema.columns
+          WHERE table_schema = 'screening_extracts'
+            AND table_name = 'resource_types'
+            AND column_name = 'is_active'
+            AND is_nullable = 'NO'
+      ) THEN
+          ALTER TABLE screening_extracts.resource_types
+              ALTER COLUMN is_active DROP NOT NULL;
+      END IF;
+
+      ${screeningErrorTypes}
+      DO $$
+      DECLARE
+          sequence_created boolean := false;
+      BEGIN
+
+          -- Create BIGINT sequence if it does not exist
+          IF NOT EXISTS (
+              SELECT 1
+              FROM pg_class
+              WHERE relkind = 'S'
+                AND relnamespace = 'screening_extracts'::regnamespace
+                AND relname = 'screening_error_type_screening_error_type_id_seq'
+          ) THEN
+              CREATE SEQUENCE
+                  screening_extracts.screening_error_type_screening_error_type_id_seq
+                  AS bigint;
+
+              sequence_created := true;
+          END IF;
+
+          -- Convert ID to BIGINT only if required
+          IF EXISTS (
+              SELECT 1
+              FROM information_schema.columns
+              WHERE table_schema = 'screening_extracts'
+                AND table_name = 'screening_error_types'
+                AND column_name = 'screening_error_type_id'
+                AND data_type <> 'bigint'
+          ) THEN
+              ALTER TABLE screening_extracts.screening_error_types
+                  ALTER COLUMN screening_error_type_id TYPE bigint;
+          END IF;
+
+          -- Set BIGINT sequence as the default
+          ALTER TABLE screening_extracts.screening_error_types
+              ALTER COLUMN screening_error_type_id
+              SET DEFAULT nextval(
+                  'screening_extracts.screening_error_type_screening_error_type_id_seq'::regclass
+              );
+
+          -- Associate sequence with the ID column
+          ALTER SEQUENCE
+              screening_extracts.screening_error_type_screening_error_type_id_seq
+              OWNED BY
+              screening_extracts.screening_error_types.screening_error_type_id;
+
+          -- Synchronize sequence only when it was newly created
+          IF sequence_created THEN
+              PERFORM setval(
+                  'screening_extracts.screening_error_type_screening_error_type_id_seq',
+                  COALESCE(
+                      (
+                          SELECT MAX(screening_error_type_id)
+                          FROM screening_extracts.screening_error_types
+                      ),
+                      0
+                  ) + 1,
+                  false
+              );
+          END IF;
+      END $$;
+
+      -- Primary key
+      IF NOT EXISTS (
+          SELECT 1
+          FROM pg_constraint
+          WHERE conname = 'screening_error_type_guid_pkey'
+            AND conrelid = 'screening_extracts.screening_error_types'::regclass
+      ) THEN
+          ALTER TABLE screening_extracts.screening_error_types
+              ADD CONSTRAINT screening_error_type_guid_pkey
+              PRIMARY KEY (screening_error_type_guid);
+      END IF;
+
+      -- Screening error type name unique key
+      IF NOT EXISTS (
+          SELECT 1
+          FROM pg_constraint
+          WHERE conname = 'screening_error_types_error_type_name_unqky'
+            AND conrelid = 'screening_extracts.screening_error_types'::regclass
+      ) THEN
+          ALTER TABLE screening_extracts.screening_error_types
+              ADD CONSTRAINT screening_error_types_error_type_name_unqky
+              UNIQUE (screening_error_type_name);
+      END IF;
+
+      IF EXISTS (
+          SELECT 1
+          FROM information_schema.columns
+          WHERE table_schema = 'screening_extracts'
+            AND table_name = 'screening_error_types'
+            AND column_name = 'is_active'
+            AND is_nullable = 'NO'
+      ) THEN
+          ALTER TABLE screening_extracts.screening_error_types
+              ALTER COLUMN is_active DROP NOT NULL;
+      END IF;
+
+      ${mcoScreeningExtracts}
+      DO $$
+      DECLARE
+          sequence_created boolean := false;
+      BEGIN
+          -- Create BIGINT sequence if it does not exist
+          IF NOT EXISTS (
+              SELECT 1
+              FROM pg_class
+              WHERE relkind = 'S'
+                AND relnamespace = 'screening_extracts'::regnamespace
+                AND relname = 'mco_screening_extracts_mco_screening_id_seq'
+          ) THEN
+              CREATE SEQUENCE screening_extracts.mco_screening_extracts_mco_screening_id_seq
+                  AS bigint;
+
+              sequence_created := true;
+          END IF;
+
+          -- Convert to BIGINT only if required
+          IF EXISTS (
+              SELECT 1
+              FROM information_schema.columns
+              WHERE table_schema = 'screening_extracts'
+                AND table_name = 'mco_screening_extracts'
+                AND column_name = 'mco_screening_id'
+                AND data_type <> 'bigint'
+          ) THEN
+              ALTER TABLE screening_extracts.mco_screening_extracts
+                  ALTER COLUMN mco_screening_id TYPE bigint;
+          END IF;
+
+          -- Set BIGINT sequence as the default
+          ALTER TABLE screening_extracts.mco_screening_extracts
+              ALTER COLUMN mco_screening_id
+              SET DEFAULT nextval(
+                  'screening_extracts.mco_screening_extracts_mco_screening_id_seq'::regclass
+              );
+
+          -- Associate sequence with the column
+          ALTER SEQUENCE screening_extracts.mco_screening_extracts_mco_screening_id_seq
+              OWNED BY screening_extracts.mco_screening_extracts.mco_screening_id;
+
+          -- Synchronize sequence only when it was newly created
+          IF sequence_created THEN
+
+              PERFORM setval(
+                  'screening_extracts.mco_screening_extracts_mco_screening_id_seq',
+                  COALESCE(
+                      (
+                          SELECT MAX(mco_screening_id)
+                          FROM screening_extracts.mco_screening_extracts
+                      ),
+                      0
+                  ) + 1,
+                  false
+              );
+          END IF;
+      END $$;
+
+      -- Primary key
+      IF NOT EXISTS (
+          SELECT 1
+          FROM pg_constraint
+          WHERE conname = 'mco_screening_extracts_guid_pkey'
+            AND conrelid = 'screening_extracts.mco_screening_extracts'::regclass
+      ) THEN
+          ALTER TABLE screening_extracts.mco_screening_extracts
+              ADD CONSTRAINT mco_screening_extracts_guid_pkey
+              PRIMARY KEY (mco_screening_guid);
+      END IF;
+
+      -- Unique constraint
+      IF NOT EXISTS (
+          SELECT 1
+          FROM pg_constraint
+          WHERE conname = 'mco_screening_extracts_mco_screening_id_unqky'
+            AND conrelid = 'screening_extracts.mco_screening_extracts'::regclass
+      ) THEN
+          ALTER TABLE screening_extracts.mco_screening_extracts
+              ADD CONSTRAINT mco_screening_extracts_mco_screening_id_unqky
+              UNIQUE (mco_screening_id);
+      END IF;
+
+      -- resource_type_id foreign key
+      IF NOT EXISTS (
+          SELECT 1
+          FROM pg_constraint
+          WHERE conname = 'mco_screening_extracts_resource_type_id_fkey'
+            AND conrelid = 'screening_extracts.mco_screening_extracts'::regclass
+      ) THEN
+          ALTER TABLE screening_extracts.mco_screening_extracts
+              ADD CONSTRAINT mco_screening_extracts_resource_type_id_fkey
+              FOREIGN KEY (resource_type_id)
+              REFERENCES screening_extracts.resource_types(resource_type_id);
+      END IF;
+
+      -- tenant_id foreign key
+      IF NOT EXISTS (
+          SELECT 1
+          FROM pg_constraint
+          WHERE conname = 'mco_screening_extracts_tenant_id_fkey'
+            AND conrelid = 'screening_extracts.mco_screening_extracts'::regclass
+      ) THEN
+          ALTER TABLE screening_extracts.mco_screening_extracts
+              ADD CONSTRAINT mco_screening_extracts_tenant_id_fkey
+              FOREIGN KEY (tenant_id)
+              REFERENCES techbd_udi_ingress.tenants(tenant_id);
+      END IF;
+
+      IF EXISTS (
+          SELECT 1
+          FROM information_schema.columns
+          WHERE table_schema = 'screening_extracts'
+            AND table_name = 'mco_screening_extracts'
+            AND column_name = 'resource_type_id'
+            AND data_type <> 'bigint'
+      ) THEN
+          ALTER TABLE screening_extracts.mco_screening_extracts
+              ALTER COLUMN resource_type_id TYPE bigint;
+      END IF;
+
+      IF EXISTS (
+          SELECT 1
+          FROM information_schema.columns
+          WHERE table_schema = 'screening_extracts'
+            AND table_name = 'mco_screening_extracts'
+            AND column_name = 'resource_type_id'
+            AND is_nullable = 'NO'
+      ) THEN
+          ALTER TABLE screening_extracts.mco_screening_extracts
+              ALTER COLUMN resource_type_id DROP NOT NULL;
+      END IF;
+
+      IF EXISTS (
+          SELECT 1
+          FROM information_schema.columns
+          WHERE table_schema = 'screening_extracts'
+            AND table_name = 'mco_screening_extracts'
+            AND column_name = 'is_active'
+            AND is_nullable = 'NO'
+      ) THEN
+          ALTER TABLE screening_extracts.mco_screening_extracts
+              ALTER COLUMN is_active DROP NOT NULL;
+      END IF;
+
+      ${mcoScreeningExtractsDetails}
+      DO $$
+      DECLARE
+          sequence_created boolean := false;
+      BEGIN
+
+          IF NOT EXISTS (
+              SELECT 1
+              FROM pg_class
+              WHERE relkind = 'S'
+                AND relnamespace = 'screening_extracts'::regnamespace
+                AND relname =
+                    'mco_screening_extracts_details_mco_scrning_extcts_dtls_id_seq'
+          ) THEN
+              CREATE SEQUENCE
+                  screening_extracts.mco_screening_extracts_details_mco_scrning_extcts_dtls_id_seq
+                  AS bigint;
+
+              sequence_created := true;
+          END IF;
+
+          IF EXISTS (
+              SELECT 1
+              FROM information_schema.columns
+              WHERE table_schema = 'screening_extracts'
+                AND table_name = 'mco_screening_extracts_details'
+                AND column_name = 'mco_screening_extracts_details_id'
+                AND data_type <> 'bigint'
+          ) THEN
+              ALTER TABLE screening_extracts.mco_screening_extracts_details
+                  ALTER COLUMN mco_screening_extracts_details_id TYPE bigint;
+          END IF;
+
+          IF EXISTS (
+              SELECT 1
+              FROM information_schema.columns
+              WHERE table_schema = 'screening_extracts'
+                AND table_name = 'mco_screening_extracts_details'
+                AND column_name = 'mco_screening_id'
+                AND data_type <> 'bigint'
+          ) THEN
+              ALTER TABLE screening_extracts.mco_screening_extracts_details
+                  ALTER COLUMN mco_screening_id TYPE bigint;
+          END IF;
+
+          IF EXISTS (
+              SELECT 1
+              FROM information_schema.columns
+              WHERE table_schema = 'screening_extracts'
+                AND table_name = 'mco_screening_extracts_details'
+                AND column_name = 'reprocess_count'
+                AND data_type <> 'bigint'
+          ) THEN
+              ALTER TABLE screening_extracts.mco_screening_extracts_details
+                  ALTER COLUMN reprocess_count TYPE bigint;
+          END IF;
+
+          IF EXISTS (
+              SELECT 1
+              FROM information_schema.columns
+              WHERE table_schema = 'screening_extracts'
+                AND table_name = 'mco_screening_extracts_details'
+                AND column_name = 'reprocess_count'
+                AND is_nullable = 'NO'
+          ) THEN
+              ALTER TABLE screening_extracts.mco_screening_extracts_details
+                  ALTER COLUMN reprocess_count DROP NOT NULL;
+          END IF;
+
+          IF EXISTS (
+              SELECT 1
+              FROM information_schema.columns
+              WHERE table_schema = 'screening_extracts'
+                AND table_name = 'mco_screening_extracts_details'
+                AND column_name = 'resource_type_id'
+                AND data_type <> 'bigint'
+          ) THEN
+              ALTER TABLE screening_extracts.mco_screening_extracts_details
+                  ALTER COLUMN resource_type_id TYPE bigint;
+          END IF;
+
+          IF EXISTS (
+              SELECT 1
+              FROM information_schema.columns
+              WHERE table_schema = 'screening_extracts'
+                AND table_name = 'mco_screening_extracts_details'
+                AND column_name = 'record_count'
+                AND data_type <> 'bigint'
+          ) THEN
+              ALTER TABLE screening_extracts.mco_screening_extracts_details
+                  ALTER COLUMN record_count TYPE bigint;
+          END IF;
+
+          IF EXISTS (
+              SELECT 1
+              FROM information_schema.columns
+              WHERE table_schema = 'screening_extracts'
+                AND table_name = 'mco_screening_extracts_details'
+                AND column_name = 'record_count'
+                AND is_nullable = 'NO'
+          ) THEN
+              ALTER TABLE screening_extracts.mco_screening_extracts_details
+                  ALTER COLUMN record_count DROP NOT NULL;
+          END IF;
+
+          ALTER TABLE screening_extracts.mco_screening_extracts_details
+              ALTER COLUMN mco_screening_extracts_details_id
+              SET DEFAULT nextval(
+                  'screening_extracts.mco_screening_extracts_details_mco_scrning_extcts_dtls_id_seq'::regclass
+              );
+
+          ALTER SEQUENCE
+              screening_extracts.mco_screening_extracts_details_mco_scrning_extcts_dtls_id_seq
+              OWNED BY
+              screening_extracts.mco_screening_extracts_details.mco_screening_extracts_details_id;
+
+          IF sequence_created THEN
+              PERFORM setval(
+                  'screening_extracts.mco_screening_extracts_details_mco_scrning_extcts_dtls_id_seq',
+                  COALESCE(
+                      (
+                          SELECT MAX(mco_screening_extracts_details_id)
+                          FROM screening_extracts.mco_screening_extracts_details
+                      ),
+                      0
+                  ) + 1,
+                  false
+              );
+          END IF;
+      END $$;
+
+      IF NOT EXISTS (
+          SELECT 1
+          FROM pg_constraint
+          WHERE conname = 'mco_screening_extracts_details_guid_pkey'
+            AND conrelid =
+                'screening_extracts.mco_screening_extracts_details'::regclass
+      ) THEN
+          ALTER TABLE screening_extracts.mco_screening_extracts_details
+              ADD CONSTRAINT mco_screening_extracts_details_guid_pkey
+              PRIMARY KEY (mco_screening_extracts_details_guid);
+      END IF;
+
+      IF NOT EXISTS (
+          SELECT 1
+          FROM pg_constraint
+          WHERE conname =
+              'mco_screening_extracts_details_mco_screening_extracts_details_i'
+            AND conrelid =
+                'screening_extracts.mco_screening_extracts_details'::regclass
+      ) THEN
+          ALTER TABLE screening_extracts.mco_screening_extracts_details
+              ADD CONSTRAINT
+              mco_screening_extracts_details_mco_screening_extracts_details_i
+              UNIQUE (mco_screening_extracts_details_id);
+      END IF;
+
+      IF NOT EXISTS (
+          SELECT 1
+          FROM pg_constraint
+          WHERE conname =
+              'mco_screening_extracts_details_mco_screening_id_fkey'
+            AND conrelid =
+                'screening_extracts.mco_screening_extracts_details'::regclass
+      ) THEN
+          ALTER TABLE screening_extracts.mco_screening_extracts_details
+              ADD CONSTRAINT
+              mco_screening_extracts_details_mco_screening_id_fkey
+              FOREIGN KEY (mco_screening_id)
+              REFERENCES screening_extracts.mco_screening_extracts(mco_screening_id);
+      END IF;
+
+      IF NOT EXISTS (
+          SELECT 1
+          FROM pg_constraint
+          WHERE conname =
+              'mco_screening_extracts_details_resource_type_id_fkey'
+            AND conrelid =
+                'screening_extracts.mco_screening_extracts_details'::regclass
+      ) THEN
+          ALTER TABLE screening_extracts.mco_screening_extracts_details
+              ADD CONSTRAINT
+              mco_screening_extracts_details_resource_type_id_fkey
+              FOREIGN KEY (resource_type_id)
+              REFERENCES screening_extracts.resource_types(resource_type_id);
+      END IF;
+
+      -- mco_screening_id nullable
+      IF EXISTS (
+          SELECT 1
+          FROM information_schema.columns
+          WHERE table_schema = 'screening_extracts'
+            AND table_name = 'mco_screening_extracts_details'
+            AND column_name = 'mco_screening_id'
+            AND is_nullable = 'NO'
+      ) THEN
+          ALTER TABLE screening_extracts.mco_screening_extracts_details
+              ALTER COLUMN mco_screening_id DROP NOT NULL;
+      END IF;
+
+
+      -- resource_type_id nullable
+      IF EXISTS (
+          SELECT 1
+          FROM information_schema.columns
+          WHERE table_schema = 'screening_extracts'
+            AND table_name = 'mco_screening_extracts_details'
+            AND column_name = 'resource_type_id'
+            AND is_nullable = 'NO'
+      ) THEN
+          ALTER TABLE screening_extracts.mco_screening_extracts_details
+              ALTER COLUMN resource_type_id DROP NOT NULL;
+      END IF;
+
+
+      -- is_active nullable
+      IF EXISTS (
+          SELECT 1
+          FROM information_schema.columns
+          WHERE table_schema = 'screening_extracts'
+            AND table_name = 'mco_screening_extracts_details'
+            AND column_name = 'is_active'
+            AND is_nullable = 'NO'
+      ) THEN
+          ALTER TABLE screening_extracts.mco_screening_extracts_details
+              ALTER COLUMN is_active DROP NOT NULL;
+      END IF;
+
+      ${mcoScreeningExtractsErrorLogs}
+      DO $$
+      DECLARE
+          sequence_created boolean := false;
+      BEGIN
+          -- Create BIGINT sequence if it does not exist
+          IF NOT EXISTS (
+              SELECT 1
+              FROM pg_class
+              WHERE relkind = 'S'
+                AND relnamespace = 'screening_extracts'::regnamespace
+                AND relname =
+                    'mco_screening_extract_error_logs_mco_scrning_extract_err_log_id'
+          ) THEN
+              CREATE SEQUENCE
+                  screening_extracts.mco_screening_extract_error_logs_mco_scrning_extract_err_log_id
+                  AS bigint;
+
+              sequence_created := true;
+          END IF;
+
+          -- Convert error log ID to BIGINT
+          IF EXISTS (
+              SELECT 1
+              FROM information_schema.columns
+              WHERE table_schema = 'screening_extracts'
+                AND table_name = 'mco_screening_extracts_error_logs'
+                AND column_name = 'mco_screening_extracts_error_log_id'
+                AND data_type <> 'bigint'
+          ) THEN
+              ALTER TABLE screening_extracts.mco_screening_extracts_error_logs
+                  ALTER COLUMN mco_screening_extracts_error_log_id TYPE bigint;
+          END IF;
+
+          -- Convert mco_screening_id to BIGINT
+          IF EXISTS (
+              SELECT 1
+              FROM information_schema.columns
+              WHERE table_schema = 'screening_extracts'
+                AND table_name = 'mco_screening_extracts_error_logs'
+                AND column_name = 'mco_screening_id'
+                AND data_type <> 'bigint'
+          ) THEN
+              ALTER TABLE screening_extracts.mco_screening_extracts_error_logs
+                  ALTER COLUMN mco_screening_id TYPE bigint;
+          END IF;
+
+          -- Convert details ID to BIGINT
+          IF EXISTS (
+              SELECT 1
+              FROM information_schema.columns
+              WHERE table_schema = 'screening_extracts'
+                AND table_name = 'mco_screening_extracts_error_logs'
+                AND column_name = 'mco_screening_extracts_details_id'
+                AND data_type <> 'bigint'
+          ) THEN
+              ALTER TABLE screening_extracts.mco_screening_extracts_error_logs
+                  ALTER COLUMN mco_screening_extracts_details_id TYPE bigint;
+          END IF;
+
+          -- Convert screening error type ID to BIGINT
+          IF EXISTS (
+              SELECT 1
+              FROM information_schema.columns
+              WHERE table_schema = 'screening_extracts'
+                AND table_name = 'mco_screening_extracts_error_logs'
+                AND column_name = 'screening_error_type_id'
+                AND data_type <> 'bigint'
+          ) THEN
+              ALTER TABLE screening_extracts.mco_screening_extracts_error_logs
+                  ALTER COLUMN screening_error_type_id TYPE bigint;
+          END IF;
+
+          -- Convert error_json from TEXT to JSON
+          IF EXISTS (
+              SELECT 1
+              FROM information_schema.columns
+              WHERE table_schema = 'screening_extracts'
+                AND table_name = 'mco_screening_extracts_error_logs'
+                AND column_name = 'error_json'
+                AND data_type <> 'json'
+          ) THEN
+              ALTER TABLE screening_extracts.mco_screening_extracts_error_logs
+                  ALTER COLUMN error_json TYPE json
+                  USING error_json::json;
+          END IF;
+
+          -- Set BIGINT sequence as the default
+          ALTER TABLE screening_extracts.mco_screening_extracts_error_logs
+              ALTER COLUMN mco_screening_extracts_error_log_id
+              SET DEFAULT nextval(
+                  'screening_extracts.mco_screening_extract_error_logs_mco_scrning_extract_err_log_id'::regclass
+              );
+
+          -- Associate sequence with the ID column
+          ALTER SEQUENCE
+              screening_extracts.mco_screening_extract_error_logs_mco_scrning_extract_err_log_id
+              OWNED BY
+              screening_extracts.mco_screening_extracts_error_logs.mco_screening_extracts_error_log_id;
+
+          -- Synchronize sequence only when it was newly created
+          IF sequence_created THEN
+              PERFORM setval(
+                  'screening_extracts.mco_screening_extract_error_logs_mco_scrning_extract_err_log_id',
+                  COALESCE(
+                      (
+                          SELECT MAX(mco_screening_extracts_error_log_id)
+                          FROM screening_extracts.mco_screening_extracts_error_logs
+                      ),
+                      0
+                  ) + 1,
+                  false
+              );
+          END IF;
+      END $$;
+
+      IF EXISTS (
+          SELECT 1
+          FROM information_schema.columns
+          WHERE table_schema = 'screening_extracts'
+            AND table_name = 'mco_screening_extracts_error_logs'
+            AND column_name = 'mco_screening_id'
+            AND is_nullable = 'NO'
+      ) THEN
+          ALTER TABLE screening_extracts.mco_screening_extracts_error_logs
+              ALTER COLUMN mco_screening_id DROP NOT NULL;
+      END IF;
+
+      IF EXISTS (
+          SELECT 1
+          FROM information_schema.columns
+          WHERE table_schema = 'screening_extracts'
+            AND table_name = 'mco_screening_extracts_error_logs'
+            AND column_name = 'mco_screening_extracts_details_id'
+            AND is_nullable = 'NO'
+      ) THEN
+          ALTER TABLE screening_extracts.mco_screening_extracts_error_logs
+              ALTER COLUMN mco_screening_extracts_details_id DROP NOT NULL;
+      END IF;
+
+      IF EXISTS (
+          SELECT 1
+          FROM information_schema.columns
+          WHERE table_schema = 'screening_extracts'
+            AND table_name = 'mco_screening_extracts_error_logs'
+            AND column_name = 'screening_error_type_id'
+            AND is_nullable = 'NO'
+      ) THEN
+          ALTER TABLE screening_extracts.mco_screening_extracts_error_logs
+              ALTER COLUMN screening_error_type_id DROP NOT NULL;
+      END IF;
+
+      IF EXISTS (
+          SELECT 1
+          FROM information_schema.columns
+          WHERE table_schema = 'screening_extracts'
+            AND table_name = 'mco_screening_extracts_error_logs'
+            AND column_name = 'is_active'
+            AND is_nullable = 'NO'
+      ) THEN
+          ALTER TABLE screening_extracts.mco_screening_extracts_error_logs
+              ALTER COLUMN is_active DROP NOT NULL;
+      END IF;
+
+      IF NOT EXISTS (
+          SELECT 1
+          FROM pg_constraint
+          WHERE conname =
+              'mco_screening_extract_error_logs_mco_screening_extracts_details'
+            AND conrelid =
+                'screening_extracts.mco_screening_extracts_error_logs'::regclass
+      ) THEN
+          ALTER TABLE screening_extracts.mco_screening_extracts_error_logs
+              ADD CONSTRAINT
+              mco_screening_extract_error_logs_mco_screening_extracts_details
+              FOREIGN KEY (mco_screening_extracts_details_id)
+              REFERENCES screening_extracts.mco_screening_extracts_details(
+                  mco_screening_extracts_details_id
+              );
+      END IF;
+
+      IF NOT EXISTS (
+          SELECT 1
+          FROM pg_constraint
+          WHERE conname = 'mco_screening_extract_error_logs_mco_screening_id_fkey'
+            AND conrelid =
+                'screening_extracts.mco_screening_extracts_error_logs'::regclass
+      ) THEN
+          ALTER TABLE screening_extracts.mco_screening_extracts_error_logs
+              ADD CONSTRAINT
+              mco_screening_extract_error_logs_mco_screening_id_fkey
+              FOREIGN KEY (mco_screening_id)
+              REFERENCES screening_extracts.mco_screening_extracts(
+                  mco_screening_id
+              );
+      END IF;
+
+      IF NOT EXISTS (
+          SELECT 1
+          FROM pg_constraint
+          WHERE conname =
+              'mco_screening_extracts_screening_error_type_id_fkey'
+            AND conrelid =
+                'screening_extracts.mco_screening_extracts_error_logs'::regclass
+      ) THEN
+          ALTER TABLE screening_extracts.mco_screening_extracts_error_logs
+              ADD CONSTRAINT
+              mco_screening_extracts_screening_error_type_id_fkey
+              FOREIGN KEY (screening_error_type_id)
+              REFERENCES screening_extracts.screening_error_types(
+                  screening_error_type_id
+              );
+      END IF;
+
+      IF NOT EXISTS (
+          SELECT 1
+          FROM pg_constraint
+          WHERE conname = 'mco_screening_extact_error_log_guid_pkey'
+            AND conrelid =
+                'screening_extracts.mco_screening_extracts_error_logs'::regclass
+      ) THEN
+          ALTER TABLE screening_extracts.mco_screening_extracts_error_logs
+              ADD CONSTRAINT mco_screening_extact_error_log_guid_pkey
+              PRIMARY KEY (mco_screening_extracts_error_log_guid);
+      END IF;
+
+      ${mcoScreeningPreferences}
+      DO $$
+      DECLARE
+          sequence_created boolean := false;
+      BEGIN
+
+          -- Create BIGINT sequence if it does not exist
+          IF NOT EXISTS (
+              SELECT 1
+              FROM pg_class
+              WHERE relkind = 'S'
+                AND relnamespace = 'screening_extracts'::regnamespace
+                AND relname = 'mco_screening_preferences_mco_screening_preferences_id_seq'
+          ) THEN
+              CREATE SEQUENCE
+                  screening_extracts.mco_screening_preferences_mco_screening_preferences_id_seq
+                  AS bigint;
+
+              sequence_created := true;
+          END IF;
+
+          -- Convert ID to BIGINT only if required
+          IF EXISTS (
+              SELECT 1
+              FROM information_schema.columns
+              WHERE table_schema = 'screening_extracts'
+                AND table_name = 'mco_screening_preferences'
+                AND column_name = 'mco_screening_preferences_id'
+                AND data_type <> 'bigint'
+          ) THEN
+              ALTER TABLE screening_extracts.mco_screening_preferences
+                  ALTER COLUMN mco_screening_preferences_id TYPE bigint;
+          END IF;
+
+          -- Convert resource_type_id to BIGINT only if required
+          IF EXISTS (
+              SELECT 1
+              FROM information_schema.columns
+              WHERE table_schema = 'screening_extracts'
+                AND table_name = 'mco_screening_preferences'
+                AND column_name = 'resource_type_id'
+                AND data_type <> 'bigint'
+          ) THEN
+              ALTER TABLE screening_extracts.mco_screening_preferences
+                  ALTER COLUMN resource_type_id TYPE bigint;
+          END IF;
+
+          -- Set BIGINT sequence as the default
+          ALTER TABLE screening_extracts.mco_screening_preferences
+              ALTER COLUMN mco_screening_preferences_id
+              SET DEFAULT nextval(
+                  'screening_extracts.mco_screening_preferences_mco_screening_preferences_id_seq'::regclass
+              );
+
+          -- Associate sequence with the ID column
+          ALTER SEQUENCE
+              screening_extracts.mco_screening_preferences_mco_screening_preferences_id_seq
+              OWNED BY
+              screening_extracts.mco_screening_preferences.mco_screening_preferences_id;
+
+          -- Synchronize sequence only when it was newly created
+          IF sequence_created THEN
+
+              PERFORM setval(
+                  'screening_extracts.mco_screening_preferences_mco_screening_preferences_id_seq',
+                  COALESCE(
+                      (
+                          SELECT MAX(mco_screening_preferences_id)
+                          FROM screening_extracts.mco_screening_preferences
+                      ),
+                      0
+                  ) + 1,
+                  false
+              );
+          END IF;
+      END $$;
+
+      -- Primary key
+      IF NOT EXISTS (
+          SELECT 1
+          FROM pg_constraint
+          WHERE conname = 'mco_screening_preferences_guid_pkey'
+            AND conrelid =
+                'screening_extracts.mco_screening_preferences'::regclass
+      ) THEN
+          ALTER TABLE screening_extracts.mco_screening_preferences
+              ADD CONSTRAINT mco_screening_preferences_guid_pkey
+              PRIMARY KEY (mco_screening_preferences_guid);
+      END IF;
+
+      -- tenant_id foreign key
+      IF NOT EXISTS (
+          SELECT 1
+          FROM pg_constraint
+          WHERE conname = 'mco_screening_preferences_tenant_id_fkey'
+            AND conrelid =
+                'screening_extracts.mco_screening_preferences'::regclass
+      ) THEN
+          ALTER TABLE screening_extracts.mco_screening_preferences
+              ADD CONSTRAINT mco_screening_preferences_tenant_id_fkey
+              FOREIGN KEY (tenant_id)
+              REFERENCES techbd_udi_ingress.tenants(tenant_id);
+      END IF;
+
+      -- resource_type_id foreign key
+      IF NOT EXISTS (
+          SELECT 1
+          FROM pg_constraint
+          WHERE conname = 'mco_screening_preferences_resource_type_id_fkey'
+            AND conrelid =
+                'screening_extracts.mco_screening_preferences'::regclass
+      ) THEN
+          ALTER TABLE screening_extracts.mco_screening_preferences
+              ADD CONSTRAINT mco_screening_preferences_resource_type_id_fkey
+              FOREIGN KEY (resource_type_id)
+              REFERENCES screening_extracts.resource_types(resource_type_id);
+      END IF;
+
+      -- tenant_id unique key
+      IF NOT EXISTS (
+          SELECT 1
+          FROM pg_constraint
+          WHERE conname = 'mco_screening_preferences_tenant_id_unqky'
+            AND conrelid = 'screening_extracts.mco_screening_preferences'::regclass
+      ) THEN
+          ALTER TABLE screening_extracts.mco_screening_preferences
+              ADD CONSTRAINT mco_screening_preferences_tenant_id_unqky
+              UNIQUE (tenant_id);
+      END IF;
+
+      /*IF EXISTS (
+          SELECT 1
+          FROM information_schema.columns
+          WHERE table_schema = 'screening_extracts'
+            AND table_name = 'mco_screening_preferences'
+            AND column_name = 'deactivated_on_utc'
+            AND data_type = 'timestamp with time zone'
+      ) THEN
+          ALTER TABLE screening_extracts.mco_screening_preferences
+              ALTER COLUMN deactivated_on_utc
+              TYPE timestamp
+              USING deactivated_on_utc::timestamp;
+      END IF;*/
+      
+      ${dependenciesSQL}
+
+      /* Call function to create RLS SELECT/INSERT Policies for tables.*/
+      CALL techbd_udi_ingress.configure_rls_policies();
+
+      CREATE EXTENSION IF NOT EXISTS pgtap SCHEMA ${assuranceSchema.sqlNamespace};
+      
+      ${testDependenciesSQL}
+
+
+
+      ${searchPathAssurance}
+
+
+      DECLARE
+        tap_op TEXT := '';
+        tap_op_failed TEXT := '';
+        test_result BOOLEAN := TRUE;
+        line TEXT;
+      BEGIN
+          PERFORM * FROM ${assuranceSchema.sqlNamespace}.runtests('techbd_udi_assurance'::name, 'test_register_interaction_requests'::text);
+          test_result = TRUE;
+
+          FOR line IN
+              SELECT * FROM ${assuranceSchema.sqlNamespace}.runtests('techbd_udi_assurance'::name, 'test_register_interaction_requests'::text)
+          LOOP
+              tap_op := tap_op || line || E'\n';
+
+              IF trim(line) LIKE 'not ok%' THEN
+                  tap_op_failed := tap_op_failed || line || E'\n';
+                  test_result := FALSE;
+              END IF;
+          END LOOP;
+
+
+          -- Insert the test result into the test_results table
+          INSERT INTO ${assuranceSchema.sqlNamespace}.${pgTapTestResult.tableName} (sat_pgtap_test_result_id, migration_version, test_name, tap_output, success, created_by, provenance, techbd_version_number, notok_results)
+          VALUES (gen_random_uuid()::text, '${migrateVersion}', 'test_register_interaction_requests', tap_op, test_result, 'ADMIN', 'pgtap', '0.1028.0', tap_op_failed);
+
+          -- Check if the test passed
+          IF NOT test_result THEN                      
+              RAISE NOTICE 'ERROR: Test test_register_interaction_requests failed: %', tap_op_failed;
+          END IF;
+      EXCEPTION
+          -- Handle the specific error          
+          WHEN others THEN            
+              -- Raise an error with a custom message
+              RAISE EXCEPTION 'Error occurred while executing runtests: %', SQLERRM;
+      END;
+      RAISE NOTICE '[MIGRATION] END basic-infra duration_ms=%',
+        round((extract(epoch FROM clock_timestamp() - migration_start_time) * 1000)::numeric, 2);
+    END
+  `;
+
+const rollbackSP = pgSQLa.storedProcedure(
+  prependMigrateSPText + "v" + migrateVersion + StateStatus.IDEMPOTENT +
+    migrationInput.description + appendMigrateUndoSPText,
+  {},
+  (name, args, _) =>
+    pgSQLa.typedPlPgSqlBody(name, args, ctx, {
+      autoBeginEnd: false,
+    }),
+  {
+    embeddedStsOptions: SQLa.typicalSqlTextSupplierOptions(),
+    autoBeginEnd: false,
+    isIdempotent: true,
+    sqlNS: infoSchemaLifecycle,
+    headerBodySeparator: "$migrateVersionUSP$",
+  },
+)`
+    BEGIN
+    -- Add any PostgreSQL you need either manually constructed or SQLa.
+    -- Your code will be placed automatically into a ISLM rollback stored procedure.
+    -- DROP table if exists "sample_schema".sample_table1;
+    END
+  `;
+const statusFn = pgSQLa.storedFunction(
+  prependMigrateSPText + "v" + migrateVersion + StateStatus.IDEMPOTENT +
+    migrationInput.description + appendMigrateStatusFnText,
+  {},
+  "integer",
+  (name, args) =>
+    pgSQLa.typedPlPgSqlBody(name, args, ctx, {
+      autoBeginEnd: false,
+    }),
+  {
+    embeddedStsOptions: SQLa.typicalSqlTextSupplierOptions(),
+    autoBeginEnd: false,
+    isIdempotent: true,
+    sqlNS: infoSchemaLifecycle,
+    headerBodySeparator: "$fnMigrateVersionStatus$",
+  },
+)`
+    DECLARE
+      status INTEGER := 0; -- Initialize status to 0 (not executed)
+    BEGIN
+      -- Add any PostgreSQL you need either manually constructed or SQLa.
+      -- Your code will be placed automatically into a ISLM status stored function.
+      -- All your checks must be idempotent and not have any side effects.
+      -- Use information_schema and other introspection capabilities of PostgreSQL
+      -- instead of manually checking. For example:
+      
+      -- IF EXISTS (
+      --  SELECT FROM information_schema.columns
+      --  WHERE table_name = 'sample_table1'
+      -- ) THEN
+      --  status := 1; -- Set status to 1 (already executed)
+      -- END IF;
+      RETURN status; -- Return the status
+              
+    END;
+  `;
+
+/**
+ * Generates SQL Data Definition Language (DDL) for the migrations.
+ *
+ * @returns {string} The SQL DDL for migrations.
+ */
+
+function sqlDDLGenerateMigration() {
+  return SQLa.SQL<EmitContext>(dvts.ddlOptions)`
+    \\set ON_ERROR_STOP on
+    DO $$
+      DECLARE
+        table_count int;
+        schema_count int;
+      BEGIN
+
+        -- Check if the required schemas exist
+        SELECT count(*)
+        INTO schema_count
+        FROM information_schema.schemata
+        WHERE schema_name IN ('info_schema_lifecycle', 'info_schema_lifecycle_assurance');
+
+        -- If less than 3 schemas are found, raise an error
+        IF schema_count < 2 THEN
+            RAISE EXCEPTION 'One or more of the required schemas info_schema_lifecycle, info_schema_lifecycle_assurance are missing';
+        END IF;
+      END;
+      $$;
+
+    
+    ${migrateSP}
+
+    ${rollbackSP}
+
+    ${statusFn}
+
+    `;
+}
+
+export function generated() {
+  const ctx = SQLa.typicalSqlEmitContext({
+    sqlDialect: SQLa.postgreSqlDialect(),
+  });
+  const testDependencies: string[] = [];
+  for (const filePath of testMigrateDependenciesWithPgtap) {
+    try {
+      const absolutePath = import.meta.resolve(filePath);
+      testDependencies.push(absolutePath);
+    } catch (err) {
+      console.error(`Error reading filepath ${filePath}:`, err);
+      throw err;
+    }
+  }
+
+  // after this execution `ctx` will contain list of all tables which will be
+  // passed into `dvts.pumlERD` below (ctx should only be used once)
+  const driverGenerateMigrationSQL = ws.unindentWhitespace(
+    sqlDDLGenerateMigration().SQL(ctx),
+  );
+  return {
+    driverGenerateMigrationSQL,
+    pumlERD: dvts.pumlERD(ctx).content,
+    destroySQL: ws.unindentWhitespace(`
+
+      DROP SCHEMA IF EXISTS public CASCADE;
+
+      DROP SCHEMA IF EXISTS ${ingressSchema.sqlNamespace} cascade;
+      DROP SCHEMA IF EXISTS ${assuranceSchema.sqlNamespace} cascade;
+      DROP SCHEMA IF EXISTS ${diagnosticsSchema.sqlNamespace} cascade;
+      DROP SCHEMA IF EXISTS ${mcoSchema.sqlNamespace} cascade;
+      DROP SCHEMA IF EXISTS ${screeningExtractsSchema.sqlNamespace} cascade;
+
+      DROP PROCEDURE IF EXISTS "${migrateSP.sqlNS?.sqlNamespace}"."${migrateSP.routineName}" CASCADE;
+      DROP PROCEDURE IF EXISTS "${rollbackSP.sqlNS?.sqlNamespace}"."${rollbackSP.routineName}" CASCADE;
+      DROP FUNCTION IF EXISTS "${statusFn.sqlNS?.sqlNamespace}"."${statusFn.routineName}" CASCADE;
+
+
+      `),
+    testDependencies,
+  };
+}

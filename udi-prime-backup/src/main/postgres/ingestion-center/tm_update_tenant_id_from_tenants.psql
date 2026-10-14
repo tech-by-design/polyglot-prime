@@ -1,0 +1,246 @@
+-- Purpose: Back fill the newly added 'tenant_id' columns from the master table tenants
+
+/* Step 1. UPDATE tenant_id colum with tenants.tenant_id */
+
+UPDATE techbd_udi_ingress.dashboard_widget_metadata t
+SET tenant_id = tm.tenant_id
+FROM techbd_udi_ingress.tenants tm
+WHERE LOWER(TRIM(t.tenant_name)) = LOWER(TRIM(tm.tenant_name)) AND (t.tenant_id = '' OR t.tenant_id IS NULL);
+
+/* After updating tenant_ids with master data values do..
+ * 1. DROP the unique constraint
+ * 2. Add new unique constraint on (widget_name, tenant_id)
+ * 3. SET tenant_id  NOT NULL
+ * 4. Update the function upsert_dashboard_widget_metadata with "ON CONFLICT (widget_name, tenant_id)"
+ */
+ 
+ALTER TABLE techbd_udi_ingress.dashboard_widget_metadata 
+	DROP CONSTRAINT uq_dashboard_widget_tenant;
+ALTER TABLE techbd_udi_ingress.dashboard_widget_metadata
+	ADD CONSTRAINT uq_dashboard_widget_tenant
+	UNIQUE (widget_name, tenant_id);
+ALTER TABLE techbd_udi_ingress.dashboard_widget_metadata
+	ALTER COLUMN tenant_id SET NOT NULL;
+
+UPDATE techbd_udi_ingress.sat_csv_fhir_processing_errors t
+SET tenant_id = tm.tenant_id
+FROM techbd_udi_ingress.tenants tm
+WHERE LOWER(TRIM(t.tenant_name)) = LOWER(TRIM(tm.tenant_name)) AND (t.tenant_id = '' OR t.tenant_id IS NULL);
+
+UPDATE techbd_udi_ingress.sat_diagnostic_dataledger_api t
+SET tenant_id = tm.tenant_id
+FROM techbd_udi_ingress.tenants tm
+WHERE LOWER(TRIM(t.tenant_name)) = LOWER(TRIM(tm.tenant_name)) AND (t.tenant_id = '' OR t.tenant_id IS NULL);
+
+UPDATE techbd_udi_ingress.sat_diagnostic_exception t
+SET tenant_id = tm.tenant_id
+FROM techbd_udi_ingress.tenants tm
+WHERE LOWER(TRIM(t.tenant_name)) = LOWER(TRIM(tm.tenant_name)) AND (t.tenant_id = '' OR t.tenant_id IS NULL);
+
+UPDATE techbd_udi_ingress.sat_diagnostic_log t
+SET tenant_id = tm.tenant_id
+FROM techbd_udi_ingress.tenants tm
+WHERE LOWER(TRIM(t.tenant_name)) = LOWER(TRIM(tm.tenant_name)) AND (t.tenant_id = '' OR t.tenant_id IS NULL);
+
+UPDATE techbd_udi_ingress.sat_expectation_http_request t
+SET tenant_id = tm.tenant_id
+FROM techbd_udi_ingress.tenants tm
+WHERE LOWER(TRIM(t.tenant_name)) = LOWER(TRIM(tm.tenant_name)) AND (t.tenant_id = '' OR t.tenant_id IS NULL);
+
+UPDATE techbd_udi_ingress.sat_interaction_ccda_request t
+SET tenant_id = tm.tenant_id
+FROM techbd_udi_ingress.tenants tm
+WHERE LOWER(TRIM(t.tenant_name)) = LOWER(TRIM(tm.tenant_name)) AND (t.tenant_id = '' OR t.tenant_id IS NULL);
+
+UPDATE techbd_udi_ingress.sat_interaction_ccda_validation_errors t
+SET tenant_id = tm.tenant_id
+FROM techbd_udi_ingress.tenants tm
+WHERE LOWER(TRIM(t.tenant_name)) = LOWER(TRIM(tm.tenant_name)) AND (t.tenant_id = '' OR t.tenant_id IS NULL);
+
+UPDATE techbd_udi_ingress.sat_interaction_fhir_request t
+SET tenant_id = tm.tenant_id
+FROM techbd_udi_ingress.tenants tm
+WHERE LOWER(TRIM(t.tenant_name)) = LOWER(TRIM(tm.tenant_name)) AND (t.tenant_id = '' OR t.tenant_id IS NULL);
+
+UPDATE techbd_udi_ingress.sat_interaction_fhir_screening_info t
+SET tenant_id = tm.tenant_id
+FROM techbd_udi_ingress.tenants tm
+WHERE LOWER(TRIM(t.tenant_name)) = LOWER(TRIM(tm.tenant_name)) AND (t.tenant_id = '' OR t.tenant_id IS NULL);
+
+UPDATE techbd_udi_ingress.sat_interaction_fhir_screening_organization t
+SET tenant_id = tm.tenant_id
+FROM techbd_udi_ingress.tenants tm
+WHERE LOWER(TRIM(t.tenant_name)) = LOWER(TRIM(tm.tenant_name)) AND (t.tenant_id = '' OR t.tenant_id IS NULL);
+
+UPDATE techbd_udi_ingress.sat_interaction_fhir_screening_patient t
+SET tenant_id = tm.tenant_id
+FROM techbd_udi_ingress.tenants tm
+WHERE LOWER(TRIM(t.tenant_name)) = LOWER(TRIM(tm.tenant_name)) AND (t.tenant_id = '' OR t.tenant_id IS NULL);
+
+UPDATE techbd_udi_ingress.sat_interaction_fhir_session_diagnostic t
+SET tenant_id = tm.tenant_id
+FROM techbd_udi_ingress.tenants tm
+WHERE LOWER(TRIM(t.tenant_name)) = LOWER(TRIM(tm.tenant_name)) AND (t.tenant_id = '' OR t.tenant_id IS NULL);
+
+UPDATE techbd_udi_ingress.sat_interaction_fhir_validation_issue t
+SET tenant_id = tm.tenant_id
+FROM techbd_udi_ingress.tenants tm
+WHERE LOWER(TRIM(t.tenant_name)) = LOWER(TRIM(tm.tenant_name)) AND (t.tenant_id = '' OR t.tenant_id IS NULL);
+
+UPDATE techbd_udi_ingress.sat_interaction_file_exchange t
+SET tenant_id = tm.tenant_id
+FROM techbd_udi_ingress.tenants tm
+WHERE LOWER(TRIM(t.tenant_name)) = LOWER(TRIM(tm.tenant_name)) AND (t.tenant_id = '' OR t.tenant_id IS NULL);
+
+UPDATE techbd_udi_ingress.sat_interaction_flat_file_csv_request t
+SET tenant_id = tm.tenant_id
+FROM techbd_udi_ingress.tenants tm
+WHERE LOWER(TRIM(t.tenant_name)) = LOWER(TRIM(tm.tenant_name)) AND (t.tenant_id = '' OR t.tenant_id IS NULL);
+
+UPDATE techbd_udi_ingress.sat_interaction_hl7_request t
+SET tenant_id = tm.tenant_id
+FROM techbd_udi_ingress.tenants tm
+WHERE LOWER(TRIM(t.tenant_name)) = LOWER(TRIM(tm.tenant_name)) AND (t.tenant_id = '' OR t.tenant_id IS NULL);
+
+UPDATE techbd_udi_ingress.sat_interaction_hl7_validation_errors t
+SET tenant_id = tm.tenant_id
+FROM techbd_udi_ingress.tenants tm
+WHERE LOWER(TRIM(t.tenant_name)) = LOWER(TRIM(tm.tenant_name)) AND (t.tenant_id = '' OR t.tenant_id IS NULL);
+
+UPDATE techbd_udi_ingress.sat_interaction_http_request t
+SET tenant_id = tm.tenant_id
+FROM techbd_udi_ingress.tenants tm
+WHERE LOWER(TRIM(t.tenant_name)) = LOWER(TRIM(tm.tenant_name)) AND (t.tenant_id = '' OR t.tenant_id IS NULL);
+
+UPDATE techbd_udi_ingress.sat_interaction_user t
+SET tenant_id = tm.tenant_id
+FROM techbd_udi_ingress.tenants tm
+WHERE LOWER(TRIM(t.tenant_name)) = LOWER(TRIM(tm.tenant_name)) AND (t.tenant_id = '' OR t.tenant_id IS NULL);
+
+UPDATE techbd_udi_ingress.sat_interaction_zip_file_request t
+SET tenant_id = tm.tenant_id
+FROM techbd_udi_ingress.tenants tm
+WHERE LOWER(TRIM(t.tenant_name)) = LOWER(TRIM(tm.tenant_name)) AND (t.tenant_id = '' OR t.tenant_id IS NULL);
+
+UPDATE techbd_udi_ingress.users t
+SET tenant_id = tm.tenant_id
+FROM techbd_udi_ingress.tenants tm
+WHERE LOWER(TRIM(t.tenant_name)) = LOWER(TRIM(tm.tenant_name)) AND (t.tenant_id = '' OR t.tenant_id IS NULL);
+
+
+/* Step 2. Analyze all tables after bulk update to use the new index efficiently.*/
+ANALYZE techbd_udi_ingress.dashboard_widget_metadata;
+ANALYZE techbd_udi_ingress.sat_csv_fhir_processing_errors;
+ANALYZE techbd_udi_ingress.sat_diagnostic_dataledger_api;
+ANALYZE techbd_udi_ingress.sat_diagnostic_exception;
+ANALYZE techbd_udi_ingress.sat_diagnostic_log;
+ANALYZE techbd_udi_ingress.sat_expectation_http_request;
+ANALYZE techbd_udi_ingress.sat_interaction_ccda_request;
+ANALYZE techbd_udi_ingress.sat_interaction_ccda_validation_errors;
+ANALYZE techbd_udi_ingress.sat_interaction_fhir_request;
+ANALYZE techbd_udi_ingress.sat_interaction_fhir_screening_info;
+ANALYZE techbd_udi_ingress.sat_interaction_fhir_screening_organization;
+ANALYZE techbd_udi_ingress.sat_interaction_fhir_screening_patient;
+ANALYZE techbd_udi_ingress.sat_interaction_fhir_session_diagnostic;
+ANALYZE techbd_udi_ingress.sat_interaction_fhir_validation_issue;
+ANALYZE techbd_udi_ingress.sat_interaction_file_exchange;
+ANALYZE techbd_udi_ingress.sat_interaction_flat_file_csv_request;
+ANALYZE techbd_udi_ingress.sat_interaction_hl7_request;
+ANALYZE techbd_udi_ingress.sat_interaction_hl7_validation_errors;
+ANALYZE techbd_udi_ingress.sat_interaction_http_request;
+ANALYZE techbd_udi_ingress.sat_interaction_user;
+ANALYZE techbd_udi_ingress.sat_interaction_zip_file_request;
+ANALYZE techbd_udi_ingress.users;
+ANALYZE techbd_udi_ingress.tenants;
+
+
+/* Step 3. Update the function upsert_dashboard_widget_metadata.
+    Need to change this to "ON CONFLICT (widget_name, tenant_id)" after completing the back filling of tenant_id column of this table.
+*/
+DROP FUNCTION IF EXISTS techbd_udi_ingress.upsert_dashboard_widget_metadata(text, text, text, timestamptz, text);
+CREATE OR REPLACE FUNCTION techbd_udi_ingress.upsert_dashboard_widget_metadata(
+    p_widget_name TEXT,
+    p_tenant_name TEXT,
+    p_tenant_id TEXT,
+    p_last_updated_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP,
+    p_last_updated_by TEXT DEFAULT CURRENT_USER
+)
+RETURNS TEXT AS $$
+DECLARE
+    allowed_widgets TEXT[] := ARRAY['FHIR', 'CSV', 'CCDA', 'HL7V2'];
+	v_exception_id	TEXT;
+    v_error_msg		TEXT;
+    v_error_type	TEXT;
+    v_sqlstate		TEXT;
+    v_pg_detail		TEXT;
+    v_pg_hint		TEXT;
+    v_pg_context	TEXT;
+BEGIN
+	/*
+	 * Inserts or updates dashboard widget metadata for a given widget_name and tenant_id. 
+	 * If either widget_name or tenant_id is NULL, the function returns without changes. 
+	 * Updates last_updated_at and last_updated_by if the record exists.
+	 */
+	-- Check for NULL required parameters
+	IF p_widget_name IS NULL OR p_tenant_id IS NULL THEN
+	    RETURN 'Error: Missing required field(s): ' ||
+	           CASE WHEN p_widget_name IS NULL AND p_tenant_id IS NULL THEN 'widget_name, tenant_id'
+	                WHEN p_widget_name IS NULL THEN 'widget_name'
+	                WHEN p_tenant_id IS NULL THEN 'tenant_id'
+	           END || '.';
+	END IF;
+
+	-- Validate widget_name
+    IF NOT UPPER(p_widget_name) = ANY (allowed_widgets) THEN
+        RETURN 'Error: Invalid widget_name. Allowed values are FHIR, CSV, CCDA, HL7V2.';
+    END IF;
+
+
+    INSERT INTO techbd_udi_ingress.dashboard_widget_metadata (
+		id,
+        widget_name,
+        tenant_id,
+		tenant_name,
+        last_updated_at,
+        last_updated_by
+    )
+    VALUES (
+		gen_random_uuid()::text,
+        UPPER(p_widget_name),
+        p_tenant_id,
+		LOWER(p_tenant_name),
+        COALESCE(p_last_updated_at, CURRENT_TIMESTAMP),
+        COALESCE(p_last_updated_by, CURRENT_USER)
+    )
+    ON CONFLICT (widget_name, tenant_id) 
+    DO UPDATE SET
+        last_updated_at = COALESCE(EXCLUDED.last_updated_at, CURRENT_TIMESTAMP),
+        last_updated_by = COALESCE(EXCLUDED.last_updated_by, CURRENT_USER);
+	
+	RETURN 'Success: Dashboard widget metadata inserted/updated.';
+EXCEPTION
+   WHEN OTHERS THEN
+	    -- Capture exception details
+	    GET STACKED DIAGNOSTICS
+	        v_error_msg = MESSAGE_TEXT,
+	        v_sqlstate = RETURNED_SQLSTATE,
+	        v_pg_detail = PG_EXCEPTION_DETAIL,
+	        v_pg_hint = PG_EXCEPTION_HINT,
+	        v_pg_context = PG_EXCEPTION_CONTEXT;
+	        v_error_type = 'SQL';
+		      
+	    -- Log the exception, reusing the previous exception ID if it exists
+		v_exception_id := techbd_udi_ingress.register_issue(
+        COALESCE(v_exception_id, NULL),
+		null,
+		v_error_msg,
+		v_error_type,
+		v_sqlstate,
+		v_pg_detail,
+		v_pg_hint,
+		v_pg_context,
+		p_last_updated_by,
+		'DashBoard-Widget', null::jsonb, p_tenant_name, p_tenant_id);
+	RETURN 'Error';
+END;
+$$ LANGUAGE plpgsql;

@@ -1,0 +1,508 @@
+/* Moved all the CREATE INDEX sqls from migrate-basic-infrastructure.ts file to this .psql file */
+-- ${diagnosticDataledgerSat}
+    migration_group_start_time := clock_timestamp();
+      
+    RAISE NOTICE '[MIGRATION] START group=fhir_request_indexes at %', migration_group_start_time;
+    
+    PERFORM pg_advisory_lock(hashtext('islm_migration_fhir_request_index_creation'));
+        IF NOT EXISTS (
+            SELECT 1 FROM pg_indexes
+            WHERE schemaname = 'techbd_udi_ingress'
+            AND tablename = 'sat_interaction_fhir_request'
+            AND indexname = 'sat_int_fhir_req_uq_hub_int_tnt_nat'
+        ) THEN
+            CREATE UNIQUE INDEX IF NOT EXISTS sat_int_fhir_req_uq_hub_int_tnt_nat 
+            ON techbd_udi_ingress.sat_interaction_fhir_request (hub_interaction_id, tenant_id, nature);
+        END IF;
+
+        -- Add idx_fhir_req_cover index if not exists
+        IF NOT EXISTS (
+            SELECT 1 FROM pg_indexes
+            WHERE schemaname = 'techbd_udi_ingress'
+            AND tablename = 'sat_interaction_fhir_request'
+            AND indexname = 'idx_fhir_req_cover'
+        ) THEN
+            CREATE INDEX idx_fhir_req_cover ON techbd_udi_ingress.sat_interaction_fhir_request USING btree (created_at DESC) WHERE (nature = 'Original FHIR Payload');
+        END IF;
+
+        -- Add idx_interaction_id_trgm_partial index if not exists
+        IF NOT EXISTS (
+            SELECT 1 FROM pg_indexes
+            WHERE schemaname = 'techbd_udi_ingress'
+            AND tablename = 'sat_interaction_fhir_request'
+            AND indexname = 'idx_interaction_id_trgm_partial'
+        ) THEN
+            migration_index_start_time := clock_timestamp();
+            RAISE NOTICE '[MIGRATION] START index=idx_interaction_id_trgm_partial at %', migration_index_start_time;
+            CREATE INDEX idx_interaction_id_trgm_partial
+            ON techbd_udi_ingress.sat_interaction_fhir_request
+            USING gin ((hub_interaction_id) techbd_udi_ingress.gin_trgm_ops)
+            WHERE nature = 'Original FHIR Payload';
+            RAISE NOTICE '[MIGRATION] END index=idx_interaction_id_trgm_partial duration_ms=%',
+                round((extract(epoch FROM clock_timestamp() - migration_index_start_time) * 1000)::numeric, 2);
+        END IF;
+
+        -- Add idx_bundle_id_trgm_partial index if not exists
+        IF NOT EXISTS (
+            SELECT 1 FROM pg_indexes
+            WHERE schemaname = 'techbd_udi_ingress'
+            AND tablename = 'sat_interaction_fhir_request'
+            AND indexname = 'idx_bundle_id_trgm_partial'
+        ) THEN
+            migration_index_start_time := clock_timestamp();
+            RAISE NOTICE '[MIGRATION] START index=idx_bundle_id_trgm_partial at %', migration_index_start_time;
+            CREATE INDEX idx_bundle_id_trgm_partial
+            ON techbd_udi_ingress.sat_interaction_fhir_request
+            USING gin ((bundle_id) techbd_udi_ingress.gin_trgm_ops)
+            WHERE nature = 'Original FHIR Payload';
+            RAISE NOTICE '[MIGRATION] END index=idx_bundle_id_trgm_partial duration_ms=%',
+                round((extract(epoch FROM clock_timestamp() - migration_index_start_time) * 1000)::numeric, 2);
+        END IF;
+
+        IF NOT EXISTS (
+            SELECT 1 FROM pg_indexes
+            WHERE schemaname = 'techbd_udi_ingress'
+            AND tablename = 'sat_interaction_fhir_request'
+            AND indexname = 'sat_inter_fhir_req_hub_inter_id_idx'
+        ) THEN
+            CREATE INDEX IF NOT EXISTS sat_inter_fhir_req_hub_inter_id_idx ON techbd_udi_ingress.sat_interaction_fhir_request USING btree (hub_interaction_id);
+        END IF;
+
+        IF NOT EXISTS (
+            SELECT 1 FROM pg_indexes
+            WHERE schemaname = 'techbd_udi_ingress'
+            AND tablename = 'sat_interaction_fhir_request'
+            AND indexname = 'sat_inter_fhir_req_hub_inter_created_idx'
+        ) THEN
+            CREATE INDEX IF NOT EXISTS sat_inter_fhir_req_hub_inter_created_idx ON techbd_udi_ingress.sat_interaction_fhir_request USING btree (hub_interaction_id, created_at DESC);
+        END IF;
+
+        IF NOT EXISTS (
+            SELECT 1 FROM pg_indexes
+            WHERE schemaname = 'techbd_udi_ingress'
+            AND tablename = 'sat_interaction_fhir_request'
+            AND indexname = 'sat_inter_fhir_req_created_idx'
+        ) THEN
+            CREATE INDEX IF NOT EXISTS sat_inter_fhir_req_created_idx ON techbd_udi_ingress.sat_interaction_fhir_request (created_at timestamptz_ops DESC);
+        END IF;          
+        
+        IF NOT EXISTS (
+            SELECT 1 FROM pg_indexes
+            WHERE schemaname = 'techbd_udi_ingress'
+            AND tablename = 'sat_interaction_fhir_request'
+            AND indexname = 'sat_inter_fhir_req_to_state_idx'
+        ) THEN
+            CREATE INDEX IF NOT EXISTS sat_inter_fhir_req_to_state_idx ON techbd_udi_ingress.sat_interaction_fhir_request USING btree (to_state);
+        END IF;
+        
+        IF NOT EXISTS (
+            SELECT 1 FROM pg_indexes
+            WHERE schemaname = 'techbd_udi_ingress'
+            AND tablename = 'sat_interaction_fhir_request'
+            AND indexname = 'sat_inter_fhir_req_nature_idx'
+        ) THEN
+            CREATE INDEX IF NOT EXISTS sat_inter_fhir_req_nature_idx ON techbd_udi_ingress.sat_interaction_fhir_request USING btree (nature);
+        END IF;         
+        
+        IF NOT EXISTS (
+            SELECT 1 FROM pg_indexes
+            WHERE schemaname = 'techbd_udi_ingress'
+            AND tablename = 'sat_interaction_fhir_request'
+            AND indexname = 'sat_inter_fhir_req_provenance_idx'
+        ) THEN
+            CREATE INDEX IF NOT EXISTS sat_inter_fhir_req_provenance_idx ON techbd_udi_ingress.sat_interaction_fhir_request USING btree (provenance);
+        END IF;
+        
+        IF NOT EXISTS (
+            SELECT 1 FROM pg_indexes
+            WHERE schemaname = 'techbd_udi_ingress'
+            AND tablename = 'sat_interaction_fhir_request'
+            AND indexname = 'sat_inter_fhir_req_bund_id_idx'
+        ) THEN
+            CREATE INDEX IF NOT EXISTS sat_inter_fhir_req_bund_id_idx ON techbd_udi_ingress.sat_interaction_fhir_request USING btree (bundle_id);
+        END IF;          
+        
+        IF NOT EXISTS (
+            SELECT 1 FROM pg_indexes
+            WHERE schemaname = 'techbd_udi_ingress'
+            AND tablename = 'sat_interaction_fhir_request'
+            AND indexname = 'sat_inter_fhir_req_org_id_idx'
+        ) THEN
+            CREATE INDEX IF NOT EXISTS sat_inter_fhir_req_org_id_idx ON techbd_udi_ingress.sat_interaction_fhir_request USING btree (organization_id);
+        END IF;
+
+        IF NOT EXISTS (
+            SELECT 1
+            FROM pg_indexes
+            WHERE schemaname = 'techbd_udi_ingress'
+            AND tablename = 'sat_interaction_fhir_request'
+            AND indexname = 'idx_sifr_hub_org'
+        ) THEN
+            CREATE INDEX IF NOT EXISTS idx_sifr_hub_org
+            ON techbd_udi_ingress.sat_interaction_fhir_request
+            USING btree (
+                hub_interaction_id,
+                organization_id
+            );
+        END IF;
+
+        IF NOT EXISTS (
+            SELECT 1 FROM pg_indexes
+            WHERE schemaname = 'techbd_udi_ingress'
+            AND tablename = 'sat_diagnostic_dataledger_api'
+            AND indexname = 'sat_diagnostic_dataledger_api_uq_hub_int'
+        ) THEN
+            CREATE UNIQUE INDEX IF NOT EXISTS sat_diagnostic_dataledger_api_uq_hub_int ON techbd_udi_ingress.sat_diagnostic_dataledger_api USING btree (hub_interaction_id);
+        END IF;
+
+        IF NOT EXISTS (
+            SELECT 1 FROM pg_indexes
+            WHERE schemaname = 'techbd_udi_ingress'
+                AND tablename = 'sat_diagnostic_log'
+                AND indexname = 'idx_sat_diagnostic_log_created_at_desc'
+        ) THEN
+            CREATE INDEX idx_sat_diagnostic_log_created_at_desc
+                ON techbd_udi_ingress.sat_diagnostic_log (created_at DESC);
+        END IF;
+
+        IF NOT EXISTS (
+            SELECT 1 FROM pg_indexes
+            WHERE schemaname = 'techbd_udi_ingress'
+            AND tablename = 'sat_diagnostic_exception'
+            AND indexname = 'idx_sat_diagnostic_exception_created_at_desc'
+        ) THEN
+            CREATE INDEX idx_sat_diagnostic_exception_created_at_desc
+                ON techbd_udi_ingress.sat_diagnostic_exception (created_at DESC);
+        END IF;
+
+        IF NOT EXISTS (
+            SELECT 1 FROM pg_indexes
+            WHERE schemaname = 'techbd_udi_ingress'
+            AND tablename = 'sat_diagnostic_exception'
+            AND indexname = 'idx_sat_diagnostic_exception_created_at_desc'
+        ) THEN
+            CREATE INDEX idx_sat_diagnostic_exception_created_at_desc
+                ON techbd_udi_ingress.sat_diagnostic_exception (created_at DESC);
+        END IF;          
+
+    PERFORM pg_advisory_unlock(hashtext('islm_migration_fhir_request_index_creation'));
+
+    RAISE NOTICE '[MIGRATION] END group=fhir_request_indexes duration_ms=%',
+        round((extract(epoch FROM clock_timestamp() - migration_group_start_time) * 1000)::numeric, 2);
+    
+-- ${interactionCcdaRequestSat} 
+    migration_group_start_time := clock_timestamp();
+      
+    RAISE NOTICE '[MIGRATION] START group=table_indexes at %', migration_group_start_time;
+    
+    PERFORM pg_advisory_lock(hashtext('islm_migration_table_index_creation'));
+    -- HL7 indexes         
+
+    IF NOT EXISTS (SELECT 1 FROM pg_indexes WHERE schemaname='techbd_udi_ingress' AND indexname='sat_inter_hl7_req_created_at_idx') THEN
+        EXECUTE 'CREATE INDEX sat_inter_hl7_req_created_at_idx ON techbd_udi_ingress.sat_interaction_hl7_request USING btree (created_at DESC)';
+    END IF;
+
+    IF NOT EXISTS (SELECT 1 FROM pg_indexes WHERE schemaname='techbd_udi_ingress' AND indexname='sat_inter_hl7_req_hub_inter_id_idx') THEN
+        EXECUTE 'CREATE INDEX sat_inter_hl7_req_hub_inter_id_idx ON techbd_udi_ingress.sat_interaction_hl7_request USING btree (hub_interaction_id)';
+    END IF;          
+    
+    IF NOT EXISTS (SELECT 1 FROM pg_indexes WHERE schemaname='techbd_udi_ingress' AND indexname='sat_interaction_fhir_session_diagnostic_severity_lower') THEN
+        EXECUTE 'CREATE INDEX sat_interaction_fhir_session_diagnostic_severity_lower ON techbd_udi_ingress.sat_interaction_fhir_session_diagnostic USING btree (LOWER(severity))';
+    END IF;
+
+    -- CCDA indexes
+    
+    IF NOT EXISTS (SELECT 1 FROM pg_indexes WHERE schemaname='techbd_udi_ingress' AND indexname='sat_inter_ccda_req_hub_inter_id_idx') THEN
+        EXECUTE 'CREATE INDEX sat_inter_ccda_req_hub_inter_id_idx ON techbd_udi_ingress.sat_interaction_ccda_request USING btree (hub_interaction_id)';
+    END IF;
+
+    IF NOT EXISTS (SELECT 1 FROM pg_indexes WHERE schemaname='techbd_udi_ingress' AND indexname='sat_inter_ccda_req_to_state_idx') THEN
+        EXECUTE 'CREATE INDEX sat_inter_ccda_req_to_state_idx ON techbd_udi_ingress.sat_interaction_ccda_request USING btree (to_state)';
+    END IF;
+
+    -- Other indexes
+    IF NOT EXISTS (SELECT 1 FROM pg_indexes WHERE schemaname='techbd_udi_ingress' AND indexname='idx_sat_interaction_user_created_at_desc') THEN
+        EXECUTE 'CREATE INDEX idx_sat_interaction_user_created_at_desc ON techbd_udi_ingress.sat_interaction_user (created_at DESC)';
+    END IF;
+
+    IF NOT EXISTS (SELECT 1 FROM pg_indexes WHERE schemaname='techbd_udi_ingress' AND indexname='sat_interaction_fhir_screening_info_submitted_date_time_idx') THEN
+        EXECUTE 'CREATE INDEX sat_interaction_fhir_screening_info_submitted_date_time_idx ON techbd_udi_ingress.sat_interaction_fhir_screening_info (submitted_date_time DESC)';
+    END IF;
+
+    --  Zip file request by hub_interaction_id
+    IF NOT EXISTS (SELECT 1 FROM pg_indexes WHERE schemaname = 'techbd_udi_ingress' AND indexname = 'idx_sat_interaction_zip_file_request_hub_interaction_id') THEN
+        EXECUTE 'CREATE INDEX idx_sat_interaction_zip_file_request_hub_interaction_id ON techbd_udi_ingress.sat_interaction_zip_file_request USING btree (hub_interaction_id)';
+    END IF;
+
+    PERFORM pg_advisory_unlock(hashtext('islm_migration_table_index_creation'));
+    RAISE NOTICE '[MIGRATION] END group=table_indexes duration_ms=%',
+        round((extract(epoch FROM clock_timestamp() - migration_group_start_time) * 1000)::numeric, 2);
+
+-- 
+    migration_group_start_time := clock_timestamp();      
+    RAISE NOTICE '[MIGRATION] START group=http_request_indexes at %', migration_group_start_time;
+    
+    PERFORM pg_advisory_lock(hashtext('islm_migration_http_request_index_creation'));
+
+    IF NOT EXISTS (
+        SELECT 1
+        FROM pg_indexes
+        WHERE schemaname = 'techbd_udi_ingress'
+        AND tablename = 'sat_interaction_http_request'
+        AND indexname = 'sat_interaction_http_request_hub_interaction_id_idx'
+    ) THEN
+        EXECUTE 'CREATE INDEX sat_interaction_http_request_hub_interaction_id_idx 
+                ON techbd_udi_ingress.sat_interaction_http_request USING btree (hub_interaction_id)';
+    END IF;
+    
+    IF NOT EXISTS (
+        SELECT 1
+        FROM pg_indexes
+        WHERE schemaname = 'techbd_udi_ingress'
+        AND tablename = 'sat_interaction_http_request'
+        AND indexname = 'sat_interaction_http_request_from_state_idx'
+    ) THEN
+        EXECUTE 'CREATE INDEX sat_interaction_http_request_from_state_idx 
+                ON techbd_udi_ingress.sat_interaction_http_request USING btree (from_state)';
+    END IF;
+
+    IF NOT EXISTS (
+        SELECT 1
+        FROM pg_indexes
+        WHERE schemaname = 'techbd_udi_ingress'
+        AND tablename = 'sat_interaction_http_request'
+        AND indexname = 'sat_interaction_http_request_to_state_idx'
+    ) THEN
+        EXECUTE 'CREATE INDEX sat_interaction_http_request_to_state_idx 
+                ON techbd_udi_ingress.sat_interaction_http_request USING btree (to_state)';
+    END IF;
+
+    IF NOT EXISTS (
+        SELECT 1
+        FROM pg_indexes
+        WHERE schemaname = 'techbd_udi_ingress'
+        AND tablename = 'sat_interaction_http_request'
+        AND indexname = 'sat_interaction_http_request_provenance_idx'
+    ) THEN
+        EXECUTE 'CREATE INDEX sat_interaction_http_request_provenance_idx 
+                ON techbd_udi_ingress.sat_interaction_http_request USING btree (provenance)';
+    END IF;
+    
+    --ANALYZE techbd_udi_ingress.sat_interaction_http_request;
+
+    IF NOT EXISTS (
+        SELECT 1 FROM pg_indexes
+        WHERE schemaname = 'techbd_udi_ingress'
+        AND tablename = 'sat_interaction_user'
+        AND indexname = 'idx_sat_interaction_user_start_time'
+    ) THEN
+        CREATE INDEX idx_sat_interaction_user_start_time
+            ON techbd_udi_ingress.sat_interaction_user (interaction_start_time);
+    END IF;
+
+    IF NOT EXISTS (
+        SELECT 1 FROM pg_indexes
+        WHERE schemaname = 'techbd_udi_ingress'
+        AND tablename = 'sat_interaction_user'
+        AND indexname = 'idx_sat_interaction_user_hub_id'
+    ) THEN
+        CREATE INDEX idx_sat_interaction_user_hub_id
+            ON techbd_udi_ingress.sat_interaction_user (hub_interaction_id);
+    END IF;
+
+    IF NOT EXISTS (
+        SELECT 1 FROM pg_indexes
+        WHERE schemaname = 'techbd_udi_ingress'
+        AND tablename = 'sat_interaction_ui_user'
+        AND indexname = 'idx_sat_interaction_ui_user_start_time'
+    ) THEN
+        CREATE INDEX idx_sat_interaction_ui_user_start_time
+            ON techbd_udi_ingress.sat_interaction_ui_user (interaction_start_time);
+    END IF;
+
+    IF NOT EXISTS (
+        SELECT 1 FROM pg_indexes
+        WHERE schemaname = 'techbd_udi_ingress'
+        AND tablename = 'sat_interaction_ui_user'
+        AND indexname = 'idx_sat_interaction_ui_user_hub_id'
+    ) THEN
+        CREATE INDEX idx_sat_interaction_ui_user_hub_id
+            ON techbd_udi_ingress.sat_interaction_ui_user (hub_interaction_id);
+    END IF;
+
+
+    IF NOT EXISTS (
+        SELECT 1 FROM pg_indexes
+        WHERE schemaname = 'techbd_udi_ingress'
+        AND tablename = 'sat_interaction_fhir_request'
+        AND indexname = 'idx_sat_interaction_fhir_request_start_time'
+    ) THEN
+        CREATE INDEX idx_sat_interaction_fhir_request_start_time
+            ON techbd_udi_ingress.sat_interaction_fhir_request (interaction_start_time);
+    END IF;   
+          
+    IF NOT EXISTS (
+        SELECT 1
+        FROM pg_indexes
+        WHERE schemaname = 'techbd_udi_ingress'
+          AND tablename = 'sat_interaction_fhir_request'
+          AND indexname = 'idx_sat_interaction_fhir_request_csv_only'
+    ) THEN
+
+        CREATE INDEX idx_sat_interaction_fhir_request_csv_only
+        ON techbd_udi_ingress.sat_interaction_fhir_request (
+            source_hub_interaction_id,
+            bundle_id,
+            created_at DESC
+        )
+        WHERE source_type = 'CSV';
+
+    END IF;          
+
+    PERFORM pg_advisory_unlock(hashtext('islm_migration_http_request_index_creation'));
+
+    RAISE NOTICE '[MIGRATION] END group=http_request_indexes duration_ms=%',
+        round((extract(epoch FROM clock_timestamp() - migration_group_start_time) * 1000)::numeric, 2);
+
+-- 
+    migration_group_start_time := clock_timestamp();
+    RAISE NOTICE '[MIGRATION] START group=json_action_rule_indexes at %', migration_group_start_time;
+
+    PERFORM pg_advisory_lock(hashtext('islm_migration_json_action_rule_index_creation'));          
+
+    IF NOT EXISTS (
+        SELECT 1
+        FROM pg_indexes
+        WHERE schemaname = 'techbd_udi_ingress'
+        AND indexname = 'json_action_rule_json_path_idx'
+    ) THEN
+        EXECUTE 'CREATE INDEX json_action_rule_json_path_idx 
+                ON techbd_udi_ingress.json_action_rule USING btree (json_path)';
+    END IF;          
+        
+    PERFORM pg_advisory_unlock(hashtext('islm_migration_json_action_rule_index_creation'));
+        
+    RAISE NOTICE '[MIGRATION] END group=json_action_rule_indexes duration_ms=%',
+        round((extract(epoch FROM clock_timestamp() - migration_group_start_time) * 1000)::numeric, 2);
+
+-- ${refCodeLookUp}
+    migration_group_start_time := clock_timestamp();
+    RAISE NOTICE '[MIGRATION] START group=lookup_indexes at %', migration_group_start_time;
+    PERFORM pg_advisory_lock(hashtext('islm_migration_lookup_index_creation'));
+    IF NOT EXISTS (
+        SELECT 1
+        FROM pg_indexes
+        WHERE schemaname = 'techbd_udi_ingress'
+        AND indexname = 'ref_code_lookup_code_type_idx'
+    ) THEN
+        EXECUTE 'CREATE INDEX ref_code_lookup_code_type_idx 
+                ON techbd_udi_ingress.ref_code_lookup USING btree (code_type)';
+    END IF;
+    
+    -- Create NULL-safe UNIQUE index if it does not exist
+    IF NOT EXISTS (
+        SELECT 1
+        FROM pg_indexes
+        WHERE schemaname = 'techbd_udi_ingress'
+          AND indexname = 'ref_code_lookup_unique_code_type_system_value_idx'
+    ) THEN
+        CREATE UNIQUE INDEX ref_code_lookup_unique_code_type_system_value_idx
+        ON techbd_udi_ingress.ref_code_lookup (
+            code,
+            code_type,
+            COALESCE(system_value, '__NULL__')
+        );
+    END IF;
+    PERFORM pg_advisory_unlock(hashtext('islm_migration_lookup_index_creation'));
+    RAISE NOTICE '[MIGRATION] END group=lookup_indexes duration_ms=%',
+        round((extract(epoch FROM clock_timestamp() - migration_group_start_time) * 1000)::numeric, 2);
+
+-- ${csvFhirProcessingErrors}
+    migration_group_start_time := clock_timestamp();
+    RAISE NOTICE '[MIGRATION] START group=flat_file_indexes at %', migration_group_start_time;
+    PERFORM pg_advisory_lock(hashtext('islm_migration_flat_file_index_creation'));
+    IF NOT EXISTS (
+        SELECT 1
+        FROM pg_indexes
+        WHERE schemaname = 'techbd_udi_ingress'
+        AND tablename = 'sat_csv_fhir_processing_errors'
+        AND indexname = 'idx_sat_csv_fhir_processing_errors_flat_file_hub_interaction_id'
+    ) THEN
+        EXECUTE 'CREATE INDEX idx_sat_csv_fhir_processing_errors_flat_file_hub_interaction_id
+                ON techbd_udi_ingress.sat_csv_fhir_processing_errors (flat_file_hub_interaction_id)';
+    END IF;
+
+    IF NOT EXISTS (
+        SELECT 1
+        FROM pg_indexes
+        WHERE schemaname = 'techbd_udi_ingress'
+        AND indexname = 'idx_sat_csv_fhir_processing_errors_zip_file_hub_interaction_id'
+    ) THEN
+        EXECUTE 'CREATE INDEX idx_sat_csv_fhir_processing_errors_zip_file_hub_interaction_id
+                ON techbd_udi_ingress.sat_csv_fhir_processing_errors (zip_file_hub_interaction_id)';
+    END IF;         
+    PERFORM pg_advisory_unlock(hashtext('islm_migration_flat_file_index_creation'));
+    RAISE NOTICE '[MIGRATION] END group=flat_file_indexes duration_ms=%',
+        round((extract(epoch FROM clock_timestamp() - migration_group_start_time) * 1000)::numeric, 2);
+
+-- Index for active user sessions
+    IF NOT EXISTS (
+        SELECT 1
+        FROM pg_indexes
+        WHERE schemaname = 'techbd_udi_ingress'
+            AND tablename = 'user_sessions'
+            AND indexname = 'idx_active_user_session'
+    ) THEN
+        CREATE INDEX IF NOT EXISTS idx_active_user_session
+            ON techbd_udi_ingress.user_sessions(user_id)
+            WHERE session_end_time IS NULL;
+    END IF;
+
+    -- Index for session expiry lookup
+    IF NOT EXISTS (
+        SELECT 1
+        FROM pg_indexes
+        WHERE schemaname = 'techbd_udi_ingress'
+            AND tablename = 'user_sessions'
+            AND indexname = 'idx_user_sessions_expiry'
+    ) THEN
+        CREATE INDEX IF NOT EXISTS idx_user_sessions_expiry
+            ON techbd_udi_ingress.user_sessions(session_expiry_time);
+    END IF;
+
+--
+    IF NOT EXISTS (
+        SELECT 1
+        FROM pg_indexes
+        WHERE schemaname = 'mco_data'
+          AND tablename = 'mco_records'
+          AND indexname = 'idx_mco_records_reporting_month_date'
+    ) THEN
+        CREATE INDEX IF NOT EXISTS idx_mco_records_reporting_month_date
+        ON mco_data.mco_records (reporting_month_date);
+    END IF;
+
+
+    IF NOT EXISTS (
+        SELECT 1
+        FROM pg_indexes
+        WHERE schemaname = 'mco_data'
+          AND tablename = 'mco_records'
+          AND indexname = 'idx_mco_records_tenant_reporting_month'
+    ) THEN
+        CREATE INDEX IF NOT EXISTS idx_mco_records_tenant_reporting_month
+        ON mco_data.mco_records (tenant_id, reporting_month_date);
+    END IF;   
+
+--
+    IF NOT EXISTS (
+        SELECT 1
+        FROM pg_indexes
+        WHERE schemaname = 'mco_data'
+          AND tablename = 'mco_record_details'
+          AND indexname = 'idx_mco_record_details_created_on_utc'
+    ) THEN
+        CREATE INDEX IF NOT EXISTS idx_mco_record_details_created_on_utc
+        ON mco_data.mco_record_details (created_on_utc DESC);
+    END IF;
+

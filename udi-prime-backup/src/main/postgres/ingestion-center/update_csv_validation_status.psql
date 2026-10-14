@@ -1,0 +1,65 @@
+
+-- Purpose: Back fill the 'number_of_fhir_bundles_generated_from_zip_file' value into `sat_interaction_zip_file_request` table
+
+--/flatfile/csv/Bundle
+WITH flat_file AS (
+	SELECT
+	    zip_file_hub_interaction_id,
+	    COUNT(*) FILTER (WHERE nature = 'CSV Validation Result' AND to_state = 'VALIDATION_SUCCESS') AS success_count,
+	    COUNT(*) FILTER (WHERE nature = 'CSV Validation Result' AND to_state = 'VALIDATION_FAILED') AS failure_count,
+	    COUNT(*) FILTER (WHERE nature = 'Original Flat File CSV' AND to_state = 'CSV_ACCEPT') AS total_count
+	FROM techbd_udi_ingress.sat_interaction_flat_file_csv_request
+	WHERE uri IN ('/flatfile/csv/Bundle/', '/flatfile/csv/Bundle')
+	GROUP BY zip_file_hub_interaction_id
+	ORDER BY zip_file_hub_interaction_id
+),
+fhir AS (
+	SELECT
+	    source_hub_interaction_id,
+	    COUNT(*) FILTER (WHERE to_state = 'ACCEPT_FHIR_BUNDLE' AND nature = 'Original FHIR Payload') AS total_fhir_count,
+	    COUNT(*) FILTER (WHERE to_state = 'FORWARD' AND nature = 'Forward HTTP Request') AS forward_count,
+	    max(flat_file.success_count) AS success_count,
+	    max(flat_file.failure_count) AS failure_count,
+	    max(flat_file.total_count) AS total_count
+	FROM techbd_udi_ingress.sat_interaction_fhir_request
+	INNER JOIN flat_file ON flat_file.zip_file_hub_interaction_id = source_hub_interaction_id
+	WHERE uri IN ('/flatfile/csv/Bundle/', '/flatfile/csv/Bundle')
+	GROUP BY source_hub_interaction_id
+	ORDER BY source_hub_interaction_id
+)
+UPDATE techbd_udi_ingress.sat_interaction_zip_file_request zip
+SET data_validation_status = 
+	CASE WHEN total_fhir_count = forward_count AND failure_count = 0 AND success_count >= total_count AND zip.general_errors IS NULL THEN 'Success'  
+		WHEN forward_count = 0 THEN 'Failed' 
+		ELSE 'Partial Success' 
+	END 
+FROM fhir 
+WHERE zip.uri IN('/flatfile/csv/Bundle/', '/flatfile/csv/Bundle')
+AND fhir.source_hub_interaction_id = zip.hub_interaction_id
+AND data_validation_status IS NULL;
+
+
+--/flatfile/csv/Bundle/$validate
+WITH flat_file AS (
+	SELECT
+	    zip_file_hub_interaction_id,
+	    COUNT(*) FILTER (WHERE nature = 'CSV Validation Result' AND to_state = 'VALIDATION_SUCCESS') AS success_count,
+	    COUNT(*) FILTER (WHERE nature = 'CSV Validation Result' AND to_state = 'VALIDATION_FAILED') AS failure_count,
+	    COUNT(*) FILTER (WHERE nature = 'Original Flat File CSV' AND to_state = 'CSV_ACCEPT') AS total_count
+	FROM techbd_udi_ingress.sat_interaction_flat_file_csv_request
+	WHERE uri IN ('/flatfile/csv/Bundle/$validate/', '/flatfile/csv/Bundle/$validate')
+	GROUP BY zip_file_hub_interaction_id
+	ORDER BY zip_file_hub_interaction_id
+)
+UPDATE techbd_udi_ingress.sat_interaction_zip_file_request zip
+SET data_validation_status = 
+	CASE WHEN success_count >= total_count AND failure_count = 0 AND zip.general_errors IS NULL THEN 'Success'  
+		 WHEN success_count > 0 AND failure_count > 0 THEN 'Partial Success' 
+		 ELSE 'Failed' 
+	END 
+FROM flat_file
+WHERE zip.uri IN('/flatfile/csv/Bundle/$validate/', '/flatfile/csv/Bundle/$validate')
+AND flat_file.zip_file_hub_interaction_id = zip.hub_interaction_id
+AND data_validation_status IS NULL;
+
+-- SELECT count(*) FROM techbd_udi_ingress.sat_interaction_zip_file_request WHERE data_validation_status IS NOT NULL;

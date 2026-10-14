@@ -1,0 +1,602 @@
+/*******************************************************************************************
+ * Comprehensive view of FHIR Content Screening. * 
+ ******************************************************************************************/
+
+DROP VIEW IF EXISTS techbd_udi_ingress.fhir_screening_info CASCADE;  
+CREATE OR REPLACE VIEW techbd_udi_ingress.fhir_screening_info
+WITH (security_invoker = true) AS SELECT hub_interaction_id,
+    qe_name,
+    org_id,
+    org_name,
+    last_name,
+    full_name,
+    first_name,
+    submitted_date_time,
+    patient_mrn,
+        CASE
+            WHEN survey_date_time ~ '^\d{4}-(0[1-9]|1[0-2])-(0[1-9]|[12][0-9]|3[01])(T| )\d{2}:\d{2}:\d{2}(\.\d{2})?(Z)?$'::text THEN
+            CASE
+                WHEN survey_date_time::timestamp with time zone IS NOT NULL THEN survey_date_time::timestamp with time zone
+                ELSE NULL::timestamp with time zone
+            END
+            ELSE NULL::timestamp with time zone
+        END AS survey_date_time,
+    areas_of_interest,
+    total_safety_score
+   FROM techbd_udi_ingress.sat_interaction_fhir_screening_info;
+
+/*============================================================================================================*/
+
+/*******************************************************************************************
+ * View of FHIR Screening Questions and Answers. *
+ ******************************************************************************************/
+DROP VIEW IF EXISTS techbd_udi_ingress.fhir_patient_screening_questions_answers CASCADE;
+CREATE OR REPLACE VIEW techbd_udi_ingress.fhir_patient_screening_questions_answers
+WITH (security_invoker = true) AS WITH filtered_resources AS (
+    SELECT
+        sihr.hub_interaction_id,
+        sihr.tenant_name AS tenant_id,
+        jsonb_array_elements(sihr.payload -> 'entry') AS entry,
+        sihr.patient_mrn
+    FROM techbd_udi_ingress.sat_interaction_fhir_request sihr
+    WHERE sihr.uri IN (
+        '/Bundle', '/Bundle/', '/flatfile/csv/Bundle', '/flatfile/csv/Bundle/',
+        '/ccda/Bundle', '/ccda/Bundle/', '/hl7v2/Bundle', '/hl7v2/Bundle/', '/historical-replay/Bundle','/historical-replay/Bundle/'
+    )
+    AND sihr.nature = 'Original FHIR Payload' 
+),
+filtered_data AS (
+    SELECT
+        fr.hub_interaction_id,
+        fr.tenant_id,
+        fr.entry -> 'resource' AS resource,
+        (fr.entry -> 'resource') ->> 'resourceType' AS resource_type,
+        fr.patient_mrn
+    FROM filtered_resources fr
+    WHERE (fr.entry -> 'resource' ->> 'resourceType') = 'Observation'
+),
+single_answers AS (
+    SELECT
+        hub_interaction_id,
+        tenant_id,
+        resource,
+        resource_type,
+        patient_mrn,
+        (((resource -> 'code') -> 'coding') -> 0) ->> 'display' AS question,
+        (((resource -> 'code') -> 'coding') -> 0) ->> 'code' AS question_code,
+        (((resource -> 'valueCodeableConcept') -> 'coding') -> 0) ->> 'display' AS answer,
+        (((resource -> 'valueCodeableConcept') -> 'coding') -> 0) ->> 'code' AS answer_code
+    FROM filtered_data
+    WHERE resource_type = 'Observation'
+    AND resource ? 'valueCodeableConcept'
+),
+multi_answers AS (
+    SELECT
+        fd.hub_interaction_id,
+        fd.tenant_id,
+        fd.resource,
+        fd.resource_type,
+        fd.patient_mrn,
+        comp -> 'code' -> 'coding' -> 0 ->> 'display' AS question,
+        comp -> 'code' -> 'coding' -> 0 ->> 'code' AS question_code,
+        coding ->> 'display' AS answer,
+        coding ->> 'code' AS answer_code
+    FROM filtered_data fd 
+    CROSS JOIN LATERAL jsonb_array_elements(fd.resource -> 'component') AS comp
+    CROSS JOIN LATERAL jsonb_array_elements(comp -> 'valueCodeableConcept' -> 'coding') AS coding
+    WHERE fd.resource_type = 'Observation'
+    AND fd.resource ? 'component'
+)
+SELECT
+    hub_interaction_id,
+    tenant_id,
+    patient_mrn,
+    resource,
+    resource_type,
+    question,
+    question_code,
+    answer,
+    answer_code
+FROM single_answers 
+
+UNION ALL
+
+SELECT
+    hub_interaction_id,
+    tenant_id,
+    patient_mrn,
+    resource,
+    resource_type,
+    question,
+    question_code,
+    answer,
+    answer_code
+FROM multi_answers ;
+
+/*******************************************************************************************
+ * Stored Procedure for FHIR Screening Questions and Answers with Filtering. *
+ ******************************************************************************************/
+drop function if exists techbd_udi_ingress.get_fhir_patient_screening_questions_answers(TEXT,TEXT);
+create or replace function techbd_udi_ingress.get_fhir_patient_screening_questions_answers(
+    p_hub_interaction_id TEXT default null,
+    p_patient_mrn TEXT default null
+)
+returns table (
+    hub_interaction_id TEXT,
+    tenant_id TEXT, 
+    resource_type TEXT,
+    patient_mrn TEXT,
+    question TEXT,
+    question_code TEXT,
+    answer TEXT,
+    answer_code TEXT,
+    data_absent_reason_code TEXT,
+    data_absent_reason_display TEXT
+) as $$
+begin
+    return QUERY
+    with filtered_resources as (
+select
+	sihr.hub_interaction_id,
+	sihr.tenant_name as tenant_id,
+	jsonb_array_elements(sihr.payload -> 'entry'::text) as entry,
+	sihr.patient_mrn
+from
+	techbd_udi_ingress.sat_interaction_fhir_request sihr
+where
+	sihr.uri in ('/Bundle', '/Bundle/', '/flatfile/csv/Bundle', '/flatfile/csv/Bundle/', '/ccda/Bundle', '/ccda/Bundle/', '/hl7v2/Bundle', '/hl7v2/Bundle/','/historical-replay/Bundle','/historical-replay/Bundle/')
+	and sihr.nature = 'Original FHIR Payload'::text
+	-- Apply filters if provided
+	and (p_hub_interaction_id is null
+		or sihr.hub_interaction_id = p_hub_interaction_id)
+	and (p_patient_mrn is null
+		or sihr.patient_mrn = p_patient_mrn)
+        ),
+filtered_data as (
+select
+	fr.hub_interaction_id,
+	fr.tenant_id,
+	fr.entry -> 'resource'::text as resource,
+	(fr.entry -> 'resource'::text) ->> 'resourceType'::text as resource_type,
+	fr.patient_mrn
+from
+	filtered_resources fr
+where
+	(fr.entry -> 'resource' ->> 'resourceType') = 'Observation'
+        ),
+single_answers as (
+select
+	fd.hub_interaction_id,
+	fd.tenant_id,
+	fd.resource_type,
+	fd.patient_mrn,
+	-- Question
+            (((fd.resource -> 'code') -> 'coding') -> 0) ->> 'display' as question,
+	(((fd.resource -> 'code') -> 'coding') -> 0) ->> 'code' as question_code,
+	-- Answer (valueCodeableConcept OR NULL)
+            case
+		when fd.resource ? 'valueCodeableConcept'
+			and (((fd.resource -> 'valueCodeableConcept') -> 'coding') -> 0 ->> 'display') = '{Number}'
+                then fd.resource -> 'valueCodeableConcept' ->> 'text'
+			when fd.resource ? 'valueCodeableConcept'
+                then (((fd.resource -> 'valueCodeableConcept') -> 'coding') -> 0 ->> 'display')
+			else null
+		end as answer,
+		case
+			when fd.resource ? 'valueCodeableConcept'
+                then (((fd.resource -> 'valueCodeableConcept') -> 'coding') -> 0) ->> 'code'
+			else null
+		end as answer_code,
+		-- Data Absent Reason (NEW)
+            (fd.resource -> 'dataAbsentReason' -> 'coding' -> 0 ->> 'code') as data_absent_reason_code,
+		(fd.resource -> 'dataAbsentReason' -> 'coding' -> 0 ->> 'display') as data_absent_reason_display
+	from
+		filtered_data fd
+		-- Accept both valueCodeableConcept OR dataAbsentReason
+	where
+		fd.resource_type = 'Observation'
+		and (fd.resource ? 'valueCodeableConcept'
+			or fd.resource ? 'dataAbsentReason')
+    ),
+multi_answers as (
+select
+	fd.hub_interaction_id,
+	fd.tenant_id,
+	fd.resource_type,
+	fd.patient_mrn,
+	comp -> 'code' -> 'coding' -> 0 ->> 'display' as question,
+	comp -> 'code' -> 'coding' -> 0 ->> 'code' as question_code,
+	case
+		when (coding ->> 'display') = '{Number}'
+                then (comp -> 'valueCodeableConcept' ->> 'text')
+		else (coding ->> 'display')
+	end as answer,
+	coding ->> 'code' as answer_code
+from
+	filtered_data fd
+cross join lateral jsonb_array_elements(fd.resource -> 'component') as comp
+cross join lateral jsonb_array_elements(comp -> 'valueCodeableConcept' -> 'coding') as coding
+where
+	fd.resource_type = 'Observation'
+	and fd.resource ? 'component'
+        )
+    select
+	sa.hub_interaction_id,
+	sa.tenant_id,
+	sa.resource_type,
+	sa.patient_mrn,
+	sa.question,
+	sa.question_code,
+	sa.answer,
+	sa.answer_code,
+	sa.data_absent_reason_code,
+	sa.data_absent_reason_display
+from
+	single_answers sa
+union all
+     select
+	ma.hub_interaction_id,
+	ma.tenant_id,
+	ma.resource_type,
+	ma.patient_mrn,
+	ma.question,
+	ma.question_code,
+	ma.answer,
+	ma.answer_code,
+	null as data_absent_reason_code,
+	null as data_absent_reason_display
+from
+	multi_answers ma;
+end;
+
+$$ language plpgsql;
+
+
+/*******************************************************************************************
+ * Comprehensive view of FHIR Content Details Screening. * 
+ ******************************************************************************************/
+DROP VIEW IF EXISTS techbd_udi_ingress.fhir_screening_detail CASCADE;
+CREATE OR REPLACE VIEW techbd_udi_ingress.fhir_screening_detail
+WITH (security_invoker = true) AS  WITH filtered_resources AS (
+         SELECT sihr.hub_interaction_id,
+            sihr.tenant_name AS tenant_id,
+            jsonb_array_elements(sihr.payload -> 'entry'::text) AS entry
+           FROM techbd_udi_ingress.sat_interaction_fhir_request sihr
+          WHERE sihr.uri IN ('/Bundle', '/Bundle/','/flatfile/csv/Bundle', '/flatfile/csv/Bundle/', '/ccda/Bundle', '/ccda/Bundle/', '/hl7v2/Bundle', '/hl7v2/Bundle/','/historical-replay/Bundle','/historical-replay/Bundle/') AND sihr.nature = 'Original FHIR Payload'::text
+        ), filtered_data AS (
+         SELECT filtered_resources.hub_interaction_id,
+            filtered_resources.tenant_id,
+            filtered_resources.entry -> 'resource'::text AS resource,
+            (filtered_resources.entry -> 'resource'::text) ->> 'resourceType'::text AS resource_type,
+            ( SELECT (entry_inner.value -> 'resource'::text) ->> 'id'::text
+                   FROM techbd_udi_ingress.sat_interaction_fhir_request sihr_inner
+                     CROSS JOIN LATERAL jsonb_array_elements(sihr_inner.payload -> 'entry'::text) entry_inner(value)
+                  WHERE ((entry_inner.value -> 'resource'::text) ->> 'resourceType'::text) = 'Patient'::text AND sihr_inner.hub_interaction_id = filtered_resources.hub_interaction_id
+                 LIMIT 1) AS patient_mrn
+           FROM filtered_resources
+        )
+ SELECT hub_interaction_id,
+    tenant_id,
+    resource,
+    resource_type,
+    patient_mrn
+   FROM filtered_data;
+
+
+/*******************************************************************************************
+ * Comprehensive view of FHIR Content Screening Patient. * 
+ ******************************************************************************************/
+DROP VIEW IF EXISTS techbd_udi_ingress.fhir_screening_patient CASCADE;
+CREATE OR REPLACE VIEW techbd_udi_ingress.fhir_screening_patient
+WITH (security_invoker = true) AS 
+ SELECT  qe_name,
+     patient_mrn,
+    max(patient_id) AS patient_id,
+    max(patient_type) AS patient_type,
+    max(patient_full_name) AS patient_full_name,
+    max(patient_first_name) AS patient_first_name,
+    max(patient_last_name) AS patient_last_name,
+    max(patient_gender) AS patient_gender,
+    max(patient_birth_date) AS patient_birth_date,
+    max(patient_address) AS patient_address,
+    max(patient_city) AS patient_city,
+    max(patient_state) AS patient_state,
+    max(patient_postal_code) AS patient_postal_code,
+    max(patient_language) AS patient_language,
+    max(org_id) AS org_id,
+    max(created_at) as created_at,
+    primary_org_id
+   FROM techbd_udi_ingress.sat_interaction_fhir_screening_patient 
+   WHERE patient_mrn !='' or patient_mrn IS NOT NULL
+  GROUP BY qe_name, patient_mrn, primary_org_id
+  ORDER BY created_at DESC;
+
+
+/*******************************************************************************************
+ * Comprehensive view of FHIR Content Screening Organization. * 
+ ******************************************************************************************/
+DROP VIEW IF EXISTS techbd_udi_ingress.fhir_screening_organization CASCADE;
+CREATE OR REPLACE VIEW techbd_udi_ingress.fhir_screening_organization
+WITH (security_invoker = true) AS 
+SELECT
+    sifso.qe_name,
+    sifso.org_id,
+    MAX(sifso.org_type) AS org_type,
+    MAX(sifso.org_name) AS org_name,
+    MAX(sifso.org_active) AS org_active,
+    MAX(sifso.org_address) AS org_address,
+    MAX(sifso.org_city) AS org_city,
+    MAX(sifso.org_state) AS org_state,
+    MAX(sifso.org_postal_code) AS org_postal_code,
+    MAX(sifso.created_at) AS created_at
+FROM techbd_udi_ingress.sat_interaction_fhir_screening_organization sifso
+WHERE EXISTS (
+    SELECT 1
+    FROM techbd_udi_ingress.sat_interaction_fhir_request sifr
+    WHERE sifr.hub_interaction_id = sifso.hub_interaction_id
+      AND sifr.organization_id   = sifso.org_id
+)
+GROUP BY sifso.qe_name, sifso.org_id
+ORDER BY MAX(sifso.created_at) DESC;
+
+
+
+/****************************************************************************************
+ * This view, fhir_validation_issue_details, provides detailed insights into FHIR validation 
+ * issues . It aggregates the data by validation engine, specific issue, IG (Implementation Guide) 
+ * version, and issue date. 
+ * The view includes the following key fields:
+ * 
+ * - validation_engine: The name of the validation engine that processed the interaction.
+ * - issue: The specific validation issue encountered.
+ * - issue_count: The number of times each issue was encountered within the given period.
+ * - most_recent_date: The most recent timestamp when the issue was recorded.
+ * - ig_version: The IG version associated with the issue, or 'Unknown' if not available.
+ * - issue_date: The date (formatted as MM-DD-YYYY) when the issue occurred.
+ * 
+ * This view helps users analyze and understand the frequency and recency of validation 
+ * issues over the past 7 days, allowing for more effective troubleshooting and resolution.
+ * The results are ordered by the most recent occurrence of each issue.
+****************************************************************************************/
+
+
+DROP VIEW IF EXISTS techbd_udi_ingress.fhir_validation_issue_details CASCADE;
+CREATE OR REPLACE VIEW techbd_udi_ingress.fhir_validation_issue_details
+WITH (security_invoker = true) AS SELECT validation_engine,
+    issue,
+    severity as issue_severity,
+    count(*) AS issue_count,
+    max(date_time) AS most_recent_date,
+    COALESCE(ig_version, 'Unknown'::text) AS ig_version,
+    to_char(date_trunc('day'::text,	date_time),	'MM-DD-YYYY'::text) AS issue_date,
+    profile_url
+      FROM techbd_udi_ingress.sat_interaction_fhir_validation_issue
+   WHERE  
+   date_time >= CURRENT_DATE - INTERVAL '2 days'
+      AND (issue ~~ '%has not been checked because it is unknown%'::text 
+            OR issue ~~ '%Unknown profile%'::text 
+            OR issue ~~ '%Unknown extension%'::text 
+            OR issue ~~ '%Unknown Code System%'::text 
+            OR issue ~~ '%not found%'::text
+            OR issue ~~ '%has not been checked because it could not be found%'::text
+            OR issue ~~ '%Unable to find a match for profile%'::text
+            OR issue ~~ '%None of the codings provided%'::text
+            OR issue ~~ '%Unable to expand ValueSet%'::text
+            OR issue ~~ '%Slicing cannot be evaluated%'::text
+            OR issue ~~ '%could not be resolved%'::text)
+            AND severity !=''
+   GROUP BY validation_engine,
+    issue, severity,
+    profile_url,
+     (COALESCE(ig_version, 'Unknown'::text)), (to_char(date_trunc('day'::text, date_time), 'MM-DD-YYYY'::text))
+   ORDER BY	(max(date_time)) DESC;
+
+/*******************************************************************************************
+ * Stored Procedure for FHIR Validation Issue Details (Replacement for View)
+ *
+ * This stored procedure replaces the fhir_validation_issue_details view by accepting
+ * ig_version, validation_engine, issue_date, and profile_url as parameters.
+ *
+ * Parameters:
+ * - p_ig_version: The IG version filter
+ * - p_validation_engine: The validation engine filter
+ * - p_issue_date: The issue date filter (format: MM-DD-YYYY)
+ * - p_profile_url: The profile URL filter
+ *
+ * Returns: Detailed FHIR validation issue records for the specified filters
+ ******************************************************************************************/
+DROP FUNCTION IF EXISTS techbd_udi_ingress.get_fhir_validation_issue_details(
+    TEXT, TEXT, TEXT, TEXT
+);
+
+CREATE OR REPLACE FUNCTION techbd_udi_ingress.get_fhir_validation_issue_details(
+    p_ig_version TEXT DEFAULT NULL,
+    p_validation_engine TEXT DEFAULT NULL,
+    p_issue_date TEXT DEFAULT NULL,
+    p_source TEXT DEFAULT NULL
+)
+RETURNS TABLE (
+    validation_engine TEXT,
+    issue TEXT,
+    issue_severity TEXT,
+    issue_count BIGINT,
+    most_recent_date TIMESTAMP WITH TIME ZONE,
+    ig_version TEXT,
+    issue_date TEXT,
+    source TEXT
+) 
+LANGUAGE sql
+ STABLE
+AS $function$
+    WITH filtered AS (
+    SELECT 
+        validation_engine,
+        issue,
+        severity AS issue_severity,        
+        COALESCE(ig_version, 'Unknown') AS ig_version,
+        date_time,
+        TO_CHAR(DATE_TRUNC('day', date_time), 'MM-DD-YYYY') AS issue_date,
+        profile_url_domain AS source
+    FROM techbd_udi_ingress.sat_interaction_fhir_validation_issue
+    WHERE
+        date_time >= now() - interval '5 days'
+        AND severity IS NOT NULL
+        AND severity <> ''
+        AND (
+            issue ILIKE '%has not been checked because it is unknown%' OR
+            issue ILIKE '%Unknown profile%' OR
+            issue ILIKE '%Unknown extension%' OR
+            issue ILIKE '%Unknown Code System%' OR
+            issue ILIKE '%not found%' OR
+            issue ILIKE '%has not been checked because it could not be found%' OR
+            issue ILIKE '%Unable to find a match for profile%' OR
+            issue ILIKE '%None of the codings provided%' OR
+            issue ILIKE '%Unable to expand ValueSet%' OR
+            issue ILIKE '%Slicing cannot be evaluated%' OR
+            issue ILIKE '%could not be resolved%'
+        )
+        AND (NULLIF(p_ig_version, '') IS NULL OR COALESCE(ig_version, 'Unknown') = p_ig_version)
+        AND (NULLIF(p_validation_engine, '') IS NULL OR validation_engine = p_validation_engine)
+        AND (NULLIF(p_issue_date, '') IS NULL OR TO_CHAR(DATE_TRUNC('day', date_time), 'MM-DD-YYYY') = p_issue_date)
+        AND (NULLIF(p_source, '') IS NULL OR profile_url_domain = p_source)
+)
+    SELECT
+        validation_engine,
+        issue,
+        issue_severity,
+        COUNT(*) AS issue_count,
+        MAX(date_time) AS most_recent_date,
+        ig_version,
+        issue_date,
+        source
+    FROM filtered
+    GROUP BY
+        validation_engine,
+        issue,
+        issue_severity,
+        source,
+        ig_version,
+        issue_date
+    ORDER BY MAX(date_time) DESC;
+$function$;
+
+
+/****************************************************************************************
+ * This view provides a straightforward way to access consolidated validation issues.
+ * It includes key fields related to FHIR validation issues, such as the validation engine, 
+ * formatted issue date, most recent timestamp of the issue, IG (Implementation Guide) version, 
+ * and the count of distinct issues. This view helps in quickly identifying and analyzing validation 
+ * issues over the past 7 days, sorted by the most recent issue date.
+****************************************************************************************/
+
+
+DROP VIEW IF EXISTS techbd_udi_ingress.fhir_validation_issue CASCADE;
+CREATE OR REPLACE VIEW techbd_udi_ingress.fhir_validation_issue
+WITH (security_invoker = true) AS 
+SELECT
+    validation_engine,
+    MAX(date_time::date) AS issue_date,
+    MAX(date_time) AS most_recent_date,
+    COALESCE(ig_version, 'Unknown') AS ig_version,
+    COUNT(DISTINCT issue) AS distinct_issue_count,
+    profile_url_domain AS source
+FROM
+    techbd_udi_ingress.sat_interaction_fhir_validation_issue
+WHERE
+    date_time >= CURRENT_DATE - INTERVAL '3 days'
+    AND (
+        issue LIKE '%has not been checked because it is unknown%'
+        OR issue LIKE '%Unknown profile%'
+        OR issue LIKE '%Unknown extension%'
+        OR issue LIKE '%Unknown Code System%'
+        OR issue LIKE '%not found%'
+        OR issue LIKE '%has not been checked because it could not be found%'
+        OR issue LIKE '%Unable to find a match for profile%'
+        OR issue LIKE '%None of the codings provided%'
+        OR issue LIKE '%Unable to expand ValueSet%'
+        OR issue LIKE '%Slicing cannot be evaluated%'
+        OR issue LIKE '%could not be resolved%'
+    )
+    AND severity <> ''
+GROUP BY
+    validation_engine,
+    COALESCE(ig_version, 'Unknown'),
+    profile_url_domain,
+    date_time::date;
+
+
+-- ============================================================
+-- View: interaction_recent_widget_new
+-- Purpose: Exposes recent widget metadata for all widget types 
+--          (FHIR, CSV, CCDA, HL7V2) across all tenants.
+-- Columns: widget_name, tenant_id, last_updated_at
+-- ============================================================
+
+DROP VIEW IF EXISTS techbd_udi_ingress.interaction_recent_widget_new CASCADE;
+CREATE OR REPLACE VIEW techbd_udi_ingress.interaction_recent_widget_new WITH (security_invoker = true) AS
+SELECT 
+    widget_name,
+    tenant_name AS tenant_id,
+    last_updated_at
+FROM techbd_udi_ingress.dashboard_widget_metadata;
+
+
+/*******************************************************************************************
+ * Stored Procedure for FHIR Screening Info with Filtering. *
+ ******************************************************************************************/
+DROP FUNCTION IF EXISTS techbd_udi_ingress.get_fhir_screening_info(TEXT, TEXT, TEXT);
+CREATE OR REPLACE FUNCTION techbd_udi_ingress.get_fhir_screening_info(
+    p_qe_name TEXT default null,
+    p_patient_mrn TEXT default null,
+    p_org_id TEXT default null
+)
+RETURNS TABLE (
+    hub_interaction_id TEXT,
+    qe_name TEXT,
+    org_id TEXT,
+    org_name TEXT,
+    last_name TEXT,
+    full_name TEXT,
+    first_name TEXT,
+    submitted_date_time TIMESTAMP with TIME zone,
+    patient_mrn TEXT,
+    survey_date_time TIMESTAMP with TIME zone,  
+    areas_of_interest TEXT,
+    total_safety_score numeric
+)
+AS $$
+BEGIN
+    RETURN QUERY
+    SELECT
+	fsi.hub_interaction_id,
+	fsi.qe_name,
+	fsi.org_id,
+	fsi.org_name,
+	fsi.last_name,
+	fsi.full_name,
+	fsi.first_name,
+	fsi.submitted_date_time,
+	fsi.patient_mrn,
+	CASE
+		WHEN fsi.survey_date_time ~ '^\d{4}-(0[1-9]|1[0-2])-(0[1-9]|[12][0-9]|3[01])(T| )\d{2}:\d{2}:\d{2}(\.\d{2})?(Z)?$'::text THEN
+            CASE
+			WHEN fsi.survey_date_time::timestamp with time zone is not null THEN fsi.survey_date_time::timestamp with time zone
+			ELSE null::timestamp with time zone
+		END
+		ELSE null::timestamp with time zone
+	END AS survey_date_time,
+	fsi.areas_of_interest,
+	nullif(fsi.total_safety_score, '')::numeric
+FROM
+	techbd_udi_ingress.sat_interaction_fhir_screening_info fsi
+WHERE
+	(p_qe_name IS NULL
+		OR fsi.qe_name = p_qe_name)
+	AND (p_patient_mrn IS NULL
+		OR fsi.patient_mrn = p_patient_mrn)
+	AND (p_org_id IS NULL
+    	OR p_org_id = ANY(string_to_array(fsi.org_id, ', '))
+        )
+    ORDER BY fsi.submitted_date_time DESC;
+END;
+$$ language plpgsql;
