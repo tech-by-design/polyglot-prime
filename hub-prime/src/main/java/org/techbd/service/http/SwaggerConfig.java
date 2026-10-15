@@ -26,7 +26,8 @@ import io.swagger.v3.oas.models.responses.ApiResponses;
 import io.swagger.v3.oas.models.servers.Server;
 import io.swagger.v3.oas.models.media.Content;
 import io.swagger.v3.oas.models.media.MediaType;
-
+import java.util.List;
+import java.util.Map;
 @Configuration
 public class SwaggerConfig {
 
@@ -153,7 +154,1118 @@ public class SwaggerConfig {
                                     .type("file")
                                     .format("binary")));
 
-                    // Add Mirth Endpoint 1
+
+                           
+     
+                        openApi.getPaths().addPathItem("/tenants", new PathItem()
+                                        .get(new Operation()
+                                                .tags(List.of("Tech by Design Hub Tenant Endpoints"))
+                                                .summary("List active tenants")
+                                                .description("Fetches the list of currently active tenants.")
+                                                .responses(new ApiResponses()
+                                                       .addApiResponse("200", new ApiResponse()
+                                                                        .description("Successful response.")
+                                                                        .content(new Content()
+                                                                                .addMediaType("application/json",
+                                                                                        new MediaType()
+                                                                                                .schema(new io.swagger.v3.oas.models.media.ArraySchema()
+                                                                                                        .items(new io.swagger.v3.oas.models.media.Schema<>()
+                                                                                                                .type("object")
+                                                                                                                .additionalProperties(new io.swagger.v3.oas.models.media.ObjectSchema())))
+                                                                                                .example(List.of(
+                                                                                                        Map.of(
+                                                                                                                "additionalProp1", Map.of(),
+                                                                                                                "additionalProp2", Map.of(),
+                                                                                                                "additionalProp3", Map.of()
+                                                                                                        )
+                                                                                                )))))
+                                                                .addApiResponse("400", new ApiResponse()
+                                                                        .description("Validation Error.")
+                                                                        .content(new Content()
+                                                                        .addMediaType("application/json", new MediaType()
+                                                                        .schema(new io.swagger.v3.oas.models.media.Schema<>()
+                                                                        .type("object"))
+                                                                        .example(Map.of(
+                                                                                 "status", "Error",
+                                                                                 "message", "${message}"
+                                                                        )))))
+                                                                .addApiResponse("500", new ApiResponse()
+                                                                                .description("Server error")
+                                                                                .content(new Content()
+                                                                                        .addMediaType("application/json", new MediaType()
+                                                                                                .schema(new io.swagger.v3.oas.models.media.Schema<>()
+                                                                                                        .type("object"))
+                                                                                                .example(Map.of(
+                                                                                                        "status", "Error",
+                                                                                                        "message", "An unexpected system error occurred."
+                                                                                                ))))))));          
+                                                            
+
+                       // Add Flat File CSV Validation Endpoint
+                        openApi.getPaths().addPathItem("/flatfile/csv/Bundle/$validate", new PathItem()
+                                .post(new Operation()
+                                        .tags(List.of("Tech by Design Hub CSV Endpoints"))
+                                        .addParametersItem(new Parameter()
+                                                .name("X-TechBD-Tenant-ID")
+                                                .description("Tenant ID, a mandatory parameter.")
+                                                .required(true)
+                                                .in("header")
+                                                .schema(new StringSchema()))
+                                        .addParametersItem(new Parameter()
+                                                .name("immediate")
+                                                .description("Optional parameter to decide whether response should be synchronous or asynchronous. Default: immediate=true → request is processed synchronously. Optional: immediate=false → request is processed asynchronously. When using immediate=false, an interim response is returned containing a zipFileInteractionId. The full operation outcome can be retrieved from Hub UI → Interactions → CSV via HTTP(s) tab using the provided zipFileInteractionId. This option is useful for large ZIP files that may otherwise result in timeout issues.")
+                                                .required(false)
+                                                .in("query")
+                                                .schema(new io.swagger.v3.oas.models.media.BooleanSchema()._default(true)))
+                                        .requestBody(new io.swagger.v3.oas.models.parameters.RequestBody()
+                                                .description("ZIP file containing CSV data. Must not be null.")
+                                                .required(true)
+                                                .content(new io.swagger.v3.oas.models.media.Content()
+                                                        .addMediaType("multipart/form-data",
+                                                                new io.swagger.v3.oas.models.media.MediaType()
+                                                                        .schema(new io.swagger.v3.oas.models.media.Schema<>()
+                                                                                .$ref("#/components/schemas/FileUpload")))))
+                                                .responses(new ApiResponses()
+                                                       .addApiResponse("200", new ApiResponse()
+                                                                        .description("OK.")
+                                                                        .content(new Content()
+                                                                                .addMediaType("*/*",
+                                                                                        new MediaType()
+                                                                                                .schema(new io.swagger.v3.oas.models.media.ArraySchema()
+                                                                                                        .items(new io.swagger.v3.oas.models.media.Schema<>()
+                                                                                                                .type("object")
+                                                                                                                .additionalProperties(new io.swagger.v3.oas.models.media.ObjectSchema())))
+                                                                                                .example(
+                                                                                                        Map.of()
+                                                                                                ))))
+                                                                .addApiResponse("400", new ApiResponse()
+                                                                        .description("Validation Error.")
+                                                                        .content(new Content()
+                                                                        .addMediaType("application/json", new MediaType()
+                                                                        .schema(new io.swagger.v3.oas.models.media.Schema<>()
+                                                                        .type("object"))
+                                                                        .example(Map.of(
+                                                                                 "status", "Error",
+                                                                                 "message", "${message}"
+                                                                        )))))
+                                                                .addApiResponse("408", new ApiResponse()
+                                                                        .description("Request Timeout.")
+                                                                        .content(new Content()
+                                                                        .addMediaType("application/json", new MediaType()
+                                                                        .schema(new io.swagger.v3.oas.models.media.Schema<>()
+                                                                        .type("object"))
+                                                                        .example(Map.of(
+                                                                                 "status", "Error",
+                                                                                 "message", "Request timed out. Please try again."
+                                                                        )))))                                                                        
+                                                                .addApiResponse("500", new ApiResponse()
+                                                                                .description("Internal Server Error")
+                                                                                .content(new Content()
+                                                                                        .addMediaType("application/json", new MediaType()
+                                                                                                .schema(new io.swagger.v3.oas.models.media.Schema<>()
+                                                                                                        .type("object"))
+                                                                                                .example(Map.of(
+                                                                                                        "status", "Error",
+                                                                                                        "message", "An unexpected system error occurred."
+                                                                                                ))))))));       
+
+
+                        openApi.getPaths().addPathItem("/flatfile/csv/Bundle/$validate/", new PathItem()
+                                .post(new Operation()
+                                        .tags(List.of("Tech by Design Hub CSV Endpoints"))
+                                        .addParametersItem(new Parameter()
+                                                .name("X-TechBD-Tenant-ID")
+                                                .description("Tenant ID, a mandatory parameter.")
+                                                .required(true)
+                                                .in("header")
+                                                .schema(new StringSchema()))
+                                        .addParametersItem(new Parameter()
+                                                .name("immediate")
+                                                .description("Optional parameter to decide whether response should be synchronous or asynchronous. Default: immediate=true → request is processed synchronously. Optional: immediate=false → request is processed asynchronously. When using immediate=false, an interim response is returned containing a zipFileInteractionId. The full operation outcome can be retrieved from Hub UI → Interactions → CSV via HTTP(s) tab using the provided zipFileInteractionId. This option is useful for large ZIP files that may otherwise result in timeout issues.")
+                                                .required(false)
+                                                .in("query")
+                                                .schema(new io.swagger.v3.oas.models.media.BooleanSchema()._default(true)))
+                                        .requestBody(new io.swagger.v3.oas.models.parameters.RequestBody()
+                                                .description("ZIP file containing CSV data. Must not be null.")
+                                                .required(true)
+                                                .content(new io.swagger.v3.oas.models.media.Content()
+                                                        .addMediaType("multipart/form-data",
+                                                                new io.swagger.v3.oas.models.media.MediaType()
+                                                                        .schema(new io.swagger.v3.oas.models.media.Schema<>()
+                                                                                .$ref("#/components/schemas/FileUpload")))))
+                                                .responses(new ApiResponses()
+                                                       .addApiResponse("200", new ApiResponse()
+                                                                        .description("OK.")
+                                                                        .content(new Content()
+                                                                                .addMediaType("*/*",
+                                                                                        new MediaType()
+                                                                                                .schema(new io.swagger.v3.oas.models.media.ArraySchema()
+                                                                                                        .items(new io.swagger.v3.oas.models.media.Schema<>()
+                                                                                                                .type("object")
+                                                                                                                .additionalProperties(new io.swagger.v3.oas.models.media.ObjectSchema())))
+                                                                                                .example(
+                                                                                                        Map.of()
+                                                                                                ))))
+                                                                .addApiResponse("400", new ApiResponse()
+                                                                        .description("Validation Error.")
+                                                                        .content(new Content()
+                                                                        .addMediaType("application/json", new MediaType()
+                                                                        .schema(new io.swagger.v3.oas.models.media.Schema<>()
+                                                                        .type("object"))
+                                                                        .example(Map.of(
+                                                                                 "status", "Error",
+                                                                                 "message", "${message}"
+                                                                        )))))
+                                                                .addApiResponse("408", new ApiResponse()
+                                                                        .description("Request Timeout.")
+                                                                        .content(new Content()
+                                                                        .addMediaType("application/json", new MediaType()
+                                                                        .schema(new io.swagger.v3.oas.models.media.Schema<>()
+                                                                        .type("object"))
+                                                                        .example(Map.of(
+                                                                                 "status", "Error",
+                                                                                 "message", "Request timed out. Please try again."
+                                                                        )))))                                                                        
+                                                                .addApiResponse("500", new ApiResponse()
+                                                                                .description("Internal Server Error")
+                                                                                .content(new Content()
+                                                                                        .addMediaType("application/json", new MediaType()
+                                                                                                .schema(new io.swagger.v3.oas.models.media.Schema<>()
+                                                                                                        .type("object"))
+                                                                                                .example(Map.of(
+                                                                                                        "status", "Error",
+                                                                                                        "message", "An unexpected system error occurred."
+                                                                                                ))))))));  
+
+
+                        // Add Flat File CSV Bundle Endpoint
+                        openApi.getPaths().addPathItem("/flatfile/csv/Bundle", new PathItem()
+                                .post(new Operation()
+                                        .tags(List.of("Tech by Design Hub CSV Endpoints"))
+                                        .addParametersItem(new Parameter()
+                                                .name("X-TechBD-Tenant-ID")
+                                                .description("Parameter to specify the Tenant ID. This is a mandatory parameter")
+                                                .required(true)
+                                                .in("header")
+                                                .schema(new StringSchema()))
+                                        .addParametersItem(new Parameter()
+                                                .name("X-TechBD-DataLake-API-URL")
+                                                .description("Optional header to specify the Datalake API URL. If not specified, the default URL mentioned in the application configuration will be used.")
+                                                .required(false)
+                                                .in("header")
+                                                .schema(new StringSchema()))
+                                        .addParametersItem(new Parameter()
+                                                .name("X-TechBD-Base-FHIR-URL")
+                                                .description("Optional header to specify the base FHIR URL. If provided, it will be used in the generated FHIR; otherwise, the default value will be used.")
+                                                .required(false)
+                                                .in("header")
+                                                .schema(new StringSchema()))
+                                        .addParametersItem(new Parameter()
+                                                .name("X-TechBD-Validation-Severity-Level")
+                                                .description("Optional header to set validation severity level (information, warning, error, fatal).")
+                                                .required(false)
+                                                .in("header")
+                                                .schema(new StringSchema()))
+                                        .addParametersItem(new Parameter()
+                                                .name("immediate")
+                                                .description("Optional parameter to decide whether response should be synchronous or asynchronous. Default: immediate=true → request is processed synchronously. Optional: immediate=false → request is processed asynchronously. When using immediate=false, an interim response is returned containing a zipFileInteractionId. The full operation outcome can be retrieved from Hub UI → Interactions → CSV via HTTP(s) tab using the provided zipFileInteractionId. This option is useful for large ZIP files that may otherwise result in timeout issues.")
+                                                .required(false)
+                                                .in("query")
+                                                .schema(new io.swagger.v3.oas.models.media.BooleanSchema()._default(true)))                                                
+                                        .requestBody(new io.swagger.v3.oas.models.parameters.RequestBody()
+                                                .description("ZIP file containing CSV data. Must not be null.")
+                                                .required(true)
+                                                .content(new io.swagger.v3.oas.models.media.Content()
+                                                        .addMediaType("multipart/form-data",
+                                                                new io.swagger.v3.oas.models.media.MediaType()
+                                                                        .schema(new io.swagger.v3.oas.models.media.Schema<>()
+                                                                                .$ref("#/components/schemas/FileUpload")))))
+                                                .responses(new ApiResponses()
+                                                       .addApiResponse("200", new ApiResponse()
+                                                                        .description("OK.")
+                                                                        .content(new Content()
+                                                                                .addMediaType("*/*",
+                                                                                        new MediaType()
+                                                                                                .schema(new io.swagger.v3.oas.models.media.ArraySchema()
+                                                                                                        .items(new io.swagger.v3.oas.models.media.Schema<>()
+                                                                                                                .type("object")
+                                                                                                                .additionalProperties(new io.swagger.v3.oas.models.media.ObjectSchema())))
+                                                                                                .example(
+                                                                                                        Map.of()
+                                                                                                ))))
+                                                                .addApiResponse("400", new ApiResponse()
+                                                                        .description("Validation Error.")
+                                                                        .content(new Content()
+                                                                        .addMediaType("application/json", new MediaType()
+                                                                        .schema(new io.swagger.v3.oas.models.media.Schema<>()
+                                                                        .type("object"))
+                                                                        .example(Map.of(
+                                                                                 "status", "Error",
+                                                                                 "message", "${message}"
+                                                                        )))))
+                                                                .addApiResponse("408", new ApiResponse()
+                                                                        .description("Request Timeout.")
+                                                                        .content(new Content()
+                                                                        .addMediaType("application/json", new MediaType()
+                                                                        .schema(new io.swagger.v3.oas.models.media.Schema<>()
+                                                                        .type("object"))
+                                                                        .example(Map.of(
+                                                                                 "status", "Error",
+                                                                                 "message", "Request timed out. Please try again."
+                                                                        )))))                                                                        
+                                                                .addApiResponse("500", new ApiResponse()
+                                                                                .description("Internal Server Error")
+                                                                                .content(new Content()
+                                                                                        .addMediaType("application/json", new MediaType()
+                                                                                                .schema(new io.swagger.v3.oas.models.media.Schema<>()
+                                                                                                        .type("object"))
+                                                                                                .example(Map.of(
+                                                                                                        "status", "Error",
+                                                                                                        "message", "An unexpected system error occurred."
+                                                                                                ))))))));  
+
+                                                                
+
+
+                        // Add Flat File CSV Bundle Endpoint
+                        openApi.getPaths().addPathItem("/flatfile/csv/Bundle/", new PathItem()
+                                .post(new Operation()
+                                        .tags(List.of("Tech by Design Hub CSV Endpoints"))
+                                        .addParametersItem(new Parameter()
+                                                .name("X-TechBD-Tenant-ID")
+                                                .description("Parameter to specify the Tenant ID. This is a mandatory parameter")
+                                                .required(true)
+                                                .in("header")
+                                                .schema(new StringSchema()))
+                                        .addParametersItem(new Parameter()
+                                                .name("X-TechBD-DataLake-API-URL")
+                                                .description("Optional header to specify the Datalake API URL. If not specified, the default URL mentioned in the application configuration will be used.")
+                                                .required(false)
+                                                .in("header")
+                                                .schema(new StringSchema()))
+                                        .addParametersItem(new Parameter()
+                                                .name("X-TechBD-Base-FHIR-URL")
+                                                .description("Optional header to specify the base FHIR URL. If provided, it will be used in the generated FHIR; otherwise, the default value will be used.")
+                                                .required(false)
+                                                .in("header")
+                                                .schema(new StringSchema()))
+                                        .addParametersItem(new Parameter()
+                                                .name("X-TechBD-Validation-Severity-Level")
+                                                .description("Optional header to set validation severity level (information, warning, error, fatal).")
+                                                .required(false)
+                                                .in("header")
+                                                .schema(new StringSchema()))
+                                        .addParametersItem(new Parameter()
+                                                .name("immediate")
+                                                .description("Optional parameter to decide whether response should be synchronous or asynchronous. Default: immediate=true → request is processed synchronously. Optional: immediate=false → request is processed asynchronously. When using immediate=false, an interim response is returned containing a zipFileInteractionId. The full operation outcome can be retrieved from Hub UI → Interactions → CSV via HTTP(s) tab using the provided zipFileInteractionId. This option is useful for large ZIP files that may otherwise result in timeout issues.")
+                                                .required(false)
+                                                .in("query")
+                                                .schema(new io.swagger.v3.oas.models.media.BooleanSchema()._default(true)))                                                
+                                        .requestBody(new io.swagger.v3.oas.models.parameters.RequestBody()
+                                                .description("ZIP file containing CSV data. Must not be null.")
+                                                .required(true)
+                                                .content(new io.swagger.v3.oas.models.media.Content()
+                                                        .addMediaType("multipart/form-data",
+                                                                new io.swagger.v3.oas.models.media.MediaType()
+                                                                        .schema(new io.swagger.v3.oas.models.media.Schema<>()
+                                                                                .$ref("#/components/schemas/FileUpload")))))
+                                                .responses(new ApiResponses()
+                                                       .addApiResponse("200", new ApiResponse()
+                                                                        .description("OK.")
+                                                                        .content(new Content()
+                                                                                .addMediaType("*/*",
+                                                                                        new MediaType()
+                                                                                                .schema(new io.swagger.v3.oas.models.media.ArraySchema()
+                                                                                                        .items(new io.swagger.v3.oas.models.media.Schema<>()
+                                                                                                                .type("object")
+                                                                                                                .additionalProperties(new io.swagger.v3.oas.models.media.ObjectSchema())))
+                                                                                                .example(
+                                                                                                        Map.of()
+                                                                                                ))))
+                                                                .addApiResponse("400", new ApiResponse()
+                                                                        .description("Validation Error.")
+                                                                        .content(new Content()
+                                                                        .addMediaType("application/json", new MediaType()
+                                                                        .schema(new io.swagger.v3.oas.models.media.Schema<>()
+                                                                        .type("object"))
+                                                                        .example(Map.of(
+                                                                                 "status", "Error",
+                                                                                 "message", "${message}"
+                                                                        )))))
+                                                                .addApiResponse("408", new ApiResponse()
+                                                                        .description("Request Timeout.")
+                                                                        .content(new Content()
+                                                                        .addMediaType("application/json", new MediaType()
+                                                                        .schema(new io.swagger.v3.oas.models.media.Schema<>()
+                                                                        .type("object"))
+                                                                        .example(Map.of(
+                                                                                 "status", "Error",
+                                                                                 "message", "Request timed out. Please try again."
+                                                                        )))))                                                                        
+                                                                .addApiResponse("500", new ApiResponse()
+                                                                                .description("Internal Server Error")
+                                                                                .content(new Content()
+                                                                                        .addMediaType("application/json", new MediaType()
+                                                                                                .schema(new io.swagger.v3.oas.models.media.Schema<>()
+                                                                                                        .type("object"))
+                                                                                                .example(Map.of(
+                                                                                                        "status", "Error",
+                                                                                                        "message", "An unexpected system error occurred."
+                                                                                                ))))))));  
+
+
+
+                        // Add Bundle Replay Endpoint
+                        openApi.getPaths().addPathItem("/Bundle/replay/", new PathItem()
+                                .post(new Operation()
+                                        .tags(List.of("Tech by Design Hub FHIR Endpoints"))
+                                        .summary("Replay FHIR Bundles between a date or datetime range.")
+                                        .description("Accepts startDate and endDate.")
+                                        .addParametersItem(new Parameter()
+                                                .name("X-TechBD-StartDate")
+                                                .required(true)
+                                                .in("header")
+                                                .schema(new StringSchema()))
+                                        .addParametersItem(new Parameter()
+                                                .name("X-TechBD-EndDate")
+                                                .required(true)
+                                                .in("header")
+                                                .schema(new StringSchema()))
+                                        .addParametersItem(new Parameter()
+                                                .name("X-TechBD-Tenant-ID")
+                                                .required(false)
+                                                .in("header")
+                                                .schema(new StringSchema()))
+                                                .responses(new ApiResponses()
+                                                       .addApiResponse("200", new ApiResponse()
+                                                                        .description("Replay triggered successfully.")
+                                                                        .content(new Content()
+                                                                                .addMediaType("*/*",
+                                                                                        new MediaType()
+                                                                                                .schema(new io.swagger.v3.oas.models.media.ArraySchema()
+                                                                                                        .items(new io.swagger.v3.oas.models.media.Schema<>()
+                                                                                                                .type("object")
+                                                                                                                .additionalProperties(new io.swagger.v3.oas.models.media.ObjectSchema())))
+                                                                                                .example(
+                                                                                                        Map.of()
+                                                                                                ))))
+                                                                .addApiResponse("400", new ApiResponse()
+                                                                        .description("Invalid or missing parameters.")
+                                                                        .content(new Content()
+                                                                        .addMediaType("application/json", new MediaType()
+                                                                        .schema(new io.swagger.v3.oas.models.media.Schema<>()
+                                                                        .type("object"))
+                                                                        .example(Map.of(
+                                                                                 "status", "Error",
+                                                                                 "message", "${message}"
+                                                                        )))))                                                                        
+                                                                .addApiResponse("500", new ApiResponse()
+                                                                                .description("Internal error occurred.")
+                                                                                .content(new Content()
+                                                                                        .addMediaType("application/json", new MediaType()
+                                                                                                .schema(new io.swagger.v3.oas.models.media.Schema<>()
+                                                                                                        .type("object"))
+                                                                                                .example(Map.of(
+                                                                                                        "status", "Error",
+                                                                                                        "message", "An unexpected system error occurred."
+                                                                                                ))))))));
+
+                                                                
+                        // Add Bundle Replay Endpoint
+                        openApi.getPaths().addPathItem("/Bundle/replay", new PathItem()
+                                .post(new Operation()
+                                        .tags(List.of("Tech by Design Hub FHIR Endpoints"))
+                                        .summary("Replay FHIR Bundles between a date or datetime range.")
+                                        .description("Accepts startDate and endDate")
+                                        .addParametersItem(new Parameter()
+                                                .name("X-TechBD-StartDate")
+                                                .required(true)
+                                                .in("header")
+                                                .schema(new StringSchema()))
+                                        .addParametersItem(new Parameter()
+                                                .name("X-TechBD-EndDate")
+                                                .required(true)
+                                                .in("header")
+                                                .schema(new StringSchema()))
+                                        .addParametersItem(new Parameter()
+                                                .name("X-TechBD-Tenant-ID")
+                                                .required(false)
+                                                .in("header")
+                                                .schema(new StringSchema()))
+                                                .responses(new ApiResponses()
+                                                       .addApiResponse("200", new ApiResponse()
+                                                                        .description("Replay triggered successfully.")
+                                                                        .content(new Content()
+                                                                                .addMediaType("*/*",
+                                                                                        new MediaType()
+                                                                                                .schema(new io.swagger.v3.oas.models.media.ArraySchema()
+                                                                                                        .items(new io.swagger.v3.oas.models.media.Schema<>()
+                                                                                                                .type("object")
+                                                                                                                .additionalProperties(new io.swagger.v3.oas.models.media.ObjectSchema())))
+                                                                                                .example(
+                                                                                                        Map.of()
+                                                                                                ))))
+                                                                .addApiResponse("400", new ApiResponse()
+                                                                        .description("Invalid or missing parameters.")
+                                                                        .content(new Content()
+                                                                        .addMediaType("application/json", new MediaType()
+                                                                        .schema(new io.swagger.v3.oas.models.media.Schema<>()
+                                                                        .type("object"))
+                                                                        .example(Map.of(
+                                                                                 "status", "Error",
+                                                                                 "message", "${message}"
+                                                                        )))))                                                                        
+                                                                .addApiResponse("500", new ApiResponse()
+                                                                                .description("Internal error occurred.")
+                                                                                .content(new Content()
+                                                                                        .addMediaType("application/json", new MediaType()
+                                                                                                .schema(new io.swagger.v3.oas.models.media.Schema<>()
+                                                                                                        .type("object"))
+                                                                                                .example(Map.of(
+                                                                                                        "status", "Error",
+                                                                                                        "message", "An unexpected system error occurred."
+                                                                                                ))))))));
+
+
+                        // Add FHIR Bundle Validation Endpoint
+                        openApi.getPaths().addPathItem("/Bundle/$validate", new PathItem()
+                                .post(new Operation()
+                                        .tags(List.of("Tech by Design Hub FHIR Endpoints"))
+                                        .summary("Endpoint to validate but not store or forward a payload to SHIN-NY. If you want to validate a payload, store it and then forward it to SHIN-NY, use /Bundle not /Bundle/$validate.")
+                                        .description("Endpoint to validate but not store or forward a payload to SHIN-NY.")
+                                        .addParametersItem(new Parameter()
+                                                .name("X-TechBD-Tenant-ID")
+                                                .description("Parameter to specify the Tenant ID. This is a mandatory parameter.")
+                                                .required(true)
+                                                .in("header")
+                                                .schema(new StringSchema()))
+                                        .addParametersItem(new Parameter()
+                                                .name("X-SHIN-NY-IG-Version")
+                                                .description("Optional header to specify IG version.")
+                                                .required(false)
+                                                .in("header")
+                                                .schema(new StringSchema()))
+                                        .requestBody(new io.swagger.v3.oas.models.parameters.RequestBody()
+                                                .required(true)
+                                                .content(new io.swagger.v3.oas.models.media.Content()
+                                                        .addMediaType("application/json",
+                                                                new io.swagger.v3.oas.models.media.MediaType()
+                                                                        .schema(new StringSchema()))))
+                                        .responses(new ApiResponses()
+                                        .addApiResponse("200", new ApiResponse()
+                                                .description("Request processed successfully.")
+                                                .content(new Content()
+                                                        .addMediaType("application/json",
+                                                                new MediaType()
+                                                                        .schema(new io.swagger.v3.oas.models.media.Schema<>()
+                                                                                .type("object"))
+                                                                        .example(Map.of(
+                                                                                "OperationOutcome", Map.of(
+                                                                                        "validationResults", List.of(
+                                                                                                Map.of(
+                                                                                                        "operationOutcome", Map.of(
+                                                                                                                "resourceType", "OperationOutcome",
+                                                                                                                "issue", List.of(
+                                                                                                                        Map.of(
+                                                                                                                                "severity", "error",
+                                                                                                                                "diagnostics", "Error Message",
+                                                                                                                                "location", List.of(
+                                                                                                                                        "Bundle.entry[0].resource/*Patient/PatientExample*/.extension[0].extension[0].value.ofType(Coding)",
+                                                                                                                                        "Line[1] Col[5190]"
+                                                                                                                                )
+                                                                                                                        )
+                                                                                                                )
+                                                                                                        )
+                                                                                                )
+                                                                                        )
+                                                                                )
+                                                                        )))))
+                                                .addApiResponse("400", new ApiResponse()
+                                                        .description("Validation Error: Missing or invalid parameter.")
+                                                        .content(new Content()
+                                                                .addMediaType("application/json", new MediaType())))
+                                               .addApiResponse("500", new ApiResponse()
+                                                        .description("An unexpected system error occurred.")
+                                                        .content(new Content()
+                                                                .addMediaType("application/json", new MediaType()
+                                                                        .schema(new io.swagger.v3.oas.models.media.Schema<>()
+                                                                                .type("object"))
+                                                                        .example(Map.of(
+                                                                                "status", "Error",
+                                                                                "message", "An unexpected system error occurred."
+                                                                        ))))))));
+
+                                        
+                      // Add FHIR Bundle Validation Endpoint
+                        openApi.getPaths().addPathItem("/Bundle/$validate/", new PathItem()
+                                .post(new Operation()
+                                        .tags(List.of("Tech by Design Hub FHIR Endpoints"))
+                                        .summary("Endpoint to validate but not store or forward a payload to SHIN-NY. If you want to validate a payload, store it and then forward it to SHIN-NY, use /Bundle not /Bundle/$validate.")
+                                        .description("Endpoint to validate but not store or forward a payload to SHIN-NY.")
+                                        .addParametersItem(new Parameter()
+                                                .name("X-TechBD-Tenant-ID")
+                                                .description("Parameter to specify the Tenant ID. This is a mandatory parameter.")
+                                                .required(true)
+                                                .in("header")
+                                                .schema(new StringSchema()))
+                                        .addParametersItem(new Parameter()
+                                                .name("X-SHIN-NY-IG-Version")
+                                                .description("Optional header to specify IG version.")
+                                                .required(false)
+                                                .in("header")
+                                                .schema(new StringSchema()))
+                                        .requestBody(new io.swagger.v3.oas.models.parameters.RequestBody()
+                                                .required(true)
+                                                .content(new io.swagger.v3.oas.models.media.Content()
+                                                        .addMediaType("application/json",
+                                                                new io.swagger.v3.oas.models.media.MediaType()
+                                                                        .schema(new StringSchema()))))
+                                        .responses(new ApiResponses()
+                                        .addApiResponse("200", new ApiResponse()
+                                                .description("Request processed successfully.")
+                                                .content(new Content()
+                                                        .addMediaType("application/json",
+                                                                new MediaType()
+                                                                        .schema(new io.swagger.v3.oas.models.media.Schema<>()
+                                                                                .type("object"))
+                                                                        .example(Map.of(
+                                                                                "OperationOutcome", Map.of(
+                                                                                        "validationResults", List.of(
+                                                                                                Map.of(
+                                                                                                        "operationOutcome", Map.of(
+                                                                                                                "resourceType", "OperationOutcome",
+                                                                                                                "issue", List.of(
+                                                                                                                        Map.of(
+                                                                                                                                "severity", "error",
+                                                                                                                                "diagnostics", "Error Message",
+                                                                                                                                "location", List.of(
+                                                                                                                                        "Bundle.entry[0].resource/*Patient/PatientExample*/.extension[0].extension[0].value.ofType(Coding)",
+                                                                                                                                        "Line[1] Col[5190]"
+                                                                                                                                )
+                                                                                                                        )
+                                                                                                                )
+                                                                                                        )
+                                                                                                )
+                                                                                        )
+                                                                                )
+                                                                        )))))
+                                                .addApiResponse("400", new ApiResponse()
+                                                        .description("Validation Error: Missing or invalid parameter.")
+                                                        .content(new Content()
+                                                                .addMediaType("application/json", new MediaType())))
+                                               .addApiResponse("500", new ApiResponse()
+                                                        .description("An unexpected system error occurred.")
+                                                        .content(new Content()
+                                                                .addMediaType("application/json", new MediaType()
+                                                                        .schema(new io.swagger.v3.oas.models.media.Schema<>()
+                                                                                .type("object"))
+                                                                        .example(Map.of(
+                                                                                "status", "Error",
+                                                                                "message", "An unexpected system error occurred."
+                                                                        ))))))));
+
+
+                    // Historical replay query params for POST /Bundle (handled by the Mirth FhirBundleSubmission channel)
+                    final var ooSizeParam = new Parameter()
+                            .name("ooSize")
+                            .in("query")
+                            .required(false)
+                            .description("Historical replay only (applies when Bundle.id starts with `historical-`). "
+                                    + "Controls the OperationOutcome returned: `full`, `lite` is the default and returns only error/fatal issues in the OperationOutcome."
+                                    + "or `none` (returns only the interactionId). Ignored for non-historical bundles.")
+                            .schema(new StringSchema()._enum(List.of("full", "lite", "none"))._default("lite"));
+
+                    final var dataLedgerParam = new Parameter()
+                            .name("dataLedger")
+                            .in("query")
+                            .required(false)
+                            .description("Historical replay only. `false` (default) skips Data Ledger submission "
+                                    + "for this request. Ignored for non-historical bundles.")
+                            .schema(new BooleanSchema()._default(false));
+
+                    final var existingBundlePath = openApi.getPaths().get("/Bundle");
+                    if (existingBundlePath != null && existingBundlePath.getPost() != null) {
+                        existingBundlePath.getPost()
+                                .addParametersItem(ooSizeParam)
+                                .addParametersItem(dataLedgerParam);
+                    } else {
+                        openApi.getPaths().addPathItem("/Bundle", new PathItem()
+                                .post(new Operation()
+                                        .tags(List.of("Tech by Design Hub FHIR Endpoints"))
+                                        .summary("Endpoint to to validate, store, and then forward a payload to SHIN-NY. If you want to validate a payload and not store it or forward it to SHIN-NY, use $validate.")
+                                        .description("Endpoint to to validate, store, and then forward a payload to SHIN-NY.")
+                                        .addParametersItem(new Parameter()
+                                                .name("X-TechBD-Tenant-ID")
+                                                .description("Parameter to specify the Tenant ID. This is a mandatory parameter.")
+                                                .required(true)
+                                                .in("header")
+                                                .schema(new StringSchema()))
+                                        .addParametersItem(new Parameter()
+                                                .name("X-TechBD-DataLake-API-URL")
+                                                .description("Optional header to specify the Datalake API URL. If not specified, the default URL mentioned in the application configuration will be used.")
+                                                .required(false)
+                                                .in("header")
+                                                .schema(new StringSchema()))
+                                        .addParametersItem(new Parameter()
+                                                .name("X-TechBD-Elaboration")
+                                                .description("Optional header to provide elaboration details.")
+                                                .required(false)
+                                                .in("header")
+                                                .schema(new StringSchema()))
+                                        .addParametersItem(new Parameter()
+                                                .name("X-TechBD-Override-Request-URI")
+                                                .description("Optional header to specify the request URI to override. This parameter is used for requests forwarded from Mirth Connect, where we override it with the initial request URI from Mirth Connect.")
+                                                .required(false)
+                                                .in("header")
+                                                .schema(new StringSchema()))
+                                        .addParametersItem(new Parameter()
+                                                .name("X-Correlation-ID")
+                                                .description("An optional header to provide a UUID that if provided will be used as interaction id.")
+                                                .required(false)
+                                                .in("header")
+                                                .schema(new StringSchema()))
+                                        .addParametersItem(new Parameter()
+                                                .name("X-TechBD-HealthCheck")
+                                                .description("Header to decide whether the request is just for health check. If true, no information will be recorded in the database. It will be false in by default.")
+                                                .required(false)
+                                                .in("header")
+                                                .schema(new StringSchema()))
+                                        .addParametersItem(new Parameter()
+                                                .name("X-TechBD-Validation-Severity-Level")
+                                                .description("Optional header to set validation severity level (information, warning, error, fatal).")
+                                                .required(false)
+                                                .in("header")
+                                                .schema(new StringSchema()))
+                                        .addParametersItem(new Parameter()
+                                                .name("X-SHIN-NY-IG-Version")
+                                                .description("Optional header to specify IG version.")
+                                                .required(false)
+                                                .in("header")
+                                                .schema(new StringSchema()))
+                                                .addParametersItem(new Parameter()
+                                                        .name("ooSize")
+                                                        .description("Historical replay only (applies when Bundle.id starts with 'historical-'). Controls the OperationOutcome returned: 'full' returns the full OperationOutcome, 'lite' returns only error/fatal issues (default), and 'none' returns only the interactionId. Ignored for non-historical bundles.")
+                                                        .required(false)
+                                                        .in("query")
+                                                        .schema(new StringSchema()
+                                                                ._enum(List.of("full", "lite", "none"))
+                                                                ._default("lite")))
+                                                .addParametersItem(new Parameter()
+                                                        .name("dataLedger")
+                                                        .description("Historical replay only. When false (default), skips Data Ledger submission for this request. Ignored for non-historical bundles.")
+                                                        .required(false)
+                                                        .in("query")
+                                                        .schema(new io.swagger.v3.oas.models.media.BooleanSchema()
+                                                                ._default(false)))
+                                        .requestBody(new io.swagger.v3.oas.models.parameters.RequestBody()
+                                                .required(true)
+                                                .content(new Content()
+                                                        .addMediaType("application/json",
+                                                                new MediaType()
+                                                                        .schema(new StringSchema()))))
+                                        .responses(new ApiResponses()
+                                                .addApiResponse("200", new ApiResponse()
+                                                        .description("Request processed successfully")
+                                                        .content(new Content()
+                                                                .addMediaType("application/json",
+                                                                        new MediaType()
+                                                                                .schema(new io.swagger.v3.oas.models.media.Schema<>()
+                                                                                        .type("object"))
+                                                                                .example(Map.of(
+                                                                                        "OperationOutcome", Map.of(
+                                                                                                "validationResults", List.of(
+                                                                                                        Map.of(
+                                                                                                                "operationOutcome", Map.of(
+                                                                                                                        "resourceType", "OperationOutcome",
+                                                                                                                        "issue", List.of(
+                                                                                                                                Map.of(
+                                                                                                                                        "severity", "error",
+                                                                                                                                        "diagnostics", "Error Message",
+                                                                                                                                        "location", List.of(
+                                                                                                                                                "Bundle.entry[0].resource/*Patient/PatientExample*/.extension[0].extension[0].value.ofType(Coding)",
+                                                                                                                                                "Line[1] Col[5190]"
+                                                                                                                                        )
+                                                                                                                                )
+                                                                                                                        )
+                                                                                                                )
+                                                                                                        )
+                                                                                                ),
+                                                                                                "techByDesignDisposition", List.of(
+                                                                                                        Map.of(
+                                                                                                                "action", "reject",
+                                                                                                                "actionPayload", Map.of(
+                                                                                                                        "message", "reject message",
+                                                                                                                        "description", "rule name"
+                                                                                                                )
+                                                                                                        )
+                                                                                                ),
+                                                                                                "resourceType", "OperationOutcome"
+                                                                                        )
+                                                                                )))))
+                                                .addApiResponse("400", new ApiResponse()
+                                                        .description("Validation Error: Missing or invalid parameter.")
+                                                        .content(new Content()
+                                                                .addMediaType("application/json", new MediaType())))
+                                               .addApiResponse("500", new ApiResponse()
+                                                        .description("An unexpected system error occurred.")
+                                                        .content(new Content()
+                                                                .addMediaType("application/json", new MediaType()
+                                                                        .schema(new io.swagger.v3.oas.models.media.Schema<>()
+                                                                                .type("object"))
+                                                                        .example(Map.of(
+                                                                                "status", "Error",
+                                                                                "message", "An unexpected system error occurred."
+                                                                        ))))))));  
+                                        }
+                    
+                    final var existingBundleSlashPath  = openApi.getPaths().get("/Bundle/");
+                    if (existingBundleSlashPath  != null && existingBundleSlashPath .getPost() != null) {
+                        existingBundleSlashPath .getPost()
+                                .addParametersItem(ooSizeParam)
+                                .addParametersItem(dataLedgerParam);
+                    } else {
+                        openApi.getPaths().addPathItem("/Bundle/", new PathItem()
+                                .post(new Operation()
+                                        .tags(List.of("Tech by Design Hub FHIR Endpoints"))
+                                        .summary("Endpoint to to validate, store, and then forward a payload to SHIN-NY. If you want to validate a payload and not store it or forward it to SHIN-NY, use $validate.")
+                                        .description("Endpoint to to validate, store, and then forward a payload to SHIN-NY.")
+                                        .addParametersItem(new Parameter()
+                                                .name("X-TechBD-Tenant-ID")
+                                                .description("Parameter to specify the Tenant ID. This is a mandatory parameter.")
+                                                .required(true)
+                                                .in("header")
+                                                .schema(new StringSchema()))
+                                        .addParametersItem(new Parameter()
+                                                .name("X-TechBD-DataLake-API-URL")
+                                                .description("Optional header to specify the Datalake API URL. If not specified, the default URL mentioned in the application configuration will be used.")
+                                                .required(false)
+                                                .in("header")
+                                                .schema(new StringSchema()))
+                                        .addParametersItem(new Parameter()
+                                                .name("X-TechBD-Elaboration")
+                                                .description("Optional header to provide elaboration details.")
+                                                .required(false)
+                                                .in("header")
+                                                .schema(new StringSchema()))
+                                        .addParametersItem(new Parameter()
+                                                .name("X-TechBD-Override-Request-URI")
+                                                .description("Optional header to specify the request URI to override. This parameter is used for requests forwarded from Mirth Connect, where we override it with the initial request URI from Mirth Connect.")
+                                                .required(false)
+                                                .in("header")
+                                                .schema(new StringSchema()))
+                                        .addParametersItem(new Parameter()
+                                                .name("X-Correlation-ID")
+                                                .description("An optional header to provide a UUID that if provided will be used as interaction id.")
+                                                .required(false)
+                                                .in("header")
+                                                .schema(new StringSchema()))
+                                        .addParametersItem(new Parameter()
+                                                .name("X-TechBD-HealthCheck")
+                                                .description("Header to decide whether the request is just for health check. If true, no information will be recorded in the database. It will be false in by default.")
+                                                .required(false)
+                                                .in("header")
+                                                .schema(new StringSchema()))
+                                        .addParametersItem(new Parameter()
+                                                .name("X-TechBD-Validation-Severity-Level")
+                                                .description("Optional header to set validation severity level (information, warning, error, fatal).")
+                                                .required(false)
+                                                .in("header")
+                                                .schema(new StringSchema()))
+                                        .addParametersItem(new Parameter()
+                                                .name("X-SHIN-NY-IG-Version")
+                                                .description("Optional header to specify IG version.")
+                                                .required(false)
+                                                .in("header")
+                                                .schema(new StringSchema()))
+                                                .addParametersItem(new Parameter()
+                                                .name("ooSize")
+                                                .description("Historical replay only (applies when Bundle.id starts with 'historical-'). Controls the OperationOutcome returned: 'full' returns the full OperationOutcome, 'lite' returns only error/fatal issues (default), and 'none' returns only the interactionId. Ignored for non-historical bundles.")
+                                                .required(false)
+                                                .in("query")
+                                                .schema(new StringSchema()
+                                                        ._enum(List.of("full", "lite", "none"))
+                                                        ._default("lite")))
+                                        .addParametersItem(new Parameter()
+                                                .name("dataLedger")
+                                                .description("Historical replay only. When false (default), skips Data Ledger submission for this request. Ignored for non-historical bundles.")
+                                                .required(false)
+                                                .in("query")
+                                                .schema(new io.swagger.v3.oas.models.media.BooleanSchema()
+                                                        ._default(false)))
+                                        .requestBody(new io.swagger.v3.oas.models.parameters.RequestBody()
+                                                .required(true)
+                                                .content(new Content()
+                                                        .addMediaType("application/json",
+                                                                new MediaType()
+                                                                        .schema(new StringSchema()))))
+                                        .responses(new ApiResponses()
+                                                .addApiResponse("200", new ApiResponse()
+                                                        .description("Request processed successfully")
+                                                        .content(new Content()
+                                                                .addMediaType("application/json",
+                                                                        new MediaType()
+                                                                                .schema(new io.swagger.v3.oas.models.media.Schema<>()
+                                                                                        .type("object"))
+                                                                                .example(Map.of(
+                                                                                        "OperationOutcome", Map.of(
+                                                                                                "validationResults", List.of(
+                                                                                                        Map.of(
+                                                                                                                "operationOutcome", Map.of(
+                                                                                                                        "resourceType", "OperationOutcome",
+                                                                                                                        "issue", List.of(
+                                                                                                                                Map.of(
+                                                                                                                                        "severity", "error",
+                                                                                                                                        "diagnostics", "Error Message",
+                                                                                                                                        "location", List.of(
+                                                                                                                                                "Bundle.entry[0].resource/*Patient/PatientExample*/.extension[0].extension[0].value.ofType(Coding)",
+                                                                                                                                                "Line[1] Col[5190]"
+                                                                                                                                        )
+                                                                                                                                )
+                                                                                                                        )
+                                                                                                                )
+                                                                                                        )
+                                                                                                ),
+                                                                                                "techByDesignDisposition", List.of(
+                                                                                                        Map.of(
+                                                                                                                "action", "reject",
+                                                                                                                "actionPayload", Map.of(
+                                                                                                                        "message", "reject message",
+                                                                                                                        "description", "rule name"
+                                                                                                                )
+                                                                                                        )
+                                                                                                ),
+                                                                                                "resourceType", "OperationOutcome"
+                                                                                        )
+                                                                                )))))
+                                                .addApiResponse("400", new ApiResponse()
+                                                        .description("Validation Error: Missing or invalid parameter.")
+                                                        .content(new Content()
+                                                                .addMediaType("application/json", new MediaType())))
+                                               .addApiResponse("500", new ApiResponse()
+                                                        .description("An unexpected system error occurred.")
+                                                        .content(new Content()
+                                                                .addMediaType("application/json", new MediaType()
+                                                                        .schema(new io.swagger.v3.oas.models.media.Schema<>()
+                                                                                .type("object"))
+                                                                        .example(Map.of(
+                                                                                "status", "Error",
+                                                                                "message", "An unexpected system error occurred."
+                                                                        ))))))));                           
+                                                                
+                        // Add FHIR Metadata Endpoint
+                        openApi.getPaths().addPathItem("/metadata", new PathItem()
+                                .get(new Operation()
+                                        .tags(List.of("Tech by Design Hub FHIR Endpoints"))
+                                        .summary("FHIR server's conformance statement")
+                                        .responses(new ApiResponses()
+                                                .addApiResponse("200",
+                                                        new ApiResponse()
+                                                                .description("Ok.")
+                                                                .content(new io.swagger.v3.oas.models.media.Content()
+                                                                        .addMediaType("application/xml",
+                                                                                new io.swagger.v3.oas.models.media.MediaType()
+                                                                                        .schema(new StringSchema()))))
+                                                                .addApiResponse("400", new ApiResponse()
+                                                                        .description("Validation Error.")
+                                                                        .content(new Content()
+                                                                        .addMediaType("application/json", new MediaType()
+                                                                        .schema(new io.swagger.v3.oas.models.media.Schema<>()
+                                                                        .type("object"))
+                                                                        .example(Map.of(
+                                                                                 "status", "Error",
+                                                                                 "message", "${message}"
+                                                                        )))))                                                                        
+                                                                .addApiResponse("500", new ApiResponse()
+                                                                                .description("Internal Server Error.")
+                                                                                .content(new Content()
+                                                                                        .addMediaType("application/json", new MediaType()
+                                                                                                .schema(new io.swagger.v3.oas.models.media.Schema<>()
+                                                                                                        .type("object"))
+                                                                                                .example(Map.of(
+                                                                                                        "status", "Error",
+                                                                                                        "message", "An unexpected system error occurred."
+                                                                                                ))))))));
+
+
+                                                                
+                        // Add Bundle Operation Outcome Status Endpoint
+                        openApi.getPaths().addPathItem("/Bundles/status/operation-outcome", new PathItem()
+                                .get(new Operation()
+                                        .tags(List.of("Tech by Design Hub FHIR Endpoints"))
+                                        .summary("Retrieve OperationOutcome(s) for a Bundle or Interaction")
+                                        .description("Endpoint to fetch OperationOutcome resources for a given Bundle ID or Interaction ID. At least one of X-TechBD-Bundle-ID or X-TechBD-Interaction-ID must be provided.")
+                                        .addParametersItem(new Parameter()
+                                                .name("X-TechBD-Tenant-ID")
+                                                .description("Parameter to specify the Tenant ID. This is a mandatory parameter.")
+                                                .required(true)
+                                                .in("header")
+                                                .schema(new StringSchema()))
+                                        .addParametersItem(new Parameter()
+                                                .name("X-TechBD-Bundle-ID")
+                                                .description("Parameter to specify the Bundle ID used to fetch OperationOutcome. This is an optional parameter. Either bundleId or interactionId must be provided.")
+                                                .required(false)
+                                                .in("header")
+                                                .schema(new StringSchema()))
+                                        .addParametersItem(new Parameter()
+                                                .name("X-TechBD-Interaction-ID")
+                                                .description("Parameter to specify the Interaction ID used to fetch OperationOutcome. This is an optional parameter. Either bundleId or interactionId must be provided.")
+                                                .required(false)
+                                                .in("header")
+                                                .schema(new StringSchema()))
+                                                .responses(new ApiResponses()
+                                                       .addApiResponse("200", new ApiResponse()
+                                                                        .description("Successfully retrieved OperationOutcome(s).")
+                                                                        .content(new Content()
+                                                                                .addMediaType("*/*",
+                                                                                        new MediaType()
+                                                                                                .schema(new io.swagger.v3.oas.models.media.ArraySchema()
+                                                                                                        .items(new io.swagger.v3.oas.models.media.Schema<>()
+                                                                                                                .type("object")
+                                                                                                                .additionalProperties(new io.swagger.v3.oas.models.media.ObjectSchema())))
+                                                                                                .example(
+                                                                                                        Map.of()
+                                                                                                ))))
+                                                                .addApiResponse("400", new ApiResponse()
+                                                                        .description("Invalid request parameters.")
+                                                                        .content(new Content()
+                                                                        .addMediaType("application/json", new MediaType()
+                                                                        .schema(new io.swagger.v3.oas.models.media.Schema<>()
+                                                                        .type("object"))
+                                                                        .example(Map.of(
+                                                                                 "status", "Error",
+                                                                                 "message", "${message}"
+                                                                        )))))                                
+                                                                .addApiResponse("500", new ApiResponse()
+                                                                                .description("Internal error occurred.")
+                                                                                .content(new Content()
+                                                                                        .addMediaType("application/json", new MediaType()
+                                                                                                .schema(new io.swagger.v3.oas.models.media.Schema<>()
+                                                                                                        .type("object"))
+                                                                                                .example(Map.of(
+                                                                                                        "status", "Error",
+                                                                                                        "message", "An unexpected system error occurred."
+                                                                                                ))))))));
+
+
+
+
+
+
+                        // Add NYeC Submission Failed Status Endpoint
+                        openApi.getPaths().addPathItem("/Bundles/status/nyec-submission-failed", new PathItem()
+                                .get(new Operation()
+                                        .tags(List.of("Tech by Design Hub FHIR Endpoints"))
+                                        .summary("Retrieve FHIR Bundles that failed NYEC submission")
+                                        .description("Fetches bundles that failed NYEC submission within the specified date/datetime range. Optionally filter by tenant ID.")
+                                        .addParametersItem(new Parameter()
+                                                .name("X-TechBD-StartDate")
+                                                .description("Parameter to specify the Start Date. This is a mandatory header.")
+                                                .required(true)
+                                                .in("header")
+                                                .schema(new StringSchema()))
+                                        .addParametersItem(new Parameter()
+                                                .name("X-TechBD-EndDate")
+                                                .description("Parameter to specify the End Date. This is a mandatory header.")
+                                                .required(true)
+                                                .in("header")
+                                                .schema(new StringSchema()))
+                                        .addParametersItem(new Parameter()
+                                                .name("X-TechBD-Tenant-ID")
+                                                .description("Parameter to specify the Tenant ID. This is an optional header")
+                                                .required(false)
+                                                .in("header")
+                                                .schema(new StringSchema()))
+                                        .addParametersItem(new Parameter()
+                                                .name("X-TechBD-IncludeDetails")
+                                                .description("Parameter to specify whether to include detailed results. This is an optional header.")
+                                                .required(false)
+                                                .in("header")
+                                                .schema(new StringSchema()))
+                                                .responses(new ApiResponses()
+                                                       .addApiResponse("200", new ApiResponse()
+                                                                        .description("Successfully retrieved failed bundles.")
+                                                                        .content(new Content()
+                                                                                .addMediaType("*/*",
+                                                                                        new MediaType()
+                                                                                                .schema(new io.swagger.v3.oas.models.media.ArraySchema()
+                                                                                                        .items(new io.swagger.v3.oas.models.media.Schema<>()
+                                                                                                                .type("object")
+                                                                                                                .additionalProperties(new io.swagger.v3.oas.models.media.ObjectSchema())))
+                                                                                                .example(
+                                                                                                        Map.of()
+                                                                                                ))))
+                                                                .addApiResponse("400", new ApiResponse()
+                                                                        .description("Invalid or missing parameters.")
+                                                                        .content(new Content()
+                                                                        .addMediaType("application/json", new MediaType()
+                                                                        .schema(new io.swagger.v3.oas.models.media.Schema<>()
+                                                                        .type("object"))
+                                                                        .example(Map.of(
+                                                                                 "status", "Error",
+                                                                                 "message", "${message}"
+                                                                        )))))                                
+                                                                .addApiResponse("500", new ApiResponse()
+                                                                                .description("Internal error occurred.")
+                                                                                .content(new Content()
+                                                                                        .addMediaType("application/json", new MediaType()
+                                                                                                .schema(new io.swagger.v3.oas.models.media.Schema<>()
+                                                                                                        .type("object"))
+                                                                                                .example(Map.of(
+                                                                                                        "status", "Error",
+                                                                                                        "message", "An unexpected system error occurred."
+                                                                                                ))))))));
+
+
+
+
+                        // Add Bundle Status Endpoint
+                        openApi.getPaths().addPathItem("/Bundle/$status/{id}", new PathItem()
+                                .get(new Operation()
+                                        .tags(List.of("Tech by Design Hub FHIR Endpoints"))
+                                        .summary("Check the state/status of async operation")
+                                        .description("Retrieves the processing status of a FHIR Bundle using its identifier.")
+                                        .addParametersItem(new Parameter()
+                                                .name("bundleSessionId")
+                                                .description("mandatory path variable to specify the bundle session ID.")
+                                                .required(true)
+                                                .in("path")
+                                                .schema(new StringSchema()))
+                                                .responses(new ApiResponses()
+                                                       .addApiResponse("200", new ApiResponse()
+                                                                        .description("Successfully retrieved failed bundles.")
+                                                                        .content(new Content()
+                                                                                .addMediaType("*/*",
+                                                                                        new MediaType()
+                                                                                                .schema(new io.swagger.v3.oas.models.media.ArraySchema()
+                                                                                                        .items(new io.swagger.v3.oas.models.media.Schema<>()
+                                                                                                                .type("object")
+                                                                                                                .additionalProperties(new io.swagger.v3.oas.models.media.ObjectSchema())))
+                                                                                                .example(
+                                                                                                        Map.of()
+                                                                                                ))))
+                                                                .addApiResponse("400", new ApiResponse()
+                                                                        .description("Validation Error")
+                                                                        .content(new Content()
+                                                                        .addMediaType("application/json", new MediaType()
+                                                                        .schema(new io.swagger.v3.oas.models.media.Schema<>()
+                                                                        .type("object"))
+                                                                        .example(Map.of(
+                                                                                 "status", "Error",
+                                                                                 "message", "${message}"
+                                                                        )))))                                
+                                                                .addApiResponse("500", new ApiResponse()
+                                                                                .description("Internal error occurred.")
+                                                                                .content(new Content()
+                                                                                        .addMediaType("application/json", new MediaType()
+                                                                                                .schema(new io.swagger.v3.oas.models.media.Schema<>()
+                                                                                                        .type("object"))
+                                                                                                .example(Map.of(
+                                                                                                        "status", "Error",
+                                                                                                        "message", "An unexpected system error occurred."
+                                                                                                ))))))));
+
+
+                     // Add Mirth Endpoint 1
                     openApi.getPaths().addPathItem("/ccda/Bundle", new PathItem()
                             .post(new Operation()
                                     .tags(List.of("Tech by Design Hub CCDA Endpoints"))
@@ -421,722 +1533,10 @@ public class SwaggerConfig {
                                                             .description("Bad request"))
                                             .addApiResponse("500",
                                                     new ApiResponse()
-                                                            .description("Server error")))));
+                                                            .description("Server error")))));                                                               
 
 
-                    // Historical replay query params for POST /Bundle (handled by the Mirth FhirBundleSubmission channel)
-                    final var ooSizeParam = new Parameter()
-                            .name("ooSize")
-                            .in("query")
-                            .required(false)
-                            .description("Historical replay only (applies when Bundle.id starts with `historical-`). "
-                                    + "Controls the OperationOutcome returned: `full`, `lite` is the default and returns only error/fatal issues in the OperationOutcome."
-                                    + "or `none` (returns only the interactionId). Ignored for non-historical bundles.")
-                            .schema(new StringSchema()._enum(List.of("full", "lite", "none"))._default("lite"));
-
-                    final var dataLedgerParam = new Parameter()
-                            .name("dataLedger")
-                            .in("query")
-                            .required(false)
-                            .description("Historical replay only. `false` (default) skips Data Ledger submission "
-                                    + "for this request. Ignored for non-historical bundles.")
-                            .schema(new BooleanSchema()._default(false));
-
-                    final var existingBundlePath = openApi.getPaths().get("/Bundle");
-                    if (existingBundlePath != null && existingBundlePath.getPost() != null) {
-                        existingBundlePath.getPost()
-                                .addParametersItem(ooSizeParam)
-                                .addParametersItem(dataLedgerParam);
-                    } else {
-                        openApi.getPaths().addPathItem("/Bundle", new PathItem()
-                                .post(new Operation()
-                                        .tags(List.of("Tech by Design Hub FHIR Endpoints"))
-                                        .summary("Endpoint to to validate, store, and then forward a payload to SHIN-NY. If you want to validate a payload and not store it or forward it to SHIN-NY, use $validate.")
-                                        .description("Submits a FHIR Bundle for the specified tenant with configurable processing and validation headers.")
-                                        .addParametersItem(new Parameter()
-                                                .name("X-TechBD-Tenant-ID")
-                                                .description("Tenant identifier.")
-                                                .required(true)
-                                                .in("header")
-                                                .schema(new StringSchema()))
-                                        .addParametersItem(new Parameter()
-                                                .name("X-TechBD-DataLake-API-URL")
-                                                .description("Data Lake API URL.")
-                                                .required(false)
-                                                .in("header")
-                                                .schema(new StringSchema()))
-                                        .addParametersItem(new Parameter()
-                                                .name("X-TechBD-Elaboration")
-                                                .description("Elaboration configuration.")
-                                                .required(false)
-                                                .in("header")
-                                                .schema(new StringSchema()))
-                                        .addParametersItem(new Parameter()
-                                                .name("X-TechBD-Override-Request-URI")
-                                                .description("Override request URI.")
-                                                .required(false)
-                                                .in("header")
-                                                .schema(new StringSchema()))
-                                        .addParametersItem(new Parameter()
-                                                .name("X-Correlation-ID")
-                                                .description("Correlation identifier for request tracing.")
-                                                .required(false)
-                                                .in("header")
-                                                .schema(new StringSchema()))
-                                        .addParametersItem(new Parameter()
-                                                .name("X-TechBD-HealthCheck")
-                                                .description("Health check header.")
-                                                .required(false)
-                                                .in("header")
-                                                .schema(new StringSchema()))
-                                        .addParametersItem(new Parameter()
-                                                .name("X-TechBD-Validation-Severity-Level")
-                                                .description("Validation severity level.")
-                                                .required(false)
-                                                .in("header")
-                                                .schema(new StringSchema()))
-                                        .addParametersItem(new Parameter()
-                                                .name("X-SHIN-NY-IG-Version")
-                                                .description("SHIN-NY Implementation Guide version.")
-                                                .required(false)
-                                                .in("header")
-                                                .schema(new StringSchema()))
-                                                .addParametersItem(new Parameter()
-                                                        .name("ooSize")
-                                                        .description("Historical replay only (applies when Bundle.id starts with 'historical-'). Controls the OperationOutcome returned: 'full' returns the full OperationOutcome, 'lite' returns only error/fatal issues (default), and 'none' returns only the interactionId. Ignored for non-historical bundles.")
-                                                        .required(false)
-                                                        .in("query")
-                                                        .schema(new StringSchema()
-                                                                ._enum(List.of("full", "lite", "none"))
-                                                                ._default("lite")))
-                                                .addParametersItem(new Parameter()
-                                                        .name("dataLedger")
-                                                        .description("Historical replay only. When false (default), skips Data Ledger submission for this request. Ignored for non-historical bundles.")
-                                                        .required(false)
-                                                        .in("query")
-                                                        .schema(new io.swagger.v3.oas.models.media.BooleanSchema()
-                                                                ._default(false)))
-                                        .requestBody(new io.swagger.v3.oas.models.parameters.RequestBody()
-                                                .description("FHIR Bundle payload in JSON format.")
-                                                .required(true)
-                                                .content(new Content()
-                                                        .addMediaType("application/json",
-                                                                new MediaType()
-                                                                        .schema(new StringSchema()))))
-                                        .responses(new ApiResponses()
-                                                .addApiResponse("200", new ApiResponse()
-                                                        .description("FHIR Bundle submitted successfully.")
-                                                        .content(new Content()
-                                                                .addMediaType("application/json",
-                                                                        new MediaType()
-                                                                                .schema(new StringSchema()))))
-                                                .addApiResponse("400", new ApiResponse()
-                                                        .description("Invalid request or validation failure."))
-                                                .addApiResponse("500", new ApiResponse()
-                                                        .description("Internal server error.")))));
-                                        }
-                    
-                    final var existingBundleSlashPath  = openApi.getPaths().get("/Bundle/");
-                    if (existingBundleSlashPath  != null && existingBundleSlashPath .getPost() != null) {
-                        existingBundleSlashPath .getPost()
-                                .addParametersItem(ooSizeParam)
-                                .addParametersItem(dataLedgerParam);
-                    } else {
-                        openApi.getPaths().addPathItem("/Bundle/", new PathItem()
-                                .post(new Operation()
-                                        .tags(List.of("Tech by Design Hub FHIR Endpoints"))
-                                        .summary("Endpoint to to validate, store, and then forward a payload to SHIN-NY. If you want to validate a payload and not store it or forward it to SHIN-NY, use $validate.")
-                                        .description("Submits a FHIR Bundle for the specified tenant with configurable processing and validation headers.")
-                                        .addParametersItem(new Parameter()
-                                                .name("X-TechBD-Tenant-ID")
-                                                .description("Tenant identifier.")
-                                                .required(true)
-                                                .in("header")
-                                                .schema(new StringSchema()))
-                                        .addParametersItem(new Parameter()
-                                                .name("X-TechBD-DataLake-API-URL")
-                                                .description("Data Lake API URL.")
-                                                .required(false)
-                                                .in("header")
-                                                .schema(new StringSchema()))
-                                        .addParametersItem(new Parameter()
-                                                .name("X-TechBD-Elaboration")
-                                                .description("Elaboration configuration.")
-                                                .required(false)
-                                                .in("header")
-                                                .schema(new StringSchema()))
-                                        .addParametersItem(new Parameter()
-                                                .name("X-TechBD-Override-Request-URI")
-                                                .description("Override request URI.")
-                                                .required(false)
-                                                .in("header")
-                                                .schema(new StringSchema()))
-                                        .addParametersItem(new Parameter()
-                                                .name("X-Correlation-ID")
-                                                .description("Correlation identifier for request tracing.")
-                                                .required(false)
-                                                .in("header")
-                                                .schema(new StringSchema()))
-                                        .addParametersItem(new Parameter()
-                                                .name("X-TechBD-HealthCheck")
-                                                .description("Health check header.")
-                                                .required(false)
-                                                .in("header")
-                                                .schema(new StringSchema()))
-                                        .addParametersItem(new Parameter()
-                                                .name("X-TechBD-Validation-Severity-Level")
-                                                .description("Validation severity level.")
-                                                .required(false)
-                                                .in("header")
-                                                .schema(new StringSchema()))
-                                        .addParametersItem(new Parameter()
-                                                .name("X-SHIN-NY-IG-Version")
-                                                .description("SHIN-NY Implementation Guide version.")
-                                                .required(false)
-                                                .in("header")
-                                                .schema(new StringSchema()))
-                                                .addParametersItem(new Parameter()
-                                                .name("ooSize")
-                                                .description("Historical replay only (applies when Bundle.id starts with 'historical-'). Controls the OperationOutcome returned: 'full' returns the full OperationOutcome, 'lite' returns only error/fatal issues (default), and 'none' returns only the interactionId. Ignored for non-historical bundles.")
-                                                .required(false)
-                                                .in("query")
-                                                .schema(new StringSchema()
-                                                        ._enum(List.of("full", "lite", "none"))
-                                                        ._default("lite")))
-                                        .addParametersItem(new Parameter()
-                                                .name("dataLedger")
-                                                .description("Historical replay only. When false (default), skips Data Ledger submission for this request. Ignored for non-historical bundles.")
-                                                .required(false)
-                                                .in("query")
-                                                .schema(new io.swagger.v3.oas.models.media.BooleanSchema()
-                                                        ._default(false)))
-                                        .requestBody(new io.swagger.v3.oas.models.parameters.RequestBody()
-                                                .description("FHIR Bundle payload in JSON format.")
-                                                .required(true)
-                                                .content(new Content()
-                                                        .addMediaType("application/json",
-                                                                new MediaType()
-                                                                        .schema(new StringSchema()))))
-                                        .responses(new ApiResponses()
-                                                .addApiResponse("200", new ApiResponse()
-                                                        .description("FHIR Bundle submitted successfully.")
-                                                        .content(new Content()
-                                                                .addMediaType("application/json",
-                                                                        new MediaType()
-                                                                                .schema(new StringSchema()))))
-                                                .addApiResponse("400", new ApiResponse()
-                                                        .description("Invalid request or validation failure."))
-                                                .addApiResponse("500", new ApiResponse()
-                                                        .description("Internal server error.")))));
-                   
-                                
-                   
-                       // Add Flat File CSV Validation Endpoint
-                        openApi.getPaths().addPathItem("/flatfile/csv/Bundle/$validate", new PathItem()
-                                .post(new Operation()
-                                        .tags(List.of("Tech by Design Hub CSV Endpoints"))
-                                        .summary("CSV endpoint to validate a flat file CSV Bundle without storing or forwarding the payload.")
-                                        .description("CSV endpoint to validate a flat file CSV Bundle. The uploaded CSV file is validated without storing or forwarding the payload.")
-                                        .addParametersItem(new Parameter()
-                                                .name("X-TechBD-Tenant-ID")
-                                                .description("Mandatory header for Tenant ID")
-                                                .required(true)
-                                                .in("header")
-                                                .schema(new StringSchema()))
-                                        .addParametersItem(new Parameter()
-                                                .name("immediate")
-                                                .description("Optional parameter to decide whether response should be synchronous or asynchronous. Default: immediate=true → request is processed synchronously. Optional: immediate=false → request is processed asynchronously. When using immediate=false, an interim response is returned containing a zipFileInteractionId. The full operation outcome can be retrieved from Hub UI → Interactions → CSV via HTTP(s) tab using the provided zipFileInteractionId. This option is useful for large ZIP files that may otherwise result in timeout issues.")
-                                                .required(false)
-                                                .in("query")
-                                                .schema(new StringSchema()._default("true")))
-                                        .requestBody(new io.swagger.v3.oas.models.parameters.RequestBody()
-                                                .description("ZIP file containing CSV data. Must not be null.")
-                                                .required(true)
-                                                .content(new io.swagger.v3.oas.models.media.Content()
-                                                        .addMediaType("multipart/form-data",
-                                                                new io.swagger.v3.oas.models.media.MediaType()
-                                                                        .schema(new io.swagger.v3.oas.models.media.Schema<>()
-                                                                                .$ref("#/components/schemas/FileUpload")))))
-                                        .responses(new ApiResponses()
-                                                .addApiResponse("200",
-                                                        new ApiResponse()
-                                                                .description("Successful validation response"))
-                                                .addApiResponse("400",
-                                                        new ApiResponse()
-                                                                .description("Bad request"))
-                                                .addApiResponse("500",
-                                                        new ApiResponse()
-                                                                .description("Server error")))));
-
-
-                        openApi.getPaths().addPathItem("/flatfile/csv/Bundle/$validate/", new PathItem()
-                                .post(new Operation()
-                                        .tags(List.of("Tech by Design Hub CSV Endpoints"))
-                                        .summary("CSV endpoint to validate a flat file CSV Bundle without storing or forwarding the payload.")
-                                        .description("CSV endpoint to validate a flat file CSV Bundle. The uploaded CSV file is validated without storing or forwarding the payload.")
-                                        .addParametersItem(new Parameter()
-                                                .name("X-TechBD-Tenant-ID")
-                                                .description("Mandatory header for Tenant ID")
-                                                .required(true)
-                                                .in("header")
-                                                .schema(new StringSchema()))
-                                        .addParametersItem(new Parameter()
-                                                .name("immediate")
-                                                .description("Optional parameter to decide whether response should be synchronous or asynchronous. Default: immediate=true → request is processed synchronously. Optional: immediate=false → request is processed asynchronously. When using immediate=false, an interim response is returned containing a zipFileInteractionId. The full operation outcome can be retrieved from Hub UI → Interactions → CSV via HTTP(s) tab using the provided zipFileInteractionId. This option is useful for large ZIP files that may otherwise result in timeout issues.")
-                                                .required(false)
-                                                .in("query")
-                                                .schema(new StringSchema()._default("true")))
-                                        .requestBody(new io.swagger.v3.oas.models.parameters.RequestBody()
-                                                .description("ZIP file containing CSV data. Must not be null.")
-                                                .required(true)
-                                                .content(new io.swagger.v3.oas.models.media.Content()
-                                                        .addMediaType("multipart/form-data",
-                                                                new io.swagger.v3.oas.models.media.MediaType()
-                                                                        .schema(new io.swagger.v3.oas.models.media.Schema<>()
-                                                                                .$ref("#/components/schemas/FileUpload")))))
-                                        .responses(new ApiResponses()
-                                                .addApiResponse("200",
-                                                        new ApiResponse()
-                                                                .description("Successful validation response"))
-                                                .addApiResponse("400",
-                                                        new ApiResponse()
-                                                                .description("Bad request"))
-                                                .addApiResponse("500",
-                                                        new ApiResponse()
-                                                                .description("Server error")))));
-
-
-                        // Add Flat File CSV Bundle Endpoint
-                        openApi.getPaths().addPathItem("/flatfile/csv/Bundle", new PathItem()
-                                .post(new Operation()
-                                        .tags(List.of("Tech by Design Hub CSV Endpoints"))
-                                        .summary("Submit a flat file CSV or ZIP file for validation and processing.")
-                                        .description("Accepts a CSV or ZIP file, validates the contents, and processes the submission for the specified tenant.")
-                                        .addParametersItem(new Parameter()
-                                                .name("X-TechBD-Tenant-ID")
-                                                .description("Mandatory header for Tenant ID.")
-                                                .required(true)
-                                                .in("header")
-                                                .schema(new StringSchema()))
-                                        .addParametersItem(new Parameter()
-                                                .name("immediate")
-                                                .description("Optional parameter to decide whether response should be synchronous or asynchronous. Default: immediate=true → request is processed synchronously. Optional: immediate=false → request is processed asynchronously. When using immediate=false, an interim response is returned containing a zipFileInteractionId. The full operation outcome can be retrieved from Hub UI → Interactions → CSV via HTTP(s) tab using the provided zipFileInteractionId. This option is useful for large ZIP files that may otherwise result in timeout issues.")
-                                                .required(false)
-                                                .in("query")
-                                                .schema(new io.swagger.v3.oas.models.media.BooleanSchema()._default(true)))
-                                        .addParametersItem(new Parameter()
-                                                .name("X-TechBD-DataLake-API-URL")
-                                                .description("Optional Data Lake API URL.")
-                                                .required(false)
-                                                .in("header")
-                                                .schema(new StringSchema()))
-                                        .addParametersItem(new Parameter()
-                                                .name("X-TechBD-Base-FHIR-URL")
-                                                .description("Optional base FHIR API URL.")
-                                                .required(false)
-                                                .in("header")
-                                                .schema(new StringSchema()))
-                                        .addParametersItem(new Parameter()
-                                                .name("X-TechBD-Validation-Severity-Level")
-                                                .description("Optional validation severity level: information, warning, error, or fatal.")
-                                                .required(false)
-                                                .in("header")
-                                                .schema(new StringSchema()))
-                                        .requestBody(new io.swagger.v3.oas.models.parameters.RequestBody()
-                                                .description("ZIP file containing CSV data. Must not be null.")
-                                                .required(true)
-                                                .content(new io.swagger.v3.oas.models.media.Content()
-                                                        .addMediaType("multipart/form-data",
-                                                                new io.swagger.v3.oas.models.media.MediaType()
-                                                                        .schema(new io.swagger.v3.oas.models.media.Schema<>()
-                                                                                .$ref("#/components/schemas/FileUpload")))))
-                                        .responses(new ApiResponses()
-                                                .addApiResponse("200",
-                                                        new ApiResponse()
-                                                                .description("Submission processed successfully."))
-                                                .addApiResponse("400",
-                                                        new ApiResponse()
-                                                                .description("Bad request or validation failure."))
-                                                .addApiResponse("500",
-                                                        new ApiResponse()
-                                                                .description("Server error.")))));
-
-                                                                
-
-
-                        // Add Flat File CSV Bundle Endpoint
-                        openApi.getPaths().addPathItem("/flatfile/csv/Bundle/", new PathItem()
-                                .post(new Operation()
-                                        .tags(List.of("Tech by Design Hub CSV Endpoints"))
-                                        .summary("Submit a flat file CSV or ZIP file for validation and processing.")
-                                        .description("Accepts a CSV or ZIP file, validates the contents, and processes the submission for the specified tenant.")
-                                        .addParametersItem(new Parameter()
-                                                .name("X-TechBD-Tenant-ID")
-                                                .description("Mandatory header for Tenant ID.")
-                                                .required(true)
-                                                .in("header")
-                                                .schema(new StringSchema()))
-                                        .addParametersItem(new Parameter()
-                                                .name("immediate")
-                                                .description("Optional parameter to decide whether response should be synchronous or asynchronous. Default: immediate=true → request is processed synchronously. Optional: immediate=false → request is processed asynchronously. When using immediate=false, an interim response is returned containing a zipFileInteractionId. The full operation outcome can be retrieved from Hub UI → Interactions → CSV via HTTP(s) tab using the provided zipFileInteractionId. This option is useful for large ZIP files that may otherwise result in timeout issues.")
-                                                .required(false)
-                                                .in("query")
-                                                .schema(new io.swagger.v3.oas.models.media.BooleanSchema()._default(true)))
-                                        .addParametersItem(new Parameter()
-                                                .name("X-TechBD-DataLake-API-URL")
-                                                .description("Optional Data Lake API URL.")
-                                                .required(false)
-                                                .in("header")
-                                                .schema(new StringSchema()))
-                                        .addParametersItem(new Parameter()
-                                                .name("X-TechBD-Base-FHIR-URL")
-                                                .description("Optional base FHIR API URL.")
-                                                .required(false)
-                                                .in("header")
-                                                .schema(new StringSchema()))
-                                        .addParametersItem(new Parameter()
-                                                .name("X-TechBD-Validation-Severity-Level")
-                                                .description("Optional validation severity level: information, warning, error, or fatal.")
-                                                .required(false)
-                                                .in("header")
-                                                .schema(new StringSchema()))
-                                        .requestBody(new io.swagger.v3.oas.models.parameters.RequestBody()
-                                                .description("ZIP file containing CSV data. Must not be null.")
-                                                .required(true)
-                                                .content(new io.swagger.v3.oas.models.media.Content()
-                                                        .addMediaType("multipart/form-data",
-                                                                new io.swagger.v3.oas.models.media.MediaType()
-                                                                        .schema(new io.swagger.v3.oas.models.media.Schema<>()
-                                                                                .$ref("#/components/schemas/FileUpload")))))
-                                        .responses(new ApiResponses()
-                                                .addApiResponse("200",
-                                                        new ApiResponse()
-                                                                .description("Submission processed successfully."))
-                                                .addApiResponse("400",
-                                                        new ApiResponse()
-                                                                .description("Bad request or validation failure."))
-                                                .addApiResponse("500",
-                                                        new ApiResponse()
-                                                                .description("Server error.")))));
-
-
-
-                        // Add Bundle Replay Endpoint
-                        openApi.getPaths().addPathItem("/Bundle/replay/", new PathItem()
-                                .post(new Operation()
-                                        .tags(List.of("Tech by Design Hub FHIR Endpoints"))
-                                        .summary("Replay FHIR Bundles between a date or datetime range.")
-                                        .description("Accepts startDate and endDate.")
-                                        .addParametersItem(new Parameter()
-                                                .name("X-TechBD-StartDate")
-                                                .required(true)
-                                                .in("header")
-                                                .schema(new StringSchema()))
-                                        .addParametersItem(new Parameter()
-                                                .name("X-TechBD-EndDate")
-                                                .required(true)
-                                                .in("header")
-                                                .schema(new StringSchema()))
-                                        .addParametersItem(new Parameter()
-                                                .name("X-TechBD-Tenant-ID")
-                                                .required(false)
-                                                .in("header")
-                                                .schema(new StringSchema()))
-                                        .requestBody(new io.swagger.v3.oas.models.parameters.RequestBody()
-                                                .description("Empty request body for the replay operation.")
-                                                .required(false)
-                                                .content(new io.swagger.v3.oas.models.media.Content()
-                                                        .addMediaType("text/plain",
-                                                                new io.swagger.v3.oas.models.media.MediaType()
-                                                                        .schema(new StringSchema()))))
-                                        .responses(new ApiResponses()
-                                                .addApiResponse("200",
-                                                        new ApiResponse()
-                                                                .description("Replay request processed successfully."))
-                                                .addApiResponse("400",
-                                                        new ApiResponse()
-                                                                .description("Bad request."))
-                                                .addApiResponse("500",
-                                                        new ApiResponse()
-                                                                .description("Server error.")))));
-
-                                                                
-                        // Add Bundle Replay Endpoint
-                        openApi.getPaths().addPathItem("/Bundle/replay", new PathItem()
-                                .post(new Operation()
-                                        .tags(List.of("Tech by Design Hub FHIR Endpoints"))
-                                        .summary("Replay FHIR Bundles between a date or datetime range.")
-                                        .description("Accepts startDate and endDate")
-                                        .addParametersItem(new Parameter()
-                                                .name("X-TechBD-StartDate")
-                                                .required(true)
-                                                .in("header")
-                                                .schema(new StringSchema()))
-                                        .addParametersItem(new Parameter()
-                                                .name("X-TechBD-EndDate")
-                                                .required(true)
-                                                .in("header")
-                                                .schema(new StringSchema()))
-                                        .addParametersItem(new Parameter()
-                                                .name("X-TechBD-Tenant-ID")
-                                                .required(false)
-                                                .in("header")
-                                                .schema(new StringSchema()))
-                                        .requestBody(new io.swagger.v3.oas.models.parameters.RequestBody()
-                                                .description("Empty request body for the replay operation.")
-                                                .required(false)
-                                                .content(new io.swagger.v3.oas.models.media.Content()
-                                                        .addMediaType("text/plain",
-                                                                new io.swagger.v3.oas.models.media.MediaType()
-                                                                        .schema(new StringSchema()))))
-                                        .responses(new ApiResponses()
-                                                .addApiResponse("200",
-                                                        new ApiResponse()
-                                                                .description("Replay request processed successfully."))
-                                                .addApiResponse("400",
-                                                        new ApiResponse()
-                                                                .description("Bad request."))
-                                                .addApiResponse("500",
-                                                        new ApiResponse()
-                                                                .description("Server error.")))));
-
-
-
-
-
-
-                        // Add FHIR Bundle Validation Endpoint
-                        openApi.getPaths().addPathItem("/Bundle/$validate", new PathItem()
-                                .post(new Operation()
-                                        .tags(List.of("Tech by Design Hub FHIR Endpoints"))
-                                        .summary("Endpoint to validate but not store or forward a payload to SHIN-NY. If you want to validate a payload, store it and then forward it to SHIN-NY, use /Bundle not /Bundle/$validate.")
-                                        .description("Endpoint to validate but not store or forward a payload to SHIN-NY.")
-                                        .addParametersItem(new Parameter()
-                                                .name("X-TechBD-Tenant-ID")
-                                                .description("Parameter to specify the Tenant ID. This is a mandatory parameter.")
-                                                .required(true)
-                                                .in("header")
-                                                .schema(new StringSchema()))
-                                        .addParametersItem(new Parameter()
-                                                .name("X-SHIN-NY-IG-Version")
-                                                .description("SHIN-NY Implementation Guide version used for validation.")
-                                                .required(false)
-                                                .in("header")
-                                                .schema(new StringSchema()))
-                                        .requestBody(new io.swagger.v3.oas.models.parameters.RequestBody()
-                                                .required(true)
-                                                .content(new io.swagger.v3.oas.models.media.Content()
-                                                        .addMediaType("application/json",
-                                                                new io.swagger.v3.oas.models.media.MediaType()
-                                                                        .schema(new StringSchema()))))
-                                        .responses(new ApiResponses()
-                                                .addApiResponse("200",
-                                                        new ApiResponse()
-                                                                .description("Validation response returned successfully."))
-                                                .addApiResponse("400",
-                                                        new ApiResponse()
-                                                                .description("Bad request or validation failure."))
-                                                .addApiResponse("500",
-                                                        new ApiResponse()
-                                                                .description("Server error.")))));
-
-
-
-
-
-
-                                        
- // Add FHIR Bundle Validation Endpoint
-                        openApi.getPaths().addPathItem("/Bundle/$validate/", new PathItem()
-                                .post(new Operation()
-                                        .tags(List.of("Tech by Design Hub FHIR Endpoints"))
-                                        .summary("Endpoint to validate but not store or forward a payload to SHIN-NY. If you want to validate a payload, store it and then forward it to SHIN-NY, use /Bundle not /Bundle/$validate.")
-                                        .description("Endpoint to validate but not store or forward a payload to SHIN-NY.")
-                                        .addParametersItem(new Parameter()
-                                                .name("X-TechBD-Tenant-ID")
-                                                .description("Parameter to specify the Tenant ID. This is a mandatory parameter.")
-                                                .required(true)
-                                                .in("header")
-                                                .schema(new StringSchema()))
-                                        .addParametersItem(new Parameter()
-                                                .name("X-SHIN-NY-IG-Version")
-                                                .description("SHIN-NY Implementation Guide version used for validation.")
-                                                .required(false)
-                                                .in("header")
-                                                .schema(new StringSchema()))
-                                        .requestBody(new io.swagger.v3.oas.models.parameters.RequestBody()
-                                                .required(true)
-                                                .content(new io.swagger.v3.oas.models.media.Content()
-                                                        .addMediaType("application/json",
-                                                                new io.swagger.v3.oas.models.media.MediaType()
-                                                                        .schema(new StringSchema()))))
-                                        .responses(new ApiResponses()
-                                                .addApiResponse("200",
-                                                        new ApiResponse()
-                                                                .description("Validation response returned successfully."))
-                                                .addApiResponse("400",
-                                                        new ApiResponse()
-                                                                .description("Bad request or validation failure."))
-                                                .addApiResponse("500",
-                                                        new ApiResponse()
-                                                                .description("Server error.")))));
-
-                                                                
-                        // Add FHIR Metadata Endpoint
-                        openApi.getPaths().addPathItem("/metadata", new PathItem()
-                                .get(new Operation()
-                                        .tags(List.of("Tech by Design Hub FHIR Endpoints"))
-                                        .summary("FHIR server's conformance statement")
-                                        .description("Returns the FHIR server's capability statement in XML format.")
-                                        .responses(new ApiResponses()
-                                                .addApiResponse("200",
-                                                        new ApiResponse()
-                                                                .description("FHIR server metadata returned successfully.")
-                                                                .content(new io.swagger.v3.oas.models.media.Content()
-                                                                        .addMediaType("application/xml",
-                                                                                new io.swagger.v3.oas.models.media.MediaType()
-                                                                                        .schema(new StringSchema()))))
-                                                .addApiResponse("500",
-                                                        new ApiResponse()
-                                                                .description("Server error.")))));
-
-
-                                                                
-                        // Add Bundle Operation Outcome Status Endpoint
-                        openApi.getPaths().addPathItem("/Bundles/status/operation-outcome", new PathItem()
-                                .get(new Operation()
-                                        .tags(List.of("Tech by Design Hub FHIR Endpoints"))
-                                        .summary("Retrieve OperationOutcome(s) for a Bundle or Interaction")
-                                        .description("Endpoint to fetch OperationOutcome resources for a given Bundle ID or Interaction ID. At least one of X-TechBD-Bundle-ID or X-TechBD-Interaction-ID must be provided.")
-                                        .addParametersItem(new Parameter()
-                                                .name("X-TechBD-Tenant-ID")
-                                                .description("Mandatory header for Tenant ID.")
-                                                .required(true)
-                                                .in("header")
-                                                .schema(new StringSchema()))
-                                        .addParametersItem(new Parameter()
-                                                .name("X-TechBD-Bundle-ID")
-                                                .description("Mandatory header for FHIR Bundle ID.")
-                                                .required(true)
-                                                .in("header")
-                                                .schema(new StringSchema()))
-                                        .addParametersItem(new Parameter()
-                                                .name("X-TechBD-Interaction-ID")
-                                                .description("Mandatory header for Interaction ID.")
-                                                .required(true)
-                                                .in("header")
-                                                .schema(new StringSchema()))
-                                        .responses(new ApiResponses()
-                                                .addApiResponse("200",
-                                                        new ApiResponse()
-                                                                .description("Operation outcome status retrieved successfully."))
-                                                .addApiResponse("400",
-                                                        new ApiResponse()
-                                                                .description("Bad request."))
-                                                .addApiResponse("404",
-                                                        new ApiResponse()
-                                                                .description("Bundle or interaction not found."))
-                                                .addApiResponse("500",
-                                                        new ApiResponse()
-                                                                .description("Server error.")))));
-
-
-
-
-
-
-                        // Add NYeC Submission Failed Status Endpoint
-                        openApi.getPaths().addPathItem("/Bundles/status/nyec-submission-failed", new PathItem()
-                                .get(new Operation()
-                                        .tags(List.of("Tech by Design Hub FHIR Endpoints"))
-                                        .summary("Retrieve FHIR Bundles that failed NYEC submission")
-                                        .description("Fetches bundles that failed NYEC submission within the specified date/datetime range. Optionally filter by tenant ID.")
-                                        .addParametersItem(new Parameter()
-                                                .name("X-TechBD-StartDate")
-                                                .description("Mandatory start date in DD-MM-YYYY format.")
-                                                .required(true)
-                                                .in("header")
-                                                .schema(new StringSchema()))
-                                        .addParametersItem(new Parameter()
-                                                .name("X-TechBD-EndDate")
-                                                .description("Mandatory end date in DD-MM-YYYY format.")
-                                                .required(true)
-                                                .in("header")
-                                                .schema(new StringSchema()))
-                                        .addParametersItem(new Parameter()
-                                                .name("X-TechBD-Tenant-ID")
-                                                .description("Mandatory header for Tenant ID.")
-                                                .required(true)
-                                                .in("header")
-                                                .schema(new StringSchema()))
-                                        .addParametersItem(new Parameter()
-                                                .name("X-TechBD-IncludeDetails")
-                                                .description("Optional header to control whether additional submission details are included.")
-                                                .required(false)
-                                                .in("header")
-                                                .schema(new StringSchema()))
-                                        .responses(new ApiResponses()
-                                                .addApiResponse("200",
-                                                        new ApiResponse()
-                                                                .description("Failed NYeC submission records retrieved successfully."))
-                                                .addApiResponse("400",
-                                                        new ApiResponse()
-                                                                .description("Bad request or invalid date range."))
-                                                .addApiResponse("500",
-                                                        new ApiResponse()
-                                                                .description("Server error.")))));
-
-
-
-
-                        // Add Bundle Status Endpoint
-                        openApi.getPaths().addPathItem("/Bundle/$status/{id}", new PathItem()
-                                .get(new Operation()
-                                        .tags(List.of("Tech by Design Hub FHIR Endpoints"))
-                                        .summary("Check the state/status of async operation")
-                                        .description("Retrieves the processing status of a FHIR Bundle using its identifier.")
-                                        .addParametersItem(new Parameter()
-                                                .name("id")
-                                                .description("FHIR Bundle identifier.")
-                                                .required(true)
-                                                .in("path")
-                                                .schema(new StringSchema()))
-                                        .responses(new ApiResponses()
-                                                .addApiResponse("200",
-                                                        new ApiResponse()
-                                                                .description("Bundle status retrieved successfully.")
-                                                                .content(new io.swagger.v3.oas.models.media.Content()
-                                                                        .addMediaType("application/json",
-                                                                                new io.swagger.v3.oas.models.media.MediaType()
-                                                                                        .schema(new StringSchema()))))
-                                                .addApiResponse("400",
-                                                        new ApiResponse()
-                                                                .description("Bad request."))
-                                                .addApiResponse("404",
-                                                        new ApiResponse()
-                                                                .description("Bundle not found."))
-                                                .addApiResponse("500",
-                                                        new ApiResponse()
-                                                                .description("Server error.")))));
-
-
-
-                        openApi.getPaths().addPathItem("/tenants", new PathItem()
-                                        .get(new Operation()
-                                                .tags(List.of("Tech by Design Hub Tenant Endpoints"))
-                                                .summary("List active tenants")
-                                                .description("Returns the list of tenants available in the system.")
-                                                .responses(new ApiResponses()
-                                                        .addApiResponse("200", new ApiResponse()
-                                                                .description("Tenants retrieved successfully.")
-                                                                .content(new Content()
-                                                                        .addMediaType("application/json",
-                                                                                new MediaType()
-                                                                                        .schema(new io.swagger.v3.oas.models.media.ArraySchema()
-                                                                                                .items(new io.swagger.v3.oas.models.media.Schema<>()
-                                                                                                        .type("object"))))))
-                                                        .addApiResponse("500", new ApiResponse()
-                                                                .description("Internal server error.")))));                          
+                        
                    
                   }
                 })
