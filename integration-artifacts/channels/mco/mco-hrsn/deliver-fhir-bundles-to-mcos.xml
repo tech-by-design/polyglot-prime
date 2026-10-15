@@ -3,7 +3,7 @@
   <nextMetaDataId>5</nextMetaDataId>
   <name>Deliver FHIR Bundles to MCOs</name>
   <description>v 0.1.0</description>
-  <revision>3</revision>
+  <revision>57</revision>
   <sourceConnector version="26.6.0">
     <metaDataId>0</metaDataId>
     <name>sourceConnector</name>
@@ -112,6 +112,10 @@ var scrPerferenceMap = null;
 var endPoint = null;
 var errorDropLocation = null;
 // var resourceType=null;
+var dataLakeApiUrl = LookupHelper.get(&quot;Config&quot;, &quot;TECHBD_DEFAULT_DATALAKE_API_URL&quot;);
+var dataLakeApiKey = LookupHelper.get(&quot;Config-sensitive&quot;, &quot;TECHBD_NYEC_DATALAKE_API_KEY&quot;);
+globalMap.put(&quot;screeningEndpoint&quot;,dataLakeApiUrl);
+globalMap.put(&quot;DATA_LAKE_API_KEY&quot;, dataLakeApiKey);
 
 try {
   // connection check
@@ -246,7 +250,7 @@ try {
 
     channelMap.put(
       &quot;fhirQuery&quot;,
-      endPoint + &quot;bundle_id=&quot; + bundleId + &quot;&amp;source_code=&quot; + submittingSource
+      endPoint + &quot;?bundle_id=&quot; + bundleId + &quot;&amp;source_code=&quot; + submittingSource
     );
     logger.info(channelMap.get(&quot;fhirQuery&quot;));
 
@@ -277,7 +281,7 @@ try {
 
   logger.info(&quot;fetching Latest Query&quot;);
   var fetchScreeningIdsQuery =
-    &quot;SELECT mco_screening_id FROM screening_extracts.mco_screening_extracts WHERE request_bundle_id = ? and mco_id =? and is_active =&apos;1&apos; ORDER BY mco_screening_id DESC LIMIT 1&quot;;
+    &quot;SELECT mco_screening_id FROM screening_extracts.mco_screening_extracts WHERE request_bundle_id = ? and tenant_id =? and is_active =&apos;1&apos; ORDER BY mco_screening_id DESC LIMIT 1&quot;;
   var rs = dbConn.executeCachedQuery(fetchScreeningIdsQuery, [bundleId, mco_id]);
 
   var latestScreeningId = null;
@@ -314,7 +318,7 @@ try {
 
   // Save screening extract and details
   var rs3 = dbConn.executeCachedQuery(
-    &quot;INSERT INTO screening_extracts.mco_screening_extracts (mco_id, resource_type_id, status, request_bundle_id, created_on_utc, updated_on_utc, acknowledge_time,is_active) VALUES (?, ?, ?, ?, now(), now(), now(),&apos;1&apos;) RETURNING mco_screening_id&quot;,
+    &quot;INSERT INTO screening_extracts.mco_screening_extracts (tenant_id, resource_type_id, status, request_bundle_id, created_on_utc, updated_on_utc, acknowledge_time,is_active) VALUES (?, ?, ?, ?, now(), now(), now(),&apos;1&apos;) RETURNING mco_screening_id&quot;,
     [mco_id, resource_type_id, &quot;RECEIVED&quot;, bundleId]
   );
   if (rs3.next()) mco_screening_id = rs3.getLong(1);
@@ -369,7 +373,7 @@ try {
     logger.info(&quot;fallbackErrJson&quot; + JSON.stringify(fallbackErrJson));
     if (mco_screening_id == null) {
       var rs1 = dbConn.executeCachedQuery(
-        &quot;INSERT INTO screening_extracts.mco_screening_extracts (mco_id, resource_type_id, status, request_bundle_id, created_on_utc,updated_on_utc, acknowledge_time,is_active) VALUES (?, ?, ?, ?, now(),now(), now(),&apos;1&apos;) RETURNING mco_screening_id&quot;,
+        &quot;INSERT INTO screening_extracts.mco_screening_extracts (tenant_id, resource_type_id, status, request_bundle_id, created_on_utc,updated_on_utc, acknowledge_time,is_active) VALUES (?, ?, ?, ?, now(),now(), now(),&apos;1&apos;) RETURNING mco_screening_id&quot;,
         [mco_id, resource_type_id, &quot;ERROR&quot;, bundleId]
       );
       if (rs1.next()) mco_screening_id = rs1.getLong(1);
@@ -466,15 +470,12 @@ try {
         <com.mirth.connect.plugins.javascriptrule.JavaScriptRule version="26.6.0">
           <sequenceNumber>0</sequenceNumber>
           <enabled>true</enabled>
-          <script>var requestUri = String($(&apos;requestUri&apos;) || &apos;&apos;);
-
-logger.info(&quot;Request URI: &quot; + requestUri);
-
-if (requestUri == &quot;/healthcheck&quot;) {
-    return true;
-}
-
-
+          <script>var path = String(connectorMessage.getSourceMap().get(&apos;contextPath&apos;)).replace(/\/$/, &apos;&apos;);
+logger.info(&quot;path&quot;+path);
+if (path == &apos;/healthcheck&apos;) { 
+	logger.info(&quot;healthcheck hitting&quot;);
+	return true; }
+  // otherwise validate credentials
 var dbConn = null;
 var resource_type_id = null;
 var globalConfig = {}, errorTypeMap = {}, mcoMap = {}, scrPerferenceMap = {};
@@ -511,6 +512,7 @@ try {
     };
   }
   try {
+  	logger.info(&quot;rawMessgae&quot;+JSON.parse(rawMessage));
     inputJson = JSON.parse(rawMessage);
     if (inputJson.hasOwnProperty(&quot;medicaid_cin&quot;)) {
       delete inputJson[&quot;medicaid_cin&quot;];
@@ -575,7 +577,7 @@ try {
   }
 
   var rs1 = dbConn.executeCachedQuery(
-    &quot;INSERT INTO screening_extracts.mco_screening_extracts (mco_id, resource_type_id, status, request_bundle_id, created_on_utc,updated_on_utc, acknowledge_time,is_active) VALUES (?, ?, ?, ?, now(),now(), now(),&apos;1&apos;) RETURNING mco_screening_id&quot;,
+    &quot;INSERT INTO screening_extracts.mco_screening_extracts (tenant_id, resource_type_id, status, request_bundle_id, created_on_utc,updated_on_utc, acknowledge_time,is_active) VALUES (?, ?, ?, ?, now(),now(), now(),&apos;1&apos;) RETURNING mco_screening_id&quot;,
     [mco_id, resource_type_id, &quot;FILTERED&quot;, bundleId]
   );
   if (rs1.next()) mco_screening_id = rs1.getLong(1);
@@ -619,7 +621,7 @@ try {
       inputJson = { rawMessage: e.rawMessage };
     }
     var rs1 = dbConn.executeCachedQuery(
-      &quot;INSERT INTO screening_extracts.mco_screening_extracts (mco_id, resource_type_id, status, request_bundle_id, created_on_utc,updated_on_utc, acknowledge_time,is_active) VALUES (?, ?, ?, ?, now(),now(), now(),&apos;1&apos;) RETURNING mco_screening_id&quot;,
+      &quot;INSERT INTO screening_extracts.mco_screening_extracts (tenant_id, resource_type_id, status, request_bundle_id, created_on_utc,updated_on_utc, acknowledge_time,is_active) VALUES (?, ?, ?, ?, now(),now(), now(),&apos;1&apos;) RETURNING mco_screening_id&quot;,
       [mco_id, resource_type_id, &quot;ERROR&quot;, bundleId]
     );
     if (rs1.next()) mco_screening_id = rs1.getLong(1);
@@ -735,8 +737,15 @@ try {
         <useProxyServer>false</useProxyServer>
         <proxyAddress></proxyAddress>
         <proxyPort></proxyPort>
-        <method>post</method>
-        <headers class="linked-hash-map"/>
+        <method>get</method>
+        <headers class="linked-hash-map">
+          <entry>
+            <string>x-api-key</string>
+            <list>
+              <string>${DATA_LAKE_API_KEY}</string>
+            </list>
+          </entry>
+        </headers>
         <parameters class="linked-hash-map"/>
         <useHeadersVariable>false</useHeadersVariable>
         <headersVariable></headersVariable>
@@ -1073,6 +1082,8 @@ var responseBody = response.getMessage();
 var mco_screening_id = channelMap.get(&quot;mco_screening_id&quot;);
 var mco_details_id = channelMap.get(&quot;mco_screening_extracts_details_id&quot;);
 var errorTypeMap = globalChannelMap.get(&quot;bundleErrorTypeMap&quot;);
+var fileName = channelMap.get(&quot;fileName&quot;);
+logger.info(&quot;errorTypeMap&quot;+JSON.stringify(errorTypeMap));
 var File = Packages.java.io.File;
 function verifyFileResponse(filePath) {
   var file = new File(filePath);
@@ -1110,6 +1121,15 @@ try {
       }
   } else {
     if (sftpResponseStatus == &apos;ERROR&apos; || !verifyFileResponse($(&apos;sftpDropLocation&apos;) + &quot;/&quot; + $(&apos;fileName&apos;))) {
+    	logger.error(&quot;SFTP error details:&quot;);
+logger.error(&quot;Response status: &quot; + sftpResponseStatus);
+logger.error(&quot;Response error: &quot; + errorText);
+logger.error(&quot;Response status message: &quot; + statusMessage);
+logger.error(&quot;Response body: &quot; + responseBody);
+logger.error(
+    &quot;File exists: &quot; +
+    verifyFileResponse($(&quot;sftpDropLocation&quot;) + &quot;/&quot; + $(&quot;fileName&quot;))
+);
       throw {
         errorType: &quot;SFTP_ERROR&quot;,
         description: &quot;SFTP ERROR ERROR&quot;,
@@ -1118,12 +1138,14 @@ try {
         statusMessage: statusMessage,
         errorResponseBody: responseBody
       };
+
+      
     }
   }
 
 
 } catch (e) {
-  logger.info(&quot;sftp catch &quot;);
+ 
   if (
     !dbConn ||
     (e.javaClassName &amp;&amp; e.javaClassName.toString().includes(&quot;PSQLException&quot;)) ||
@@ -1245,6 +1267,11 @@ return;</postprocessingScript>
   <deployScript>// This script executes once when the channel is deployed
 // You only have access to the globalMap and globalChannelMap here to persist data
 logger.info(&quot;started&quot;);
+var dataLakeApiUrl = LookupHelper.get(&quot;Config&quot;, &quot;TECHBD_DEFAULT_DATALAKE_API_URL&quot;);
+var dataLakeApiKey = LookupHelper.get(&quot;Config-sensitive&quot;, &quot;TECHBD_NYEC_DATALAKE_API_KEY&quot;);
+globalMap.put(&quot;screeningEndpoint&quot;,dataLakeApiUrl);
+globalMap.put(&quot;DATA_LAKE_API_KEY&quot;, dataLakeApiKey);
+
 var dbConn;
 try {
   var errorTypeMap = {},resource_type_id,mcoMap = {},scrPerferenceMap={};
@@ -1354,7 +1381,7 @@ return;</undeployScript>
     <metadata>
       <enabled>true</enabled>
       <lastModified>
-        <time>1790767995094</time>
+        <time>1792057695227</time>
         <timezone>Asia/Calcutta</timezone>
       </lastModified>
       <pruningSettings>
