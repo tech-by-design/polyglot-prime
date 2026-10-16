@@ -56,7 +56,7 @@ jobs:
               echo "FHIR=aws/hub-fhir-uat-techbd.org/.env" >> $GITHUB_OUTPUT
               echo "CSV=aws/hub-csv-uat-techbd.org/.env" >> $GITHUB_OUTPUT
               ;;
-            prd)
+            prod)
               echo "HUB=aws/hub-ui-prod-techbd.org/.env" >> $GITHUB_OUTPUT
               echo "FHIR=aws/hub-fhir-prod-techbd.org/.env" >> $GITHUB_OUTPUT
               echo "CSV=aws/hub-csv-prod-techbd.org/.env" >> $GITHUB_OUTPUT
