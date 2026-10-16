@@ -1219,7 +1219,7 @@ public class SwaggerConfig {
 
 
                         // Add Bundle Status Endpoint
-                        openApi.getPaths().addPathItem("/Bundle/$status/{id}", new PathItem()
+                        openApi.getPaths().addPathItem("/Bundle/$status/{bundleSessionId}", new PathItem()
                                 .get(new Operation()
                                         .tags(List.of("Tech by Design Hub FHIR Endpoints"))
                                         .summary("Check the state/status of async operation")
