@@ -1,10 +1,10 @@
 <channel version="26.6.0">
-  <id>576131f3-aa5b-4453-929f-1e07d7534e82</id>
+  <id>439731b6-d490-42cc-a4f8-a15c50ee2fe9</id>
   <nextMetaDataId>4</nextMetaDataId>
   <name>RouterChannel</name>
-  <description>Version: 0.2.27
-Implemented support for Historical fhir bundle replay api in router channel</description>
-  <revision>9</revision>
+  <description>Version: 0.2.28
+Fixed CORS issues across Swagger endpoints and implemented appropriate error messages when client certificates are not provided.</description>
+  <revision>14</revision>
   <sourceConnector version="26.6.0">
     <metaDataId>0</metaDataId>
     <name>sourceConnector</name>
@@ -177,11 +177,48 @@ else if (requestedPath == &quot;/tenants/&quot; || requestedPath == &quot;/tenan
 	logger.info(logPrefix + &quot;FHIR channel tenants api calling from RouterChannel &quot;);
 }
 
+else if (requestedPath == &quot;/Bundles/status/operation-outcome/&quot; || requestedPath == &quot;/Bundles/status/operation-outcome&quot;) {
+	channelMap.put(&apos;destinationUrl&apos;, &quot;http://localhost:9003&quot; + requestedPath); 	
+	logger.info(logPrefix + &quot;FHIR channel operation-outcome status api calling from RouterChannel &quot;);
+}
+
+// route nyec-submission-failed GET API to FhirBundleSubmission channel (port 9003)
+else if (requestedPath == &quot;/Bundles/status/nyec-submission-failed/&quot; || requestedPath == &quot;/Bundles/status/nyec-submission-failed&quot;) {
+	channelMap.put(&apos;destinationUrl&apos;, &quot;http://localhost:9003&quot; + requestedPath);
+	logger.info(logPrefix + &quot;FHIR channel nyec-submission-failed status api calling from RouterChannel &quot;);
+}
+
+// route GET /Bundle/status/{id} and alias GET /Bundle/$status/{id} to FhirBundleSubmission channel (port 9003)
+else if (/^\/Bundle\/(?:status|\$status|%24status)\/[^\/]+\/?$/i.test(String(requestedPath))) {
+	channelMap.put(&apos;destinationUrl&apos;, &quot;http://localhost:9003&quot; + requestedPath);
+	logger.info(logPrefix + &quot;FHIR channel bundle status api calling from RouterChannel &quot;);
+}
+
+else if (requestedPath == &quot;/metadata/&quot; || requestedPath == &quot;/metadata&quot;) {
+    // Set XML Content-Type for the HTTP listener response.
+    channelMap.put(&apos;responseContentType&apos;, &apos;application/xml&apos;);
+    responseMap.put(&apos;responseContentType&apos;, &apos;application/xml&apos;);
+
+    // Preserve existing CORS headers and force Content-Type.
+    var mdRespHeaders = channelMap.get(&apos;corsHeaders&apos;);
+    if (mdRespHeaders == null) {
+        mdRespHeaders = new java.util.HashMap();
+    }
+
+    mdRespHeaders.put(&apos;Content-Type&apos;, &apos;application/xml&apos;);
+    channelMap.put(&apos;corsHeaders&apos;, mdRespHeaders);
+
+    logger.info(logPrefix + &quot;metadata: forcing response Content-Type application/xml&quot;);
+
+    channelMap.put(&apos;destinationUrl&apos;, &quot;http://localhost:9003&quot; + requestedPath);
+
+    logger.info(logPrefix + &quot;FHIR metadata api calling from RouterChannel &quot;);
+}
+
 else if (requestedPath == &quot;/Bundle/$validate/&quot; || requestedPath == &quot;/Bundle/$validate&quot;) {
 	channelMap.put(&apos;destinationUrl&apos;, &quot;http://localhost:9001&quot; + requestedPath);
 	logger.info(logPrefix + &quot;FHIRBundle validation  RouterChannel &quot;);
 }
-
 
 else if (requestedPath == &quot;/ccda/Bundle/&quot; || requestedPath == &quot;/ccda/Bundle&quot;) {
 	channelMap.put(&apos;destinationUrl&apos;, &quot;http://localhost:9002&quot; + requestedPath);	
@@ -219,11 +256,11 @@ else if (requestedPath == &quot;/Bundle/replay/&quot; || requestedPath == &quot;
 	logger.info(logPrefix + &quot;Replay validation  RouterChannel &quot;);
 }
 
-else if (requestedPath == &quot;/historical-replay/Bundle/&quot; ||
-         requestedPath == &quot;/historical-replay/Bundle&quot;) {
-	channelMap.put(&apos;destinationUrl&apos;, &quot;http://localhost:9007&quot; + requestedPath);
-     logger.info(logPrefix + &quot;Historical Replay Bundle RouterChannel&quot;);
-}
+//else if (requestedPath == &quot;/historical-replay/Bundle/&quot; ||
+//         requestedPath == &quot;/historical-replay/Bundle&quot;) {
+//	channelMap.put(&apos;destinationUrl&apos;, &quot;http://localhost:9007&quot; + requestedPath);
+//     logger.info(logPrefix + &quot;Historical Replay Bundle RouterChannel&quot;);
+//}
 
 else{
 	return;
@@ -279,7 +316,8 @@ if (originHeader != null) {
         var corsHeaders = new java.util.HashMap();
         corsHeaders.put(&apos;Access-Control-Allow-Origin&apos;, originHeader);
         corsHeaders.put(&apos;Access-Control-Allow-Methods&apos;, &apos;GET, POST, OPTIONS&apos;);
-        corsHeaders.put(&apos;Access-Control-Allow-Headers&apos;, &apos;Content-Type, X-TechBD-Tenant-ID, X-TechBD-CIN, X-TechBD-OrgNPI, X-TechBD-Encounter-Type, X-TechBD-Facility-ID, X-TechBD-Interaction-ID, X-TechBD-Group-Interaction-ID, X-TechBD-Master-Interaction-ID, X-TechBD-Source-Type, X-TechBD-Part2, X-TechBD-Screening-Code, X-TechBD-OrgTIN, X-TechBD-Organization-Name, X-SHIN-NY-IG-Version, X-TechBD-Validation-Severity-Level, X-TechBD-DataLake-API-URL&apos;);
+        corsHeaders.put(&apos;Access-Control-Allow-Headers&apos;, &apos;Content-Type, X-TechBD-Tenant-ID, X-TechBD-CIN, X-TechBD-OrgNPI, X-TechBD-Encounter-Type, X-TechBD-Facility-ID, X-TechBD-Interaction-ID, X-TechBD-Group-Interaction-ID, X-TechBD-Master-Interaction-ID, X-TechBD-Source-Type, X-TechBD-Part2, X-TechBD-Screening-Code, X-TechBD-OrgTIN, X-TechBD-Organization-Name, X-SHIN-NY-IG-Version, X-TechBD-Validation-Severity-Level, X-TechBD-DataLake-API-URL, X-TechBD-Base-FHIR-URL, X-TechBD-OPWDD, X-TechBD-OMH, X-TechBD-HealthCheck, X-TechBD-StartDate, X-TechBD-EndDate, X-TechBD-Elaboration, X-Correlation-ID, X-TechBD-Override-Request-URI, X-TechBD-HealthCheck, X-TechBD-Bundle-ID, X-TechBD-IncludeDetails&apos;);
+        // X-TechBD-IncludeDetails added to Access-Control-Allow-Headers (StartDate/EndDate were already present)
         corsHeaders.put(&apos;Vary&apos;, &apos;Origin&apos;);
         channelMap.put(&apos;corsHeaders&apos;, corsHeaders);
     }
@@ -411,6 +449,13 @@ var group2 = $(&apos;headers&apos;).getHeader(&apos;X-TechBD-Interaction-ID&apos
 channelMap.put(&apos;group2&apos;, group2);
 logger.info(&quot;Interaction-ID inside RouterChannel filter: &quot; + group2 + &apos;contextPath&apos; + contextPath );
 
+//GET /metadata is public - skip client certificate validation (Host header check above still applies).
+
+if (contextPath === &apos;/metadata&apos; &amp;&amp; httpMethod === &apos;GET&apos;) {
+    return true;
+}
+
+
 var sourceType = $(&apos;headers&apos;).getHeader(&apos;X-TechBD-Source-Type&apos;);
 
 if (sourceType == &quot;CSV&quot;) {
@@ -435,6 +480,7 @@ if (sourceType == &quot;CSV&quot;) {
         responseMap.put(&apos;responseStatusCode&apos;, 401);
         responseMap.put(&apos;responseContentType&apos;, &apos;application/fhir+json&apos;);
         responseMap.put(&apos;responseBody&apos;, certErrorOutcome);
+        responseMap.put(&apos;commonResponse&apos;, certErrorOutcome);
         channelMap.put(&apos;certValidationFailed&apos;, true);
     }
     return certResult;
@@ -775,13 +821,21 @@ if (inboundParams != null) {
     }
 }
 
+var isOperationOutcomeStatus = String(requestedPath || &quot;&quot;).replace(/\/$/, &quot;&quot;) == &quot;/Bundles/status/operation-outcome&quot;;
+if (!isOperationOutcomeStatus &amp;&amp; !headersMap.containsKey(&quot;X-TechBD-Interaction-ID&quot;)) {
+    headersMap.put(&quot;X-TechBD-Interaction-ID&quot;, interactionId);
+    logger.info(logPrefix + &quot;Added X-TechBD-Interaction-ID to router headers: &quot; + interactionId);
+} else {
+    logger.info(logPrefix + &quot;Preserving/omitting inbound X-TechBD-Interaction-ID for router headers&quot;);
+}
+
 // Store for the HTTP Sender
 connectorMap.put(&quot;routerparams&quot;, paramsMap);
 
 
 
 
-// CRITICAL: REMOVE BODY COMPLETELY
+
 return &apos;&apos;;</script>
           </com.mirth.connect.plugins.javascriptstep.JavaScriptStep>
         </elements>
@@ -828,7 +882,7 @@ return &apos;&apos;;</script>
             <sequenceNumber>0</sequenceNumber>
             <enabled>true</enabled>
             <script>var contextPath = String(connectorMessage.getSourceMap().get(&apos;contextPath&apos;)).replace(/\/$/, &apos;&apos;);
-return contextPath != &quot;/tenants&quot;;</script>
+return contextPath != &quot;/tenants&quot; &amp;&amp; contextPath != &quot;/Bundles/status/operation-outcome&quot; &amp;&amp; contextPath != &quot;/Bundles/status/nyec-submission-failed&quot; &amp;&amp; !/^\/Bundle\/(?:status|\$status|%24status)\/[^\/]+\/?$/i.test(contextPath) &amp;&amp; contextPath != &quot;/metadata&quot;;</script>
           </com.mirth.connect.plugins.javascriptrule.JavaScriptRule>
         </elements>
       </filter>
@@ -1090,88 +1144,134 @@ return contextPath != &quot;/tenants&quot;;</script>
             <sequenceNumber>0</sequenceNumber>
             <enabled>true</enabled>
             <script>var requestedPath = sourceMap.get(&apos;contextPath&apos;);
-if (requestedPath == &quot;/&quot; ||  requestedPath ==  &quot;/healthcheck&quot;) {
-  return;
+	if (requestedPath == &quot;/&quot; ||  requestedPath ==  &quot;/healthcheck&quot;) {
+	  return;
+	}
+	interactionId = channelMap.get(&quot;interactionId&quot;);
+	var logPrefix = &quot;[INTERACTION ID: &quot; + interactionId + &quot;] &quot;;
+	
+	// ======================================================
+	// PARSE HEADERS + FORWARD
+	// ======================================================
+	var headersMap = new java.util.HashMap();
+	var headers = $(&apos;headers&apos;);
+	logger.info(logPrefix + &quot;HEADERS OBJECT: &quot; + headers);
+	
+	//sec-ch-ua / sec-ch-ua-mobile / sec-ch-ua-platform values contain
+	// embedded quotes and commas 
+	if (headers != null) {
+	    var headerStr = String(headers);  // Convert full object to string
+	
+	    headerStr = headerStr.replace(/(^|, )(sec-ch-ua(-mobile|-platform)?)=\[.*?\](?=(, |$))/g, &apos;&apos;);
+	    headerStr = headerStr.replace(/^, /, &apos;&apos;); // clean up if the removed segment was first in the map
+	
+	    // Remove { and }
+	    headerStr = headerStr.replace(/^\{|\}$/g, &apos;&apos;);
+	    var pairs = headerStr.split(&apos;, &apos;);
+	    for (var i = 0; i &lt; pairs.length; i++) {
+	        var idx = pairs[i].indexOf(&apos;=&apos;);
+	        if (idx &gt; 0) {
+	            var key = pairs[i].substring(0, idx).trim();
+	            var value = pairs[i].substring(idx + 1).trim();
+	            // Remove [ ]
+	            var headerValue = value.replace(/^\[|\]$/g, &apos;&apos;);
+	
+	            if (headerValue !== &apos;&apos; &amp;&amp; key.toLowerCase() !== &apos;content-length&apos;) {
+	                headersMap.put(key, headerValue);
+	            }
+	        }
+	    }
+	}
+	
+//	headersMap.put(&quot;X-TechBD-Interaction-ID&quot;, interactionId);
+//	logger.info(logPrefix + &quot;Added X-TechBD-Interaction-ID to router headers: &quot; + interactionId);
+	// Send headers via HTTP Sender
+	//connectorMap.put(&quot;routerheaders&quot;, headersMap);
+	
+	
+	
+	var paramsMap = new java.util.HashMap();
+	var inboundParams = $(&apos;parameters&apos;); // Get query params from source
+	
+	if (inboundParams != null) {
+	    var paramsStr = String(inboundParams);
+	
+	    // Clean the { } brackets
+	    paramsStr = paramsStr.replace(/^\{|\}$/g, &apos;&apos;);
+	
+	    if (paramsStr.length &gt; 0) {
+	        var pPairs = paramsStr.split(&apos;, &apos;);
+	        for (var j = 0; j &lt; pPairs.length; j++) {
+	            var pParts = pPairs[j].split(&apos;=&apos;);
+	            if (pParts.length === 2) {
+	                var pKey = pParts[0].trim();
+	                var pValue = pParts[1].trim();
+	
+	                // Clean the [ ] brackets from the value
+	                var finalPValue = pValue.replace(/^\[|\]$/g, &apos;&apos;);
+	
+	                if (finalPValue !== &apos;&apos;) {
+	                    paramsMap.put(pKey, finalPValue);
+	                }
+	            }
+	        }
+	    }
+	}
+	
+	//var isOperationOutcomeStatus = String(requestedPath || &quot;&quot;).replace(/\/$/, &quot;&quot;) == &quot;/Bundles/status/operation-outcome&quot;;
+	//if (!isOperationOutcomeStatus &amp;&amp; !headersMap.containsKey(&quot;X-TechBD-Interaction-ID&quot;)) {
+	//    headersMap.put(&quot;X-TechBD-Interaction-ID&quot;, interactionId);
+	//    logger.info(logPrefix + &quot;Added X-TechBD-Interaction-ID to router headers: &quot; + interactionId);
+	//} else {
+	//    logger.info(logPrefix + &quot;Preserving/omitting inbound X-TechBD-Interaction-ID for router headers&quot;);
+	//}
+	
+	
+	var isOperationOutcomeStatus =
+    String(requestedPath || &quot;&quot;).replace(/\/$/, &quot;&quot;) ===
+    &quot;/Bundles/status/operation-outcome&quot;;
+
+//GET /Bundle/status/{id} is a lookup by bundle id - do not inject a generated interaction id
+if (/^\/Bundle\/(?:status|\$status|%24status)\/[^\/]+\/?$/i.test(String(requestedPath || &quot;&quot;).replace(/\/$/, &quot;&quot;))) {
+    isOperationOutcomeStatus = true;
 }
-interactionId = channelMap.get(&quot;interactionId&quot;);
-var logPrefix = &quot;[INTERACTION ID: &quot; + interactionId + &quot;] &quot;;
 
-// ======================================================
-// PARSE HEADERS + FORWARD
-// ======================================================
-var headersMap = new java.util.HashMap();
-var headers = $(&apos;headers&apos;);
-logger.info(logPrefix + &quot;HEADERS OBJECT: &quot; + headers);
+//metadata is not an interaction - do not inject a generated X-TechBD-Interaction-ID
+if (String(requestedPath || &quot;&quot;).replace(/\/$/, &quot;&quot;) === &quot;/metadata&quot;) {
+    isOperationOutcomeStatus = true;
+}
 
-//sec-ch-ua / sec-ch-ua-mobile / sec-ch-ua-platform values contain
-// embedded quotes and commas 
-if (headers != null) {
-    var headerStr = String(headers);  // Convert full object to string
+if (isOperationOutcomeStatus) {
+    // Do not inject a generated ID for this endpoint.
+    // Preserve an inbound ID only if the client supplied one.
+    var inboundInteractionId =
+        $(&apos;headers&apos;).getHeader(&apos;X-TechBD-Interaction-ID&apos;);
 
-    headerStr = headerStr.replace(/(^|, )(sec-ch-ua(-mobile|-platform)?)=\[.*?\](?=(, |$))/g, &apos;&apos;);
-    headerStr = headerStr.replace(/^, /, &apos;&apos;); // clean up if the removed segment was first in the map
-
-    // Remove { and }
-    headerStr = headerStr.replace(/^\{|\}$/g, &apos;&apos;);
-    var pairs = headerStr.split(&apos;, &apos;);
-    for (var i = 0; i &lt; pairs.length; i++) {
-        var idx = pairs[i].indexOf(&apos;=&apos;);
-        if (idx &gt; 0) {
-            var key = pairs[i].substring(0, idx).trim();
-            var value = pairs[i].substring(idx + 1).trim();
-            // Remove [ ]
-            var headerValue = value.replace(/^\[|\]$/g, &apos;&apos;);
-
-            if (headerValue !== &apos;&apos; &amp;&amp; key.toLowerCase() !== &apos;content-length&apos;) {
-                headersMap.put(key, headerValue);
-            }
-        }
+    if (inboundInteractionId == null ||
+        String(inboundInteractionId).trim() === &apos;&apos;) {
+        headersMap.remove(&quot;X-TechBD-Interaction-ID&quot;);
     }
+
+    logger.info(
+        logPrefix + &quot;Operation-outcome endpoint: not injecting generated interaction ID&quot;
+    );
+} else if (!headersMap.containsKey(&quot;X-TechBD-Interaction-ID&quot;)) {
+    headersMap.put(&quot;X-TechBD-Interaction-ID&quot;, interactionId);
+    logger.info(
+        logPrefix + &quot;Added generated X-TechBD-Interaction-ID for non-operation-outcome endpoint&quot;
+    );
 }
 
-headersMap.put(&quot;X-TechBD-Interaction-ID&quot;, interactionId);
-logger.info(logPrefix + &quot;Added X-TechBD-Interaction-ID to router headers: &quot; + interactionId);
-// Send headers via HTTP Sender
 connectorMap.put(&quot;routerheaders&quot;, headersMap);
-
-
-
-var paramsMap = new java.util.HashMap();
-var inboundParams = $(&apos;parameters&apos;); // Get query params from source
-
-if (inboundParams != null) {
-    var paramsStr = String(inboundParams);
-
-    // Clean the { } brackets
-    paramsStr = paramsStr.replace(/^\{|\}$/g, &apos;&apos;);
-
-    if (paramsStr.length &gt; 0) {
-        var pPairs = paramsStr.split(&apos;, &apos;);
-        for (var j = 0; j &lt; pPairs.length; j++) {
-            var pParts = pPairs[j].split(&apos;=&apos;);
-            if (pParts.length === 2) {
-                var pKey = pParts[0].trim();
-                var pValue = pParts[1].trim();
-
-                // Clean the [ ] brackets from the value
-                var finalPValue = pValue.replace(/^\[|\]$/g, &apos;&apos;);
-
-                if (finalPValue !== &apos;&apos;) {
-                    paramsMap.put(pKey, finalPValue);
-                }
-            }
-        }
-    }
-}
-
-// Store for the HTTP Sender
 connectorMap.put(&quot;routerparams&quot;, paramsMap);
 
-
-
-
-// CRITICAL: REMOVE BODY COMPLETELY
-return &apos;&apos;;</script>
+//return &apos;&apos;;
+	
+	
+	
+	
+	// CRITICAL: REMOVE BODY COMPLETELY
+	return &apos;&apos;;</script>
           </com.mirth.connect.plugins.javascriptstep.JavaScriptStep>
         </elements>
         <inboundTemplate encoding="base64"></inboundTemplate>
@@ -1217,7 +1317,8 @@ return &apos;&apos;;</script>
             <sequenceNumber>0</sequenceNumber>
             <enabled>true</enabled>
             <script>var contextPath = String(connectorMessage.getSourceMap().get(&apos;contextPath&apos;)).replace(/\/$/, &apos;&apos;);
-return contextPath == &quot;/tenants&quot;;</script>
+
+return contextPath == &quot;/tenants&quot; || contextPath == &quot;/Bundles/status/operation-outcome&quot; || contextPath == &quot;/Bundles/status/nyec-submission-failed&quot; || /^\/Bundle\/(?:status|\$status|%24status)\/[^\/]+\/?$/i.test(contextPath) || contextPath == &quot;/metadata&quot;;</script>
           </com.mirth.connect.plugins.javascriptrule.JavaScriptRule>
         </elements>
       </filter>
@@ -1228,6 +1329,11 @@ return contextPath == &quot;/tenants&quot;;</script>
     </connector>
   </destinationConnectors>
   <preprocessingScript>// Modify the message variable below to pre process data
+
+
+
+//default response Content-Type for every request (listener now uses ${responseContentType}); keeps existing behaviour = application/fhir+json
+channelMap.put(&apos;responseContentType&apos;, &apos;application/fhir+json&apos;);
 return message;</preprocessingScript>
   <postprocessingScript>var requestedPath = sourceMap.get(&apos;contextPath&apos;);
 if (requestedPath == &quot;/&quot; || requestedPath == &quot;/healthcheck&quot;) {
@@ -1304,7 +1410,9 @@ var requestedPath = String(sourceMap.get(&quot;contextPath&quot;) || &quot;&quot
 
 var destinationName;
 
-if (requestedPath == &quot;/tenants&quot;) {
+//GET destination for nyec-submission-failed is tenant_api
+//GET destination for /Bundle/status/{id} and /Bundle/$status/{id} is tenant_api
+if (requestedPath == &quot;/tenants&quot; || requestedPath == &quot;/Bundles/status/operation-outcome&quot; || requestedPath == &quot;/Bundles/status/nyec-submission-failed&quot; || /^\/Bundle\/(?:status|\$status|%24status)\/[^\/]+\/?$/i.test(requestedPath) || requestedPath == &quot;/metadata&quot; ) {
     destinationName = &quot;tenant_api&quot;;
 } else {
     destinationName = &quot;response_operationoutcome&quot;;
@@ -1347,6 +1455,12 @@ if (!destinationResponse) {
 // =========================
 var responseStatus = String(destinationResponse.getStatus());
 var responseData = String(destinationResponse.getMessage() || &apos;&apos;).trim();
+
+//metadata returns XML (CapabilityStatement) - label it application/xml so Swagger/clients do not try to parse it as JSON
+if (String(requestedPath || &quot;&quot;).replace(/\/$/, &quot;&quot;) == &quot;/metadata&quot; &amp;&amp; responseData.indexOf(&quot;&lt;&quot;) === 0) {
+    channelMap.put(&apos;responseContentType&apos;, &apos;application/xml&apos;);
+    responseMap.put(&apos;responseContentType&apos;, &apos;application/xml&apos;);
+}
 
 logger.info(logPrefix + &apos;DEBUG#2 | responseStatus: &apos; + responseStatus);
 logger.info(logPrefix + &apos;DEBUG#3 | responseData (first 500): &apos; + responseData.substring(0, 500));
@@ -1486,7 +1600,35 @@ if (responseData === &quot;&quot;) {
 try {
     var json = JSON.parse(responseData);
 
-    if (json.status != null &amp;&amp; json.status !== &quot;&quot;) {
+    // Handle missing bundleId and interactionId validation
+    if (requestedPath == &quot;/Bundles/status/operation-outcome&quot; &amp;&amp;
+        json.status === &quot;Error&quot; &amp;&amp;
+        json.message === &quot;Invalid request. Either bundleId or interactionId is required.&quot;) {
+
+        responseMap.put(&apos;status&apos;, &apos;400&apos;);
+
+        logger.info(
+            logPrefix + &quot;Returning HTTP 400 for missing bundleId/interactionId&quot;
+        );}
+    
+   // nyec-submission-failed - only honour a numeric HTTP status from the body, otherwise 200
+   else if (requestedPath == &quot;/Bundles/status/nyec-submission-failed&quot;) {
+        var nyecSt = parseInt(json.status);
+        responseMap.put(&apos;status&apos;, (!isNaN(nyecSt) &amp;&amp; nyecSt &gt;= 100 &amp;&amp; nyecSt &lt;= 599) ? String(nyecSt) : &apos;200&apos;);
+    }
+      //bundle status - body {&quot;status&quot;:&quot;Error&quot;,&quot;message&quot;:&quot;Invalid request...&quot;} =&gt; 400, other &quot;Error&quot; =&gt; 500; rows / &quot;Success&quot; =&gt; 200
+   else if (/^\/Bundle\/(?:status|\$status|%24status)\/[^\/]+\/?$/i.test(String(requestedPath))) {
+        var bsSt = parseInt(json.status);
+        if (!isNaN(bsSt) &amp;&amp; bsSt &gt;= 100 &amp;&amp; bsSt &lt;= 599) {
+            responseMap.put(&apos;status&apos;, String(bsSt));
+        } else if (json != null &amp;&amp; json.status === &quot;Error&quot;) {
+            responseMap.put(&apos;status&apos;, String(json.message || &quot;&quot;).indexOf(&quot;Invalid request&quot;) === 0 ? &apos;400&apos; : &apos;500&apos;);
+        } else {
+            responseMap.put(&apos;status&apos;, &apos;200&apos;);
+        }
+    }
+   
+   else if (json.status != null &amp;&amp; json.status !== &quot;&quot;) {
         responseMap.put(&apos;status&apos;, String(json.status));
     } else {
         responseMap.put(&apos;status&apos;, &apos;200&apos;);
@@ -1552,7 +1694,7 @@ return;</undeployScript>
     <metadata>
       <enabled>true</enabled>
       <lastModified>
-        <time>1786525580958</time>
+        <time>1792055211828</time>
         <timezone>Asia/Calcutta</timezone>
       </lastModified>
       <pruningSettings>
@@ -1561,5 +1703,22 @@ return;</undeployScript>
       </pruningSettings>
       <userId>10</userId>
     </metadata>
+    <channelTags>
+      <channelTag>
+        <id>c262e39d-04e7-4b69-89b4-016b015ade06</id>
+        <name>0_2_28</name>
+        <channelIds>
+          <string>28be0628-cfe1-4c16-8acc-4a53928c9c34</string>
+          <string>417892cd-09d4-47fe-b7c9-c7164db71938</string>
+          <string>439731b6-d490-42cc-a4f8-a15c50ee2fe9</string>
+        </channelIds>
+        <backgroundColor>
+          <red>255</red>
+          <green>0</green>
+          <blue>0</blue>
+          <alpha>255</alpha>
+        </backgroundColor>
+      </channelTag>
+    </channelTags>
   </exportData>
 </channel>

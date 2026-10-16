@@ -1,17 +1,19 @@
 <channel version="26.6.0">
-  <id>cac50f15-1204-495d-a15e-0f341c494171</id>
+  <id>3ab2e65e-b5fd-448d-b879-e42bc1a00203</id>
   <nextMetaDataId>5</nextMetaDataId>
   <name>FhirBundleSubmission</name>
-  <description>Version 0.8.46
-Historical FHIR Bundle Replay has been integrated into the existing FhirBundleSubmission channel. No separate historical endpoint or channel is used.
-Historical processing is applied only when the FHIR Bundle.id starts with historical-. All other Bundles continue through the existing normal Bundle processing flow unchanged.
-Historical Bundles support:
-- ooSize: full, lite, or none. Default is lite.
-- dataLedger: true or false. Default is false.
-- ooSize controls the OperationOutcome returned to the client.
-- dataLedger=false, including the default behavior when the parameter is omitted, prevents Data Ledger submission for the historical request.
-The channel validates the Bundle, processes and persists the FHIR data through the existing flow, and applies historical-specific response handling only for Historical Bundles.</description>
-  <revision>9</revision>
+  <description>Version 0.8.47
+
+    GET API Integration: Integrated support for four GET APIs through the existing Mirth Connect channels, including FhirBundleSubmission:
+
+        GET /metadata
+
+        GET /Bundles/status/nyec-submission-failed
+
+        GET /Bundles/status/operation-outcome
+
+        GET /Bundle/$status/{bundleSessionId}</description>
+  <revision>10</revision>
   <sourceConnector version="26.6.0">
     <metaDataId>0</metaDataId>
     <name>sourceConnector</name>
@@ -93,7 +95,7 @@ The channel validates the Bundle, processes and persists the FHIR data through t
         <entry>
           <string>Access-Control-Allow-Headers</string>
           <list>
-            <string>Content-Type, Authorization, X-TechBD-Base-FHIR-URL, X-TechBD-Tenant-ID, User-Agent, X-TechBD-REMOTE-IP, X-TechBD-Override-Request-URI, X-Correlation-ID, accept, X-TechBD-DataLake-API-URL,  X-TechBD-HealthCheck, X-TechBD-Validation-Severity-Level, X-SHIN-NY-IG-Version</string>
+            <string>Content-Type, Authorization, X-TechBD-Base-FHIR-URL, X-TechBD-Tenant-ID, User-Agent, X-TechBD-REMOTE-IP, X-TechBD-Override-Request-URI, X-Correlation-ID, accept, X-TechBD-DataLake-API-URL,  X-TechBD-HealthCheck, X-TechBD-Validation-Severity-Level, X-SHIN-NY-IG-Version, X-TechBD-StartDate, X-TechBD-EndDate, X-TechBD-IncludeDetails</string>
           </list>
         </entry>
         <entry>
@@ -459,6 +461,97 @@ if (
 }
 logger.info(&quot;requestedPath&quot;+requestedPath);
 
+///////////////////////////
+//call the Java service (GET) and keep its status / body / content-type as-is
+function callJavaGet(javaPath, headerNames) {
+    var client = null, resp = null;
+    try {
+        var base = String(LookupHelper.get(&quot;Config&quot;, &quot;BL_FHIR_BUNDLE_VALIDATION_API_URL&quot;) || &quot;&quot;).trim().replace(/\/+$/, &quot;&quot;);
+        if (base === &quot;&quot;) throw &quot;BL_FHIR_BUNDLE_VALIDATION_API_URL is empty.&quot;;
+
+        var rc = org.apache.http.client.config.RequestConfig.custom()
+            .setConnectTimeout(5000).setSocketTimeout(60000).build();
+        client = org.apache.http.impl.client.HttpClients.custom().setDefaultRequestConfig(rc).build();
+
+        var get = new org.apache.http.client.methods.HttpGet(base + javaPath);
+        get.setHeader(&quot;Accept&quot;, &quot;application/json&quot;);
+        for (var i = 0; i &lt; headerNames.length; i++) {
+            var v = $(&apos;headers&apos;).getHeader(headerNames[i]);
+            if (v != null &amp;&amp; String(v).trim() !== &quot;&quot;) get.setHeader(headerNames[i], String(v).trim());
+        }
+
+        resp = client.execute(get);
+        var ct = resp.getFirstHeader(&quot;Content-Type&quot;);
+        channelMap.put(&quot;javaStatusCode&quot;, resp.getStatusLine().getStatusCode());
+        channelMap.put(&quot;javaResponse&quot;, resp.getEntity() != null ? String(org.apache.http.util.EntityUtils.toString(resp.getEntity(), &quot;UTF-8&quot;)) : &quot;&quot;);
+        channelMap.put(&quot;javaContentType&quot;, ct != null ? String(ct.getValue()) : &quot;application/json&quot;);
+    } catch (e) {
+        logger.error(&quot;callJavaGet failed for &quot; + javaPath + &quot;: &quot; + e);
+        channelMap.put(&quot;javaStatusCode&quot;, 502);
+        channelMap.put(&quot;javaContentType&quot;, &quot;application/json&quot;);
+        channelMap.put(&quot;javaResponse&quot;, JSON.stringify({ status: 502, message: &quot;Unable to retrieve data from the downstream service.&quot; }));
+    } finally {
+        try { if (resp != null) resp.close(); } catch (x) {}
+        try { if (client != null) client.close(); } catch (y) {}
+    }
+}
+
+//////////////////////////
+//GET /metadata - call the Java service directly and return its response as-is (no CapabilityStatement built in the channel)
+if (requestedPath == &quot;/metadata&quot; || requestedPath == &quot;/metadata/&quot;) {
+
+    
+    var mdClient = null;
+    var mdResp = null;
+    try {
+        var mdJavaBase = String(LookupHelper.get(&quot;Config&quot;, &quot;BL_FHIR_BUNDLE_VALIDATION_API_URL&quot;) || &quot;&quot;).trim().replace(/\/+$/, &quot;&quot;);
+        if (mdJavaBase === &quot;&quot;) {
+            throw &quot;BL_FHIR_BUNDLE_VALIDATION_API_URL retrieved from Lookup Manager is empty.&quot;;
+        }
+
+        var mdRC = org.apache.http.client.config.RequestConfig.custom()
+            .setConnectTimeout(5000).setSocketTimeout(30000).build();
+        mdClient = org.apache.http.impl.client.HttpClients.custom().setDefaultRequestConfig(mdRC).build();
+
+        var mdGet = new org.apache.http.client.methods.HttpGet(mdJavaBase + &quot;/metadata&quot;);
+        mdGet.setHeader(&quot;Accept&quot;, &quot;application/xml&quot;);
+
+        
+        //forward original host/proto so the Java service builds baseUrl for the public host
+        var mdFwdProto = $(&apos;headers&apos;).getHeader(&apos;X-Forwarded-Proto&apos;);
+        var mdFwdHost = $(&apos;headers&apos;).getHeader(&apos;X-Forwarded-Host&apos;);
+        if (mdFwdProto != null &amp;&amp; String(mdFwdProto).trim() !== &quot;&quot;) mdGet.setHeader(&quot;X-Forwarded-Proto&quot;, String(mdFwdProto).trim());
+        if (mdFwdHost != null &amp;&amp; String(mdFwdHost).trim() !== &quot;&quot;) mdGet.setHeader(&quot;X-Forwarded-Host&quot;, String(mdFwdHost).trim());
+
+        mdResp = mdClient.execute(mdGet);
+        var mdStatus = mdResp.getStatusLine().getStatusCode();
+        var mdBody = mdResp.getEntity() != null
+            ? String(org.apache.http.util.EntityUtils.toString(mdResp.getEntity(), &quot;UTF-8&quot;)) : &quot;&quot;;
+        var mdCtHeader = mdResp.getFirstHeader(&quot;Content-Type&quot;);
+
+        
+        //return Java status, body and content type unchanged
+        channelMap.put(&quot;metadataStatusCode&quot;, mdStatus);
+        channelMap.put(&quot;metadataResponse&quot;, mdBody);
+        channelMap.put(&quot;metadataContentType&quot;, mdCtHeader != null ? String(mdCtHeader.getValue()) : &quot;application/xml&quot;);
+
+    } catch (mde) {
+       
+        logger.error(&quot;metadata: error calling Java /metadata: &quot; + mde);
+        channelMap.put(&quot;metadataStatusCode&quot;, 502);
+        channelMap.put(&quot;metadataContentType&quot;, &quot;application/json&quot;);
+        channelMap.put(&quot;metadataResponse&quot;, JSON.stringify({
+            status: 502,
+            message: &quot;Unable to retrieve metadata from the downstream service.&quot;
+        }));
+    } finally {
+        try { if (mdResp != null) mdResp.close(); } catch (ig1) {}
+        try { if (mdClient != null) mdClient.close(); } catch (ig2) {}
+    }
+    return;
+}
+
+//////////////////////////////////////////
 if (requestedPath == &quot;/tenants&quot; || requestedPath == &quot;/tenants/&quot;) {
 
     importPackage(java.sql);
@@ -504,7 +597,26 @@ if (requestedPath == &quot;/tenants&quot; || requestedPath == &quot;/tenants/&qu
     return;
 }
 
-&#xd;
+///Bundles/status/operation-outcome
+if (requestedPath == &quot;/Bundles/status/operation-outcome&quot; || requestedPath == &quot;/Bundles/status/operation-outcome/&quot;) {
+    callJavaGet(&quot;/Bundles/status/operation-outcome&quot;, [&quot;X-TechBD-Tenant-ID&quot;, &quot;X-TechBD-Bundle-ID&quot;, &quot;X-TechBD-Interaction-ID&quot;]);
+    return;
+}
+
+///Bundles/status/nyec-submission-failed
+if (requestedPath == &quot;/Bundles/status/nyec-submission-failed&quot; || requestedPath == &quot;/Bundles/status/nyec-submission-failed/&quot;) {
+    callJavaGet(&quot;/Bundles/status/nyec-submission-failed&quot;, [&quot;X-TechBD-StartDate&quot;, &quot;X-TechBD-EndDate&quot;, &quot;X-TechBD-Tenant-ID&quot;, &quot;X-TechBD-IncludeDetails&quot;]);
+    return;
+}
+
+///Bundle/$status/id
+var bsMatch = /^\/Bundle\/(?:status|\$status|%24status)\/([^\/]+)\/?$/i.exec(String(requestedPath));
+if (bsMatch) {
+    callJavaGet(&quot;/Bundle/$status/&quot; + bsMatch[1], []);
+    return;
+}
+///////////////////////////////////////////////////////////
+
 //if (requestedPath == &quot;/Bundle/&quot; || requestedPath == &quot;/Bundle&quot;) {
 var fhirJson  = connectorMessage.getRawData();
 channelMap.put(&apos;fhirJson&apos;, fhirJson);
@@ -644,7 +756,52 @@ if (contextPath === &apos;/tenants&apos; || contextPath === &apos;/tenants/&apos
 }
 
 /* =====================================
-   4️ BUNDLE
+   4 OPERATION OUTCOME STATUS
+===================================== */
+if (contextPath === &apos;/Bundles/status/operation-outcome&apos; || contextPath === &apos;/Bundles/status/operation-outcome/&apos;) {
+
+    if (httpMethod === &apos;GET&apos;) {
+        channelMap.put(&quot;endpoint&quot;, &quot;operation-outcome&quot;);
+        return true;
+    }
+
+    return methodNotAllowed();
+}
+
+
+//GET endpoint /Bundles/status/nyec-submission-failed (GET only)
+if (contextPath === &apos;/Bundles/status/nyec-submission-failed&apos;) {
+
+    if (httpMethod === &apos;GET&apos;) {
+        channelMap.put(&quot;endpoint&quot;, &quot;nyec-submission-failed&quot;);
+        return true;
+    }
+
+    return methodNotAllowed();
+}
+
+//GET /Bundle/status/{id} and alias GET /Bundle/$status/{id} (GET only, {id} = bundle id)
+if (/^\/Bundle\/(?:status|\$status|%24status)\/[^\/]+\/?$/i.test(contextPath)) {
+
+    if (httpMethod === &apos;GET&apos;) {
+        channelMap.put(&quot;endpoint&quot;, &quot;bundle-status&quot;);
+        return true;
+    }
+
+    return methodNotAllowed();
+}
+
+//GET /metadata
+if (contextPath === &apos;/metadata&apos; || contextPath === &apos;/metadata/&apos;) {
+    if (httpMethod === &apos;GET&apos;) {
+        channelMap.put(&quot;endpoint&quot;, &quot;metadata&quot;);
+        return true;
+    }
+    return methodNotAllowed();
+}
+
+/* =====================================
+   5️ BUNDLE
 ===================================== */
 if (contextPath === &apos;/Bundle/&apos; || contextPath === &apos;/Bundle&apos;) {
 
@@ -958,7 +1115,7 @@ function notFound() {
             <sequenceNumber>0</sequenceNumber>
             <enabled>true</enabled>
             <script>var path = String(channelMap.get(&quot;requestedPath&quot;)).replace(/\/$/, &quot;&quot;);
-return path != &quot;/tenants&quot;;</script>
+return path != &quot;/tenants&quot;  &amp;&amp; path != &quot;/metadata&quot; &amp;&amp; path != &quot;/Bundles/status/operation-outcome&quot; &amp;&amp; path != &quot;/Bundles/status/nyec-submission-failed&quot; &amp;&amp; !/^\/Bundle\/(?:status|\$status|%24status)\/[^\/]+\/?$/i.test(path);</script>
           </com.mirth.connect.plugins.javascriptrule.JavaScriptRule>
         </elements>
       </filter>
@@ -1840,7 +1997,7 @@ function iterableToArrayStr(col) {&#xd;
             <sequenceNumber>0</sequenceNumber>
             <enabled>true</enabled>
             <script>var path = String(channelMap.get(&quot;requestedPath&quot;)).replace(/\/$/, &quot;&quot;);
-return path != &quot;/tenants&quot;;</script>
+return path != &quot;/tenants&quot;  &amp;&amp; path != &quot;/metadata&quot; &amp;&amp; path != &quot;/Bundles/status/operation-outcome&quot; &amp;&amp; path != &quot;/Bundles/status/nyec-submission-failed&quot; &amp;&amp; !/^\/Bundle\/(?:status|\$status|%24status)\/[^\/]+\/?$/i.test(path);</script>
           </com.mirth.connect.plugins.javascriptrule.JavaScriptRule>
         </elements>
       </filter>
@@ -1891,7 +2048,16 @@ if (
     requestedPath == &quot;/&quot; ||
     requestedPath == &quot;/healthcheck&quot; ||
     requestedPath == &quot;/tenants&quot;||
-    requestedPath == &quot;/tenants/&quot;
+    requestedPath == &quot;/tenants/&quot;||
+    requestedPath == &quot;/Bundles/status/operation-outcome&quot; ||
+    requestedPath == &quot;/Bundles/status/operation-outcome/&quot; ||
+    requestedPath == &quot;/Bundles/status/nyec-submission-failed&quot; ||
+    requestedPath == &quot;/Bundles/status/nyec-submission-failed/&quot; ||
+    // bypass body/tenant validation for GET /metadata
+    requestedPath == &quot;/metadata&quot; ||
+    requestedPath == &quot;/metadata/&quot; ||
+    //bypass body/tenant validation in preprocessor for GET /Bundle/status/{id} and /Bundle/$status/{id}
+    /^\/Bundle\/(?:status|\$status|%24status)\/[^\/]+\/?$/i.test(String(requestedPath))
 ) {
     return;
 }&#xd;
@@ -2145,6 +2311,20 @@ if (
     return;
 }
 
+//postprocessor response for GET /metadata - pass through exactly what the Java service returned
+if (requestedPath == &quot;/metadata&quot; || requestedPath == &quot;/metadata/&quot;) {
+
+    var mdSc = String(channelMap.get(&quot;metadataStatusCode&quot;) || &quot;200&quot;);
+    var mdCt = String(channelMap.get(&quot;metadataContentType&quot;) || &quot;application/xml&quot;);
+
+    responseMap.put(&quot;status&quot;, mdSc);
+    responseMap.put(&quot;responseStatusCode&quot;, mdSc);
+    responseMap.put(&quot;responseContentType&quot;, mdCt);
+    responseMap.put(&quot;finalResponse&quot;, String(channelMap.get(&quot;metadataResponse&quot;)));
+
+    return;
+}
+
 
 if (requestedPath == &quot;/tenants&quot; || requestedPath == &quot;/tenants/&quot;) {
 
@@ -2156,6 +2336,21 @@ if (requestedPath == &quot;/tenants&quot; || requestedPath == &quot;/tenants/&qu
 
     return;
 }
+
+//one pass-through block for operation-outcome, nyec-submission-failed and bundle status
+var isJavaGet = requestedPath == &quot;/Bundles/status/operation-outcome&quot; || requestedPath == &quot;/Bundles/status/operation-outcome/&quot;
+    || requestedPath == &quot;/Bundles/status/nyec-submission-failed&quot; || requestedPath == &quot;/Bundles/status/nyec-submission-failed/&quot;
+    || /^\/Bundle\/(?:status|\$status|%24status)\/[^\/]+\/?$/i.test(String(requestedPath));
+
+if (isJavaGet) {
+    var jSc = String(channelMap.get(&quot;javaStatusCode&quot;) || &quot;200&quot;);
+    responseMap.put(&quot;status&quot;, jSc);
+    responseMap.put(&quot;responseStatusCode&quot;, jSc);
+    responseMap.put(&quot;responseContentType&quot;, String(channelMap.get(&quot;javaContentType&quot;) || &quot;application/json&quot;));
+    responseMap.put(&quot;finalResponse&quot;, String(channelMap.get(&quot;javaResponse&quot;) || &quot;{}&quot;));
+    return;
+}
+
 
 logger.info(&quot;[CHANNEL: 1115 TECHBD &quot; + chlName + &quot;][INTERACTION ID: &quot; +interactionId +&quot; ]: Postprocessor STARTS.&quot;);
 
@@ -2826,7 +3021,7 @@ return;</undeployScript>
     <metadata>
       <enabled>true</enabled>
       <lastModified>
-        <time>1791371044581</time>
+        <time>1792053612047</time>
         <timezone>Asia/Calcutta</timezone>
       </lastModified>
       <pruningSettings>
@@ -2836,5 +3031,21 @@ return;</undeployScript>
       </pruningSettings>
       <userId>10</userId>
     </metadata>
+    <channelTags>
+      <channelTag>
+        <id>0f69a398-a288-4d1f-a02c-55552d8b19e3</id>
+        <name>0_8_47</name>
+        <channelIds>
+          <string>3ab2e65e-b5fd-448d-b879-e42bc1a00203</string>
+          <string>694e29f3-7820-4ce7-85ba-aa90ce8296c9</string>
+        </channelIds>
+        <backgroundColor>
+          <red>255</red>
+          <green>0</green>
+          <blue>0</blue>
+          <alpha>255</alpha>
+        </backgroundColor>
+      </channelTag>
+    </channelTags>
   </exportData>
 </channel>
