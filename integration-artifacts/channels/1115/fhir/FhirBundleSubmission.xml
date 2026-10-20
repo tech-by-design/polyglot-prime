@@ -2,14 +2,18 @@
   <id>3ab2e65e-b5fd-448d-b879-e42bc1a00203</id>
   <nextMetaDataId>5</nextMetaDataId>
   <name>FhirBundleSubmission</name>
-  <description>Version 0.8.48
-feat(datalake): switch between API key and mTLS with DATALAKE_MTLS_ENABLED flag</description>
-  <revision>4</revision>
+  <description>
+Version 0.8.49
+fixed response from mlts enabled datalake api</description>
+  <revision>8</revision>
   <sourceConnector version="26.6.0">
     <metaDataId>0</metaDataId>
     <name>sourceConnector</name>
     <properties class="com.mirth.connect.connectors.http.HttpReceiverProperties" version="26.6.0">
       <pluginProperties>
+        <com.mirth.connect.plugins.httpauth.NoneHttpAuthProperties version="26.6.0">
+  <authType>NONE</authType>
+        </com.mirth.connect.plugins.httpauth.NoneHttpAuthProperties>
         <com.mirth.connect.plugins.ssl.SSLSettingsProperties version="26.6.0">
   <sslEnabled>false</sslEnabled>
           <mutualTlsEnabled>true</mutualTlsEnabled>
@@ -40,9 +44,6 @@ feat(datalake): switch between API key and mTLS with DATALAKE_MTLS_ENABLED flag<
           <pinnedLeafPins/>
           <subjectSanFilterPatterns/>
         </com.mirth.connect.plugins.ssl.SSLSettingsProperties>
-        <com.mirth.connect.plugins.httpauth.NoneHttpAuthProperties version="26.6.0">
-  <authType>NONE</authType>
-        </com.mirth.connect.plugins.httpauth.NoneHttpAuthProperties>
       </pluginProperties>
       <listenerConnectorProperties version="26.6.0">
         <host>0.0.0.0</host>
@@ -1274,7 +1275,11 @@ try {
         httpParams.put(&quot;captureHeaders&quot;, false);
         httpParams.put(&quot;followRedirects&quot;, true);
 
-        response = SSLHelper.httpsPost(finalUrl, payload, headers, sslParams, httpParams);
+        var mtlsResponse = SSLHelper.httpsPost(finalUrl, payload, headers, sslParams, httpParams);
+        statusCode   = parseInt(String(mtlsResponse.get(&quot;status&quot;)), 10);
+        statusText   = String(mtlsResponse.get(&quot;reason&quot;));
+        var mtlsBody = mtlsResponse.get(&quot;body&quot;);
+        responseBody = (mtlsBody != null) ? String(mtlsBody) : &quot;&quot;;
 
     } else {
         // ---------------- API key only (lower env) ----------------
@@ -1286,15 +1291,15 @@ try {
         post.setEntity(new StringEntity(payload, &quot;UTF-8&quot;));
 
         response = client.execute(post);
+        var statusLine = response.getStatusLine();
+        statusCode = statusLine.getStatusCode();
+        statusText = statusLine.getReasonPhrase();
+
+        if (response.getEntity() != null) {
+            responseBody = EntityUtils.toString(response.getEntity(), &quot;UTF-8&quot;);
+        }
     }
 
-    var statusLine = response.getStatusLine();
-    statusCode = statusLine.getStatusCode();
-    statusText = statusLine.getReasonPhrase();
-
-    if (response.getEntity() != null) {
-        responseBody = EntityUtils.toString(response.getEntity(), &quot;UTF-8&quot;);
-    }
 
     logger.info(&quot;DataLake Status Code: &quot; + statusCode + &quot; DataLake Status Text: &quot; + statusText + &quot; DataLake Response Body: &quot; + responseBody);
 
@@ -3054,7 +3059,7 @@ return;</undeployScript>
     <metadata>
       <enabled>true</enabled>
       <lastModified>
-        <time>1792477626014</time>
+        <time>1792502873968</time>
         <timezone>Asia/Calcutta</timezone>
       </lastModified>
       <pruningSettings>
@@ -3066,8 +3071,8 @@ return;</undeployScript>
     </metadata>
     <channelTags>
       <channelTag>
-        <id>93e03cb0-1b54-4628-9062-6dff6dc67467</id>
-        <name>0_8_48</name>
+        <id>7ea5540d-baf7-4802-b4b8-4772e0bbed41</id>
+        <name>0_8_49</name>
         <channelIds>
           <string>3ab2e65e-b5fd-448d-b879-e42bc1a00203</string>
         </channelIds>
