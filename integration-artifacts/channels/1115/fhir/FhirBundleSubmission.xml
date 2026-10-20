@@ -2,18 +2,9 @@
   <id>3ab2e65e-b5fd-448d-b879-e42bc1a00203</id>
   <nextMetaDataId>5</nextMetaDataId>
   <name>FhirBundleSubmission</name>
-  <description>Version 0.8.47
-
-    GET API Integration: Integrated support for four GET APIs through the existing Mirth Connect channels, including FhirBundleSubmission:
-
-        GET /metadata
-
-        GET /Bundles/status/nyec-submission-failed
-
-        GET /Bundles/status/operation-outcome
-
-        GET /Bundle/$status/{bundleSessionId}</description>
-  <revision>10</revision>
+  <description>Version 0.8.48
+feat(datalake): switch between API key and mTLS with DATALAKE_MTLS_ENABLED flag</description>
+  <revision>4</revision>
   <sourceConnector version="26.6.0">
     <metaDataId>0</metaDataId>
     <name>sourceConnector</name>
@@ -299,6 +290,17 @@ try {
 } catch (e) {
     logger.error(&quot; Error processing DataLake API Key secret: &quot; + e.message);
 }
+
+
+try {
+    var dataLakeMtlsEnabled = LookupHelper.get(&quot;Config&quot;, &quot;DATALAKE_MTLS_ENABLED&quot;);
+
+    channelMap.put(&quot;DATALAKE_MTLS_ENABLED&quot;, dataLakeMtlsEnabled);
+
+} catch (e) {
+    logger.error(&quot; Error processing DataLake Mtls Enabled or not: &quot; + e.message);
+}
+
 
 
 /********************************************
@@ -1159,8 +1161,7 @@ function resolveProcessingAgent(tenantId) {
     var value = String(globalMap.get(&quot;ORG_TECHBD_PROCESSING_AGENT_VALUE&quot;));
     tenantId = String(tenantId);
 
-    logger.info(&quot;Feature Flag: &quot; + featureEnabled+&quot;Tenant IDs Config: &quot; + tenantIds+&quot;Configured Value: &quot; + value+&quot;Incoming TenantId: [&quot; + tenantId + &quot;]&quot;);
-   
+    logger.info(&quot;Feature Flag: &quot; + featureEnabled + &quot; Tenant IDs Config: &quot; + tenantIds + &quot; Configured Value: &quot; + value + &quot; Incoming TenantId: [&quot; + tenantId + &quot;]&quot;);
 
     if (!tenantId || featureEnabled !== &quot;true&quot;) {
         logger.info(&quot;Feature disabled or tenantId missing&quot;);
@@ -1170,23 +1171,18 @@ function resolveProcessingAgent(tenantId) {
     var incomingTenant = tenantId.trim().toLowerCase();
     var tenantList = tenantIds.split(&quot;,&quot;);
 
-
     for (var i = 0; i &lt; tenantList.length; i++) {
-
         var configTenant = String(tenantList[i]).trim().toLowerCase();
-
         if (configTenant === incomingTenant) {
             logger.info(&quot;Tenant matched. Returning value: &quot; + value);
             return value;
         }
     }
-
     return tenantId;
 }
 
-
 // ------------------------------------------------------------
-// Apache HttpClient Imports
+// Imports
 // ------------------------------------------------------------
 var DefaultHttpClient = Packages.org.apache.http.impl.client.DefaultHttpClient;
 var HttpPost = Packages.org.apache.http.client.methods.HttpPost;
@@ -1194,52 +1190,41 @@ var StringEntity = Packages.org.apache.http.entity.StringEntity;
 var EntityUtils = Packages.org.apache.http.util.EntityUtils;
 
 // ------------------------------------------------------------
+// mTLS switch (true = mTLS / higher env, false = API key / lower env)
+// Set in Configuration Map / globalMap: DATALAKE_MTLS_ENABLED
+// ------------------------------------------------------------
+var mtlsEnabled = String(channelMap.get(&quot;DATALAKE_MTLS_ENABLED&quot;) || &quot;false&quot;).trim().toLowerCase() === &quot;true&quot;;
+logger.info(&quot;DataLake mTLS enabled: &quot; + mtlsEnabled);
+
+// ------------------------------------------------------------
 // Get Required Values
 // ------------------------------------------------------------
 var datalakeApiUrl = channelMap.get(&quot;DATALAKE_API_URL&quot;);
 var tenantId = channelMap.get(&apos;tenantId&apos;);
-var apiKey = channelMap.get(&quot;DATA_LAKE_API_KEY&quot;); 
+var apiKey = channelMap.get(&quot;DATA_LAKE_API_KEY&quot;);
 
 if (!datalakeApiUrl) {
     throw &quot;DATALAKE_API_URL is missing&quot;;
 }
-
 if (!tenantId) {
     throw &quot;Tenant ID is missing&quot;;
 }
-
-if (!apiKey) {
+// API key is mandatory only when mTLS is disabled
+if (!mtlsEnabled &amp;&amp; !apiKey) {
     throw &quot;DATA_LAKE_API_KEY is missing&quot;;
 }
 
 // ------------------------------------------------------------
 // Build Final URL
 // ------------------------------------------------------------
-
 var processingAgent = resolveProcessingAgent(tenantId);
 var finalUrl = datalakeApiUrl + &quot;?processingAgent=&quot; + processingAgent;
-//var finalUrl = datalakeApiUrl + &quot;?processingAgent=&quot; + tenantId;
 logger.info(&quot;Calling DataLake URL: &quot; + finalUrl);
 
 // ------------------------------------------------------------
-// Create HTTP Client
+// Payload
 // ------------------------------------------------------------
-var client = new DefaultHttpClient();
-var post = new HttpPost(finalUrl);
-
-// ------------------------------------------------------------
-// Set Headers
-// ------------------------------------------------------------
-post.setHeader(&quot;X-TechBD-Tenant-ID&quot;, tenantId);
-post.setHeader(&quot;Content-Type&quot;, &quot;application/fhir+json&quot;);
-post.setHeader(&quot;x-api-key&quot;, apiKey);
-
-// ------------------------------------------------------------
-// Set Request Body
-// ------------------------------------------------------------
-var payloadMsg = channelMap.get(&apos;updatedFhirJson&apos;);
-var payload = payloadMsg; 
-post.setEntity(new StringEntity(payload, &quot;UTF-8&quot;));
+var payload = channelMap.get(&apos;updatedFhirJson&apos;);
 
 // ------------------------------------------------------------
 // Execute Request
@@ -1247,11 +1232,61 @@ post.setEntity(new StringEntity(payload, &quot;UTF-8&quot;));
 var statusCode = 500;
 var statusText = &quot;&quot;;
 var responseBody = &quot;&quot;;
-dataLakeErrorMessage = &quot;&quot;;
+var dataLakeErrorMessage = &quot;&quot;;
+var client = null;
 
 try {
 
-    var response = client.execute(post);
+    var response;
+
+    if (mtlsEnabled) {
+        // ---------------- mTLS (higher env) ----------------
+        // mTLS settings (SSL Manager keystore / truststore UIDs and client cert alias)
+		var mtlsKeystoreUid = &quot;nyec-datalake-mtls.JKS&quot;;
+		var mtlsCertAlias = &quot;techbd-datalake (tech-by-design-intermediate-ca)&quot;;
+		var mtlsTruststoreUid = &quot;datalake-outbound-trust.JKS&quot;;
+
+
+        var headers = new java.util.HashMap();
+        headers.put(&quot;X-TechBD-Tenant-ID&quot;, String(tenantId));
+        headers.put(&quot;Content-Type&quot;, &quot;application/json&quot;);
+        if (apiKey) {
+            headers.put(&quot;x-api-key&quot;, String(apiKey)); // still sent if available
+        }
+
+        var sslParams = new java.util.HashMap();
+        sslParams.put(&quot;truststoreUid&quot;, mtlsTruststoreUid);
+        sslParams.put(&quot;validationMode&quot;, &quot;pkix&quot;);
+        sslParams.put(&quot;revocationMode&quot;, &quot;disabled&quot;);
+        sslParams.put(&quot;softFail&quot;, false);
+        sslParams.put(&quot;hostnameVerify&quot;, true);
+        sslParams.put(&quot;clientCertEnabled&quot;, true);
+        sslParams.put(&quot;keystoreUid&quot;, mtlsKeystoreUid);
+        sslParams.put(&quot;certAlias&quot;, mtlsCertAlias);
+        sslParams.put(&quot;tls13&quot;, true);
+        sslParams.put(&quot;tls12&quot;, true);
+        sslParams.put(&quot;tls11&quot;, false);
+
+        var httpParams = new java.util.HashMap();
+        httpParams.put(&quot;connectTimeoutMs&quot;, 15000);
+        httpParams.put(&quot;readTimeoutMs&quot;, 30000);
+        httpParams.put(&quot;throwOnHttpError&quot;, false);
+        httpParams.put(&quot;captureHeaders&quot;, false);
+        httpParams.put(&quot;followRedirects&quot;, true);
+
+        response = SSLHelper.httpsPost(finalUrl, payload, headers, sslParams, httpParams);
+
+    } else {
+        // ---------------- API key only (lower env) ----------------
+        client = new DefaultHttpClient();
+        var post = new HttpPost(finalUrl);
+        post.setHeader(&quot;X-TechBD-Tenant-ID&quot;, String(tenantId));
+        post.setHeader(&quot;Content-Type&quot;, &quot;application/fhir+json&quot;);
+        post.setHeader(&quot;x-api-key&quot;, String(apiKey));
+        post.setEntity(new StringEntity(payload, &quot;UTF-8&quot;));
+
+        response = client.execute(post);
+    }
 
     var statusLine = response.getStatusLine();
     statusCode = statusLine.getStatusCode();
@@ -1261,22 +1296,20 @@ try {
         responseBody = EntityUtils.toString(response.getEntity(), &quot;UTF-8&quot;);
     }
 
-    logger.info(&quot;DataLake Status Code: &quot; + statusCode+&quot;DataLake Status Text: &quot; + statusText+&quot;DataLake Response Body: &quot; + responseBody);
+    logger.info(&quot;DataLake Status Code: &quot; + statusCode + &quot; DataLake Status Text: &quot; + statusText + &quot; DataLake Response Body: &quot; + responseBody);
 
 } catch (e) {
 
     logger.error(&quot;Error calling DataLake API: &quot; + e);
     var bundleAsyncInteractionId = channelMap.get(&quot;interactionId&quot;);
-    var dataLakeApiBaseURL = datalakeApiUrl;
 
     logger.error(
         &quot;NYEC_API_CALL_FAILED &quot; +
         &quot;REGISTER State Fail&quot; +
         &quot; : Register State Failure - Exception while sending FHIR payload to datalake URL &quot; +
-        dataLakeApiBaseURL +
-        &quot; for interaction id &quot; +
-        bundleAsyncInteractionId +
-        &quot; error: &quot; + e
+        datalakeApiUrl +
+        &quot; for interaction id &quot; + bundleAsyncInteractionId +
+        &quot; (mtlsEnabled=&quot; + mtlsEnabled + &quot;) error: &quot; + e
     );
 
     statusCode = 500;
@@ -1289,7 +1322,6 @@ try {
     } else {
         errMsg = e.toString();
     }
-
     logger.info(&quot;Error Message: &quot; + errMsg);
 
     // Detect UnknownHostException
@@ -1299,12 +1331,13 @@ try {
     }
 
     statusText = &quot;Exception&quot;;
+    responseBody = e.toString();   // keep original body
+    dataLakeErrorMessage = errMsg; // clean message
 
-    // keep original body
-    responseBody = e.toString();
-
-    // store clean message
-    dataLakeErrorMessage = errMsg;
+} finally {
+    if (client != null) {
+        try { client.getConnectionManager().shutdown(); } catch (ignore) {}
+    }
 }
 
 // ------------------------------------------------------------
@@ -3021,7 +3054,7 @@ return;</undeployScript>
     <metadata>
       <enabled>true</enabled>
       <lastModified>
-        <time>1792053612047</time>
+        <time>1792477626014</time>
         <timezone>Asia/Calcutta</timezone>
       </lastModified>
       <pruningSettings>
@@ -3029,15 +3062,14 @@ return;</undeployScript>
         <archiveEnabled>true</archiveEnabled>
         <pruneErroredMessages>false</pruneErroredMessages>
       </pruningSettings>
-      <userId>10</userId>
+      <userId>6</userId>
     </metadata>
     <channelTags>
       <channelTag>
-        <id>0f69a398-a288-4d1f-a02c-55552d8b19e3</id>
-        <name>0_8_47</name>
+        <id>93e03cb0-1b54-4628-9062-6dff6dc67467</id>
+        <name>0_8_48</name>
         <channelIds>
           <string>3ab2e65e-b5fd-448d-b879-e42bc1a00203</string>
-          <string>694e29f3-7820-4ce7-85ba-aa90ce8296c9</string>
         </channelIds>
         <backgroundColor>
           <red>255</red>
