@@ -17,3 +17,44 @@ SET search_path TO techbd_udi_assurance;
 \ir ./004-idempotent-migrate-unit-test.psql
 
 SELECT * FROM techbd_udi_assurance.runtests('info_schema_lifecycle'::name, 'test_all_migration_objects');
+
+SELECT * FROM techbd_udi_assurance.runtests('techbd_udi_assurance'::name, 'test_register_interaction_requests');
+
+-- Run test_register_interaction_requests and store the result in pgtap_test_result
+DO $test$
+DECLARE
+    tap_op        TEXT    := '';
+    tap_op_failed TEXT    := '';
+    test_result   BOOLEAN := TRUE;
+    line          TEXT;
+BEGIN
+    test_result = TRUE;
+    
+    FOR line IN
+        SELECT * FROM techbd_udi_assurance.runtests('techbd_udi_assurance'::name, 'test_register_interaction_requests')
+    LOOP
+        tap_op := tap_op || line || E'\n';
+
+        IF trim(line) LIKE 'not ok%' THEN
+            tap_op_failed := tap_op_failed || line || E'\n';
+            test_result := FALSE;
+        END IF;
+    END LOOP;
+
+    -- Store the result
+    INSERT INTO techbd_udi_assurance.pgtap_test_result
+        (sat_pgtap_test_result_id, migration_version, test_name, tap_output,
+         success, created_by, provenance, techbd_version_number, notok_results)
+    VALUES
+        (gen_random_uuid()::text, '2024_06_28_13_16', 'test_register_interaction_requests',
+         tap_op, test_result, 'ADMIN', 'pgtap', '0.1028.0', tap_op_failed);
+
+    IF NOT test_result THEN
+        RAISE NOTICE 'ERROR: Test test_register_interaction_requests failed: %', tap_op_failed;
+    END IF;
+EXCEPTION
+    WHEN others THEN
+        RAISE EXCEPTION 'Error occurred while executing runtests: %', SQLERRM;
+END
+
+$test$;
