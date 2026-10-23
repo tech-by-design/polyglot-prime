@@ -29,6 +29,7 @@ import org.techbd.udi.auto.jooq.ingress.tables.GetFhirScnSubmissionDetails;
 import org.techbd.udi.auto.jooq.ingress.tables.GetMissingDatalakeSubmissionDetails;
 import org.techbd.udi.auto.jooq.ingress.tables.GetMissingTechbydesigndispositionDetails;
 
+import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
 public class JooqRowsSupplierForSP {
@@ -472,7 +473,28 @@ public class JooqRowsSupplierForSP {
                         startDate, endDate);
                 return DSL.table(functionCall);
             }            
- 
+            case "get_interaction_http_request_forward_failure" -> {
+                objectMapper = new ObjectMapper();
+                Map<String, String> paramMap = objectMapper.readValue(
+                        paramsJson, new TypeReference<Map<String, String>>() {});
+
+                String startDateValue = paramMap.get("p_start_date");
+                String endDateValue = paramMap.get("p_end_date");
+                if (startDateValue == null || endDateValue == null) {
+                    throw new IllegalArgumentException("Start date and end date are required");
+                }
+
+                LocalDate startDate = LocalDate.parse(startDateValue, formatter);
+                LocalDate endDate = LocalDate.parse(endDateValue, formatter);
+                if (startDate.isAfter(endDate)) {
+                    throw new IllegalArgumentException("Start date must not be after end date");
+                }
+
+                String functionCall = String.format(
+                        "techbd_udi_ingress.get_interaction_http_request_forward_failure(DATE '%s', DATE '%s')",
+                        startDate, endDate);
+                return DSL.table(functionCall);
+            }
             case "get_fhir_session_diagnostics_details" -> {
                 objectMapper = new ObjectMapper();
                 Map<String, String> paramMap = objectMapper.readValue(paramsJson, Map.class);

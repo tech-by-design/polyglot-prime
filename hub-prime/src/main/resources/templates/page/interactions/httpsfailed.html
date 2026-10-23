@@ -3,16 +3,50 @@
     layout:decorate="~{layout/prime}">
 
 <head>
+    <link rel="stylesheet" href="//code.jquery.com/ui/1.13.2/themes/base/jquery-ui.css">
+
     <style>
         .grid-description {
             font-size: 14px;
-            margin: 5px 0px 8px 15px;
+            margin: 8px 0px 10px 15px;
         }
 
         .grid-title {
             font-size: 18px;
             font-weight: bold;
             margin: 12px 0px 11px 15px;
+        }
+
+        #date-picker-container {
+            margin-top: 20px;
+            display: flex;
+            gap: 10px;
+            align-items: center;
+            justify-content: flex-start;
+        }
+
+        .date-picker-label {
+            width: 100px;
+            line-height: 35px;
+            text-align: right;
+        }
+
+        #searchButton,
+        #clearButton {
+            margin-left: 10px;
+            background-color: #e7e7e7;
+            border: none;
+            border-radius: 12px;
+            color: black;
+            padding: 15px 24px;
+            text-align: center;
+            text-decoration: none;
+            display: inline-block;
+            font-size: 16px;
+        }
+
+        #clearButton {
+            display: none;
         }
     </style> 
     <!-- Include Font Awesome in your HTML -->
@@ -22,20 +56,33 @@
     <!-- <script src="https://unpkg.com/@alenaksu/json-viewer@2.0.0/dist/json-viewer.bundle.js"></script> -->
 
     <th:block th:insert="./fragments/common-head-aggrid :: common-head-aggrid"></th:block>
+    <script src="https://code.jquery.com/jquery-3.6.0.js"></script>
+    <script src="https://code.jquery.com/ui/1.13.2/jquery-ui.js"></script>
     <script type="module">
         import { AGGridAide, AGGridAideBuilder } from '@presentation/shell/aggrid-aide.js';
         import ModalAide from '@presentation/shell/modal-aide.js';
+        import { Helpers } from '@presentation/shell/helpers.js';
 
         const schemaName = 'techbd_udi_ingress';
-        const viewName = 'interaction_http_request_forward_failure';
+        const storedProcName = 'get_interaction_http_request_forward_failure';
         const popViewName = 'interaction_http_fhir_request';
- 
+
+        const formatDate = (date) => {
+            const month = String(date.getMonth() + 1).padStart(2, '0');
+            const day = String(date.getDate()).padStart(2, '0');
+            const year = date.getFullYear();
+            return `${month}-${day}-${year}`;
+        };
+
         document.addEventListener('DOMContentLoaded', function () {
+            const helpers = new Helpers();
+            const modalAide = new ModalAide();
+            const today = new Date();
+            const oneWeekAgo = new Date(today);
+            oneWeekAgo.setDate(today.getDate() - 7);
 
             function downloadCellRenderer(params) {
 
-                const contentType = params.data.content_type;
-                const payload = params.data.payload;
                 const patient_mrn = params.data.patient_mrn;
                 const nature = params.data.nature;
                 const sat_interaction_fhir_request_id = params.data.sat_interaction_fhir_request_id; // Assuming you need interaction_id
@@ -52,9 +99,61 @@
                 return downloadLink;
             }
 
-            const modalAide = new ModalAide();
-            const agGridInstance = new AGGridAideBuilder()
-                .withColumnDefs([
+            $("#start-date, #end-date").datepicker({
+                dateFormat: "mm-dd-yy",
+                maxDate: today,
+                onSelect: function () {
+                    const startDate = $('#start-date').datepicker('getDate');
+                    const endDate = $('#end-date').datepicker('getDate');
+                    $('#clearButton').toggle(
+                        !startDate || !endDate ||
+                        formatDate(startDate) !== formatDate(oneWeekAgo) ||
+                        formatDate(endDate) !== formatDate(today)
+                    );
+                }
+            });
+
+            $("#start-date").datepicker("setDate", oneWeekAgo);
+            $("#end-date").datepicker("setDate", today);
+            updateGridWithDates(oneWeekAgo, today);
+
+            $('#searchButton').click(function () {
+                const startDate = $('#start-date').datepicker('getDate');
+                const endDate = $('#end-date').datepicker('getDate');
+                if (!startDate || !endDate || startDate > endDate) {
+                    alert('Please select a valid start date and end date.');
+                    return;
+                }
+
+                $('#serverDataGrid').empty();
+                updateGridWithDates(startDate, endDate);
+            });
+
+            $('#clearButton').click(function () {
+                $('#start-date').datepicker('setDate', oneWeekAgo);
+                $('#end-date').datepicker('setDate', today);
+                $('#clearButton').hide();
+                $('#serverDataGrid').empty();
+                updateGridWithDates(oneWeekAgo, today);
+            });
+
+            function updateGridWithDates(startDate, endDate) {
+                const formattedStartDate = formatDate(startDate);
+                const formattedEndDate = formatDate(endDate);
+                const storedProcParams = {
+                    "p_start_date": formattedStartDate,
+                    "p_end_date": formattedEndDate
+                };
+
+                helpers.injectDateRangeText(
+                    'date-range',
+                    `This widget provides an overview of failed HTTP requests and associated interactions for the selected date range (<b>${formattedStartDate}</b> to <b>${formattedEndDate}</b>). It includes Request Time, Interaction ID, Tenant ID, Bundle ID, Bundle Source, Patient MRN, URI, Nature, From State, To State, Error Message, Validation Issues, FHIR Resources, IP Address, and User Agent. Click an Interaction ID to view detailed interaction information, or use the filters to analyze failures.`
+                );
+
+                const paramsJson = encodeURIComponent(JSON.stringify(storedProcParams));
+                const url = `/api/ux/tabular/jooq/sp/${schemaName}/${storedProcName}.json?storedProcparams=${paramsJson}`;
+                const agGridInstance = new AGGridAideBuilder()
+                    .withColumnDefs([
                     {
                         headerName: "Request Time",
                         field: "interaction_created_at",
@@ -103,7 +202,7 @@
                     } 
                 ])
                 .withServerSideDatasource(
-                    window.shell.serverSideUrl(`/api/ux/tabular/jooq/${schemaName}/${viewName}.json`),
+                    window.shell.serverSideUrl(url),
                     (data, valueCols) => {
                         return valueCols.map(col => ({
                             headerName: col.displayName,
@@ -115,19 +214,24 @@
                 .withGridDivStyles({ height: "750px", width: "100%" })
                 .build();
 
-            agGridInstance.init('serverDataGrid');
+                agGridInstance.init('serverDataGrid');
+            }
         });
     </script>
 </head>
 
 <body>
     <div layout:fragment="content">
-        <div class="grid-description">
-            This widget provides an overview of the FHIR interactions that have failed or remain unprocessed. It features
-            columns such as Request Time, Interaction ID, Tenant ID, URI, Nature, From State, To State, Outbound HTTP
-            Message, Error Message, Validation Issues, FHIR Resources, IP Address, and User Agent. Users can click on
-            the Interaction ID to view detailed error and interaction information in a popup. The widget also supports
-            filtering and sorting to analyze interactions based on specific criteria and error details.
+        <div class="grid-description" id="date-range">
+            <!-- The selected date range description is injected here. -->
+        </div>
+        <div id="date-picker-container">
+            <label for="start-date" class="date-picker-label">Start Date:</label>
+            <input type="text" id="start-date" name="start-date" readonly>
+            <label for="end-date" class="date-picker-label">End Date:</label>
+            <input type="text" id="end-date" name="end-date" readonly>
+            <button id="searchButton" type="button">Search</button>
+            <button id="clearButton" type="button">Clear</button>
         </div>
         <div id="serverDataGrid" class="ag-theme-alpine"></div>
     </div>

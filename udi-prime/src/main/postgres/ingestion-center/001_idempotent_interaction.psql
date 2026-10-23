@@ -1882,66 +1882,106 @@ END;
 END;
 $function$;
 /*******************************************************************************************
-  This view provides a consolidated view of failed HTTP requests and associated interactions.
+  This FUNCTION provides a consolidated view of failed HTTP requests and associated interactions.
 ******************************************************************************************/
 DROP VIEW IF EXISTS techbd_udi_ingress.interaction_http_request_forward_failure;
-CREATE OR REPLACE VIEW techbd_udi_ingress.interaction_http_request_forward_failure WITH (security_invoker = true) AS
-SELECT DISTINCT ON (hub_interaction_id)
-    sat_interaction_fhir_request_id,
-    hub_interaction_id AS interaction_id,
-    tenant_name AS tenant_id,
-    uri,
-    bundle_id,
-    nature,
-    created_at AS interaction_created_at,
-    created_by AS interaction_created_by,
-    provenance AS interaction_provenance,
-    client_ip_address,
-    user_agent,
-    from_state,
-    to_state,
-    outbound_http_message,
-    error_message AS error,
-    issues_count,
-    resource_type_set AS resource_types,
-    patient_id,
-    patient_mrn,
-    concat_ws('-', tenant_name, organization_id, patient_mrn) AS source_mrn,
-    CASE 
-        WHEN source_type IN ('CSV', 'CCDA', 'HL7V2') THEN source_type
-        WHEN lower(source_type) = 'fhir' THEN 'FHIR'
+
+DROP FUNCTION IF EXISTS techbd_udi_ingress.get_interaction_http_request_forward_failure(DATE, DATE);
+
+CREATE OR REPLACE FUNCTION techbd_udi_ingress.get_interaction_http_request_forward_failure(
+    p_start_date DATE,
+    p_end_date   DATE
+)
+RETURNS TABLE (
+    sat_interaction_fhir_request_id TEXT,
+    interaction_id                 TEXT,
+    tenant_id                      TEXT,
+    uri                            TEXT,
+    bundle_id                      TEXT,
+    nature                         TEXT,
+    interaction_created_at         TIMESTAMPTZ,
+    interaction_created_by         TEXT,
+    interaction_provenance         TEXT,
+    client_ip_address              TEXT,
+    user_agent                     TEXT,
+    from_state                     TEXT,
+    to_state                       TEXT,
+    outbound_http_message          TEXT,
+    error                          TEXT,
+    issues_count                   INTEGER,
+    resource_types                 TEXT,
+    patient_id                     TEXT,
+    patient_mrn                    TEXT,
+    source_mrn                     TEXT,
+    source_type                    TEXT,
+    source_hub_interaction_id      TEXT,
+    ig_version                     TEXT,
+    techbd_version_number          TEXT
+)
+LANGUAGE sql
+STABLE
+AS $function$
+SELECT DISTINCT ON (r1.hub_interaction_id)
+    r1.sat_interaction_fhir_request_id,
+    r1.hub_interaction_id AS interaction_id,
+    r1.tenant_name AS tenant_id,
+    r1.uri,
+    r1.bundle_id,
+    r1.nature,
+    r1.created_at AS interaction_created_at,
+    r1.created_by AS interaction_created_by,
+    r1.provenance AS interaction_provenance,
+    r1.client_ip_address,
+    r1.user_agent,
+    r1.from_state,
+    r1.to_state,
+    r1.outbound_http_message,
+    r1.error_message AS error,
+    r1.issues_count,
+    r1.resource_type_set AS resource_types,
+    r1.patient_id,
+    r1.patient_mrn,
+    concat_ws('-', r1.tenant_name, r1.organization_id, r1.patient_mrn) AS source_mrn,
+    CASE
+        WHEN r1.source_type IN ('CSV', 'CCDA', 'HL7V2') THEN r1.source_type
+        WHEN lower(r1.source_type) = 'fhir' THEN 'FHIR'
         ELSE 'FHIR'
     END AS source_type,
-    source_hub_interaction_id,
-    ig_version,
-    techbd_version_number
-FROM techbd_udi_ingress.sat_interaction_fhir_request as r1
-WHERE 
-  to_state = 'FAIL'
-  AND (
-        -- ✅ Failed after resubmission
+    r1.source_hub_interaction_id,
+    r1.ig_version,
+    r1.techbd_version_number
+FROM techbd_udi_ingress.sat_interaction_fhir_request AS r1
+WHERE
+    r1.to_state = 'FAIL'
+    AND r1.created_at >= p_start_date::timestamp
+    AND r1.created_at < (p_end_date::timestamp + interval '1 day')
+    AND (
+        -- Failed after resubmission
         (
-          nature = 'Forwarded HTTP Response Replay Error'
-          AND EXISTS (
-              SELECT 1 
-              FROM techbd_udi_ingress.sat_interaction_fhir_request r2
-              WHERE r2.hub_interaction_id = r1.hub_interaction_id
-                AND r2.nature = 'Forwarded HTTP Response Error'
-          )
+            r1.nature = 'Forwarded HTTP Response Replay Error'
+            AND EXISTS (
+                SELECT 1
+                FROM techbd_udi_ingress.sat_interaction_fhir_request r2
+                WHERE r2.hub_interaction_id = r1.hub_interaction_id
+                  AND r2.nature = 'Forwarded HTTP Response Error'
+            )
         )
         OR
-        -- ✅ Failed without resubmission
+        -- Failed without resubmission
         (
-          nature = 'Forwarded HTTP Response Error'
-          AND NOT EXISTS (
-              SELECT 1 
-              FROM techbd_udi_ingress.sat_interaction_fhir_request r3
-              WHERE r3.hub_interaction_id = r1.hub_interaction_id
-                AND r3.nature = 'Forwarded HTTP Request Replay'
-          )
+            r1.nature = 'Forwarded HTTP Response Error'
+            AND NOT EXISTS (
+                SELECT 1
+                FROM techbd_udi_ingress.sat_interaction_fhir_request r3
+                WHERE r3.hub_interaction_id = r1.hub_interaction_id
+                  AND r3.nature = 'Forwarded HTTP Request Replay'
+            )
         )
-     )
-ORDER BY hub_interaction_id, created_at DESC;
+    )
+ORDER BY
+    r1.hub_interaction_id,
+    r1.created_at DESC;
+$function$;
 
 
 /*******************************************************************************************************************************
