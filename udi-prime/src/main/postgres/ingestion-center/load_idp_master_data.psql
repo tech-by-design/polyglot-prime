@@ -202,12 +202,13 @@ ON CONFLICT (scr_code) DO NOTHING;
 /*Insert master data into screening_extracts tables*/
 -- 1. screening_error_types 
 INSERT INTO screening_extracts.screening_error_types 
-    (screening_error_type_name, is_active, created_on_utc) VALUES
-    ('INVALID_FILE', '1', NOW()),
-    ('INVALID_EXTENSION', '1', NOW()),
-    ('INVALID_HEADER', '1', NOW()), 
-    ('INVALID_RECORD', '1', NOW()),
-    ('DUPLICATE_RECORD', '1', NOW())
+    (screening_error_type_name, screening_error_type_description, is_active, created_on_utc) VALUES
+    ('INVALID_FILE', NULL, '1', NOW()),
+    ('INVALID_EXTENSION', NULL, '1', NOW()),
+    ('INVALID_HEADER', NULL, '1', NOW()), 
+    ('INVALID_RECORD', NULL, '1', NOW()),
+    ('DUPLICATE_RECORD', NULL, '1', NOW()),
+    ('SFTP_ERROR', 'Error while uploading a file to the MCO SFTP server', '1', NOW())
     ON CONFLICT (screening_error_type_name) DO NOTHING;
 
 -- 2. Resource types 
