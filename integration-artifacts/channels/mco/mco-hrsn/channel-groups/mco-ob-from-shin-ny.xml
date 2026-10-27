@@ -13,24 +13,12 @@
       <nextMetaDataId>5</nextMetaDataId>
       <name>Deliver FHIR Bundles to MCOs</name>
       <description>v 0.1.0</description>
-      <revision>57</revision>
+      <revision>64</revision>
       <sourceConnector version="26.6.0">
         <metaDataId>0</metaDataId>
         <name>sourceConnector</name>
         <properties class="com.mirth.connect.connectors.http.HttpReceiverProperties" version="26.6.0">
           <pluginProperties>
-            <com.mirth.connect.plugins.httpauth.basic.BasicHttpAuthProperties version="26.6.0">
-  <authType>BASIC</authType>
-              <realm>My Realm</realm>
-              <credentials class="linked-hash-map">
-    <entry>
-      <string>mco_screening_extract_user</string>
-                  <string>adminmcomc3</string>
-                </entry>
-              </credentials>
-              <isUseCredentialsVariable>false</isUseCredentialsVariable>
-              <credentialsVariable/>
-            </com.mirth.connect.plugins.httpauth.basic.BasicHttpAuthProperties>
             <com.mirth.connect.plugins.ssl.SSLSettingsProperties version="26.6.0">
   <sslEnabled>false</sslEnabled>
               <mutualTlsEnabled>true</mutualTlsEnabled>
@@ -61,10 +49,22 @@
               <pinnedLeafPins/>
               <subjectSanFilterPatterns/>
             </com.mirth.connect.plugins.ssl.SSLSettingsProperties>
+            <com.mirth.connect.plugins.httpauth.basic.BasicHttpAuthProperties version="26.6.0">
+  <authType>BASIC</authType>
+              <realm>My Realm</realm>
+              <credentials class="linked-hash-map">
+    <entry>
+      <string>mco_screening_extract_user</string>
+                  <string>adminmcomc3</string>
+                </entry>
+              </credentials>
+              <isUseCredentialsVariable>false</isUseCredentialsVariable>
+              <credentialsVariable/>
+            </com.mirth.connect.plugins.httpauth.basic.BasicHttpAuthProperties>
           </pluginProperties>
           <listenerConnectorProperties version="26.6.0">
             <host>0.0.0.0</host>
-            <port>8002</port>
+            <port>9008</port>
           </listenerConnectorProperties>
           <sourceConnectorProperties version="26.6.0">
             <responseVariable>Auto-generate (Before processing)</responseVariable>
@@ -1391,7 +1391,7 @@ return;</undeployScript>
         <metadata>
           <enabled>true</enabled>
           <lastModified>
-            <time>1792057695227</time>
+            <time>1793087201245</time>
             <timezone>Asia/Calcutta</timezone>
           </lastModified>
           <pruningSettings>

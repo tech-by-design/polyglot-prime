@@ -293,8 +293,8 @@
       "type": "Channel Group",
       "channel": "mco-ob-from-shin-ny.xml",
       "version": "",
-      "editedby": "anoopvarma-2000-p",
-      "date": "2026-10-16"
+      "editedby": "abhiramisanthosh90",
+      "date": "2026-10-27"
     },
 
   {
@@ -328,9 +328,9 @@
     {
       "type": "MCO",
       "channel": "deliver-fhir-bundles-to-mcos.xml",
-      "version": "0.1.0",
+      "version": "0.1.1",
       "editedby": "abhiramisanthosh90",
-      "date": "2026-10-15"
+      "date": "2026-10-27"
     },
     {
       "type": "MCO",
