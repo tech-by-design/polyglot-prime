@@ -1,4 +1,5 @@
 -- Purpose: Back fill the newly added 'tenant_id' columns from the master table tenants
+-- NOT UPDATED IN PHI-QA OR PROD
 
 /* Step 1. UPDATE tenant_id colum with tenants.tenant_id */
 

@@ -1,6 +1,7 @@
 
 -- Purpose: Back fill the 'bundle_type' value in the `sat_interaction_fhir_request` table
 -- Now limitted to 10000 records. To continue updating, run this psql more time or use cron.
+-- NOT UPDATED IN PHI-QA OR PROD
 
 WITH payload_source AS (
     SELECT 

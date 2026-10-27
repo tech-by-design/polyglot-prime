@@ -1,3 +1,6 @@
+/* To Update Existing NULL Values with Defaults in 'uri' and 'nature' fields
+   and Add NOT NULL constraints to the 'uri' and 'nature' fields.
+*/
 DO $$
 DECLARE
     rows_updated integer;

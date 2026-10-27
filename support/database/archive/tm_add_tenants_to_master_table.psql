@@ -1,4 +1,6 @@
-/* Create master table (tenants) entries from already ingested data */
+/* Create master table (tenants) entries from already ingested data 
+ NOT UPDATED IN PHI-QA OR PROD
+*/
 INSERT INTO techbd_udi_ingress.tenants (
     tenant_id,
     tenant_name,

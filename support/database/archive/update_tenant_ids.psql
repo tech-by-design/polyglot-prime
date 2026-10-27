@@ -10,6 +10,7 @@
 -- sat_interaction_fhir_screening_organization 
 -- sat_interaction_fhir_screening_patient 
 -- sat_interaction_http_request 
+-- NOT UPDATED IN PHI-QA OR PROD
 
 UPDATE techbd_udi_ingress.sat_interaction_fhir_screening_info SET tenant_id = qe_name WHERE tenant_id IS NULL;
 UPDATE techbd_udi_ingress.sat_interaction_fhir_screening_organization SET tenant_id = qe_name WHERE tenant_id IS NULL;
