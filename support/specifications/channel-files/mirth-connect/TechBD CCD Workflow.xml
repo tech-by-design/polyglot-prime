@@ -2,8 +2,9 @@
   <id>8ac74b49-acb3-48f9-90fa-914cacdbe16f</id>
   <nextMetaDataId>12</nextMetaDataId>
   <name>TechBD CCD Workflow</name>
-  <description>Version: 0.4.52</description>
-  <revision>67</revision>
+  <description>Version: 0.4.54
+Grouper effectiveDateTime updates.</description>
+  <revision>5</revision>
   <sourceConnector version="4.5.0">
     <metaDataId>0</metaDataId>
     <name>sourceConnector</name>
@@ -1326,7 +1327,7 @@ function getCategoryCode(code) {
 }
 
 // Define Namespace Resolver
-function getObservationCategoryCodes(transformer, observations) {    
+function getObservationCategoryCodesForCategoryXML(transformer, observations) {    
     var xml = new XML(observations); // Parse the source message as XML    
     var ccda = new Namespace(&quot;urn:hl7-org:v3&quot;); // Define the CCDA namespace    
     default xml namespace = ccda; // Set default namespace so ccda tags can be used without prefix
@@ -1400,6 +1401,275 @@ function getObservationCategoryCodes(transformer, observations) {
 	// set context variable
 	transformer.setParameter(&apos;categoryXml&apos;, categoryXml);
 	return transformer;
+}
+
+/*
+ * getObservationCategoryCodes  (latest-observation aware)
+ *
+ * Builds the category JSON (categoryXml) and the latest grouper effectiveTime
+ * (latestEffectiveTime) that are passed to the XSLT transformer, using ONLY the
+ * observations the XSLT will actually emit: for every question code, the VALID
+ * observation with the MOST RECENT effectiveTime (ties: the later one in
+ * document order). This mirrors isValidObs / obsSortKey / isLatestObs in
+ * Observation_latest.xsl, so the channel and the XSLT always agree.
+ *
+ * Keep all functions below in the same Code Template library (or the same
+ * script) as getCategoryCode() and getCategoryDisplay(), which are unchanged.
+ */
+
+// Set to false to go back to &quot;every code that appears&quot;, without the validity filter.
+var REQUIRE_VALID_ANSWER = true;
+
+// Normalise a CCDA timestamp to a 14-digit sortable string (yyyyMMddHHmmss).
+// Only the leading digits are used, so a timezone offset (&quot;-0500&quot;) is ignored.
+// Missing or empty value =&gt; &apos;00000000000000&apos;.
+function ccdaTimeSortKey(raw) {
+    var s = String(raw === null || raw === undefined ? &apos;&apos; : raw).replace(/^\s+|\s+$/g, &apos;&apos;);
+    var m = /^[0-9]+/.exec(s);
+    var digits = m ? m[0].substring(0, 14) : &apos;&apos;;
+    return (digits + &apos;00000000000000&apos;).substring(0, 14);
+}
+
+// Same validity rules as isValidObs in the XSLT.
+function isValidAnswer(answer) {
+    var ccda = new Namespace(&quot;urn:hl7-org:v3&quot;);
+    default xml namespace = ccda;   // must be set inside every function that reads CCDA elements
+
+    var code = answer.code.@code.toString();
+    var codeSystemName = answer.code.@codeSystemName.toString();
+    var valueCode = answer.value.@code.toString();
+    var translationCode = answer.value.translation.@code.toString();
+
+    if (translationCode == &apos;X-SDOH-FLO-1570000066-Patient-unable-to-answer&apos; ||
+        translationCode == &apos;X-SDOH-FLO-1570000066-Patient-declined&apos;) {
+        return true;
+    }
+
+    if (valueCode != &apos;UNK&apos; &amp;&amp; valueCode.length &gt; 0 &amp;&amp;
+        code != &apos;UNK&apos; &amp;&amp; code.length &gt; 0 &amp;&amp;
+        answer.value.@nullFlavor.toString().length == 0 &amp;&amp;
+        answer.code.@nullFlavor.toString().length == 0 &amp;&amp;
+        (codeSystemName == &apos;LOINC&apos; || codeSystemName == &apos;SNOMED&apos; || codeSystemName == &apos;SNOMED CT&apos;)) {
+        return true;
+    }
+
+    // Total Safety Score carries a numeric value instead of a coded one
+    if (code == &apos;95614-4&apos; &amp;&amp; answer.value.@value.toString().length &gt; 0) {
+        return true;
+    }
+
+    return false;
+}
+
+// Same date source as obsSortKey in the XSLT:
+// own effectiveTime/@value, then own effectiveTime/low/@value, then the grouper&apos;s effectiveTime/@value.
+function getAnswerEffectiveRaw(answer, unit) {
+    var ccda = new Namespace(&quot;urn:hl7-org:v3&quot;);
+    default xml namespace = ccda;
+
+    var v = answer.effectiveTime.@value.toString().trim();
+    if (v !== &apos;&apos;) { return v; }
+
+    v = answer.effectiveTime.low.@value.toString().trim();
+    if (v !== &apos;&apos;) { return v; }
+
+    if (unit) {
+        v = unit.effectiveTime.@value.toString().trim();
+        if (v !== &apos;&apos;) { return v; }
+    }
+    return &apos;&apos;;
+}
+
+function getObservationCategoryCodes(transformer, observations) {
+    var xml = new XML(observations);
+    var ccda = new Namespace(&quot;urn:hl7-org:v3&quot;);
+    default xml namespace = ccda;
+
+    var ehrVendor = channelMap.get(&apos;ehrVendor&apos;);
+    var units;               // &quot;grouper&quot; level observations the original code iterated over
+    var nested = false;      // true: answers are the child observations of each unit
+
+    //logger.info(&quot;ehrVendor: &quot; + ehrVendor);
+
+    // Select observations based on EHR vendor (unchanged)
+    if (ehrVendor == &apos;Medent&apos; ||
+        ehrVendor == &apos;Athenahealth&apos; ||
+        ehrVendor == &apos;CureMD&apos;) {
+
+        // answer = the selected observation itself
+        units = xml..component
+            .structuredBody
+            .component
+            .section.(@ID == &apos;observations&apos;)
+            .entry
+            .observation
+            .entryRelationship
+            .observation;
+
+    } else if (ehrVendor == &apos;Epic&apos; || ehrVendor == &apos;Oracle&apos;) {
+
+        // grouper = selected observation, answers = its entryRelationship/observation
+        nested = true;
+        units = xml..component
+            .structuredBody
+            .component
+            .section.(@ID == &apos;observations&apos;)
+            .entry
+            .observation
+            .entryRelationship
+            .observation;
+
+    } else {
+
+        // answer = the selected observation itself
+        units = xml..component
+            .structuredBody
+            .component
+            .section.(@ID == &apos;observations&apos;)
+            .entry
+            .observation;
+    }
+
+    // --------------------------------------------------
+    // Pick, for every question code, the valid observation
+    // with the most recent effectiveTime.
+    // --------------------------------------------------
+    var bestByCode = {};      // code -&gt; { key: sortable time, unitIndex: index of its grouper }
+    var firstSeenCodes = [];  // codes in document order of first appearance
+
+    for (var j = 0; j &lt; units.length(); j++) {
+        var unit = units[j];
+        var answers = [];
+
+        if (nested) {
+            var children = unit.entryRelationship.observation;
+            for (var a = 0; a &lt; children.length(); a++) {
+                answers.push(children[a]);
+            }
+        } else {
+            answers.push(unit);
+        }
+
+        for (var n = 0; n &lt; answers.length; n++) {
+            var answer = answers[n];
+            var qCode = answer.code.@code.toString().trim();
+
+            if (qCode === &apos;&apos;) { continue; }
+            if (REQUIRE_VALID_ANSWER &amp;&amp; !isValidAnswer(answer)) { continue; }
+
+            var key = ccdaTimeSortKey(getAnswerEffectiveRaw(answer, unit));
+            var current = bestByCode[qCode];
+
+            if (!current) {
+                firstSeenCodes.push(qCode);
+                bestByCode[qCode] = { key: key, unitIndex: j };
+            } else if (key &gt;= current.key) {
+                // newer wins; on a tie the later one in document order wins
+                current.key = key;
+                current.unitIndex = j;
+            }
+        }
+    }
+
+    // Collect unique category codes (from the winning observations only)
+    var categorySet = {};
+    var winnerUnits = {};     // groupers that own at least one emitted observation
+
+    for (var i = 0; i &lt; firstSeenCodes.length; i++) {
+        var originalCode = firstSeenCodes[i];
+        var code = getCategoryCode(originalCode);
+
+        if (code) {
+            winnerUnits[bestByCode[originalCode].unitIndex] = true;
+
+            if (!(code in categorySet)) {
+                categorySet[code] = getCategoryDisplay(originalCode);
+            }
+        }
+    }
+
+    var categoryJsonArray = [];
+
+    for (var cat in categorySet) {
+        categoryJsonArray.push({
+            code: cat,
+            display: categorySet[cat]
+        });
+    }
+
+    // Build category JSON for the XSLT transformer
+    var categoryXml = &apos;[&apos;;
+
+    for (var c = 0; c &lt; categoryJsonArray.length; c++) {
+        categoryXml += &apos;{&apos; +
+            &apos;&quot;system&quot;: &quot;http://hl7.org/fhir/us/sdoh-clinicalcare/CodeSystem/SDOHCC-CodeSystemTemporaryCodes&quot;,&apos; +
+            &apos;&quot;code&quot;: &quot;&apos; + categoryJsonArray[c].code + &apos;&quot;,&apos; +
+            &apos;&quot;display&quot;: &quot;&apos; + categoryJsonArray[c].display + &apos;&quot;}&apos;;
+
+        if (c !== categoryJsonArray.length - 1) {
+            categoryXml += &apos;,&apos;;
+        }
+    }
+
+    categoryXml += &apos;]&apos;;
+
+    transformer.setParameter(&apos;categoryXml&apos;, categoryXml);
+
+    // --------------------------------------------------
+    // Latest effectiveTime of the grouper observations that
+    // own an emitted observation.
+    // Supports:
+    //   effectiveTime.value
+    //   effectiveTime.low.value
+    //   effectiveTime.high.value
+    // --------------------------------------------------
+
+    var latestEffectiveTime = null;
+    var latestKey = null;
+
+    for (var u = 0; u &lt; units.length(); u++) {
+        if (!winnerUnits[u]) { continue; }
+
+        var effectiveTimes = units[u].effectiveTime;
+
+        for (var k = 0; k &lt; effectiveTimes.length(); k++) {
+            var effectiveTime = effectiveTimes[k];
+
+            var candidateValues = [];
+
+            var directValue = effectiveTime.@value.toString().trim();
+            if (directValue !== &apos;&apos;) { candidateValues.push(directValue); }
+
+            var lowValue = effectiveTime.low.@value.toString().trim();
+            if (lowValue !== &apos;&apos;) { candidateValues.push(lowValue); }
+
+            var highValue = effectiveTime.high.@value.toString().trim();
+            if (highValue !== &apos;&apos;) { candidateValues.push(highValue); }
+
+            // Compare on the normalised 14-digit key, keep the original CCDA string
+            for (var m = 0; m &lt; candidateValues.length; m++) {
+                var candidate = candidateValues[m];
+                var candidateKey = ccdaTimeSortKey(candidate);
+
+                if (latestKey === null || candidateKey &gt; latestKey) {
+                    latestKey = candidateKey;
+                    latestEffectiveTime = candidate;
+                }
+            }
+        }
+    }
+
+    // Pass latest effectiveTime to the XSLT transformer
+    transformer.setParameter(
+        &apos;latestEffectiveTime&apos;,
+        latestEffectiveTime === null ? &apos;&apos; : latestEffectiveTime
+    );
+
+    logger.info(&quot;latest observation per code: &quot; + firstSeenCodes.join(&apos;,&apos;));
+    logger.info(&quot;categoryXml: &quot; + categoryXml);
+    logger.info(&quot;latestEffectiveTime: &quot; + latestEffectiveTime);
+
+    return transformer;
 }
 
 function getMultipleAnswersForComponent(transformer, observations) {
@@ -1638,7 +1908,7 @@ function setResourceIdParameters(transformer) {
 	}
 	
 	// Extract `encompassingEncounter`
-	try {
+	/*try {
 		var encounter = xmlDoc.*::componentOf.*::encompassingEncounter;
 		if (encounter != undefined &amp;&amp; encounter.length() &gt; 0) {
 		    var encounterEffectiveTime = getEncounterEffectiveTime(encounter);	
@@ -1658,6 +1928,42 @@ function setResourceIdParameters(transformer) {
 		        logger.error(&quot;Encounter resource not found in the XML.&quot;);
 		    }
 		}
+	} catch (e) {
+	    logger.error(&quot;Error accessing encounter: &quot; + e);
+	}*/
+
+	try {
+	    // Check for encompassingEncounter
+	    var encounter = xmlDoc.*::componentOf.*::encompassingEncounter;
+	    if (encounter != undefined &amp;&amp; encounter.length() &gt; 0) {        
+	        var encounterEffectiveTime = getEncounterEffectiveTime(encounter);
+	        transformer = generateSHA256Id(encounter, &quot;encounter&quot;, &quot;encounterResourceId&quot;, transformer, encounterEffectiveTime);
+	    } else {
+	        // Fallback: Check for encounters section first
+	        var encountersSection =
+	            xmlDoc.*::component
+	                  .*::structuredBody
+	                  .*::component
+	                  .*::section.(@ID == &apos;encounters&apos;);
+	        if (encountersSection != undefined &amp;&amp; encountersSection.length() &gt; 0) {
+	            // Get entries only after confirming the section exists
+	            var encounterEntries = encountersSection.*::entry;
+	            if (encounterEntries != undefined &amp;&amp; encounterEntries.length() &gt; 0) {
+	                // Safely select the first entry
+	                var encounters = encounterEntries[0].*::encounter;
+	                if (encounters != undefined &amp;&amp; encounters.length() &gt; 0) {
+	                    var encounterEffectiveTime = getEncounterEffectiveTime(encounters);
+					 transformer = generateSHA256Id(encounters, &quot;encounter&quot;, &quot;encounterResourceId&quot;, transformer, encounterEffectiveTime);                    
+	                } else {
+	                    logger.error(&quot;No encounter element found in the first encounters entry.&quot;);
+	                }	
+	            } else {
+	                logger.error(&quot;No encounter entries found in the encounters section.&quot;);
+	            }	
+	        } else {
+	            logger.error(&quot;Neither encompassingEncounter nor the encounters section was found in the XML.&quot;);
+	        }
+	    }	
 	} catch (e) {
 	    logger.error(&quot;Error accessing encounter: &quot; + e);
 	}
@@ -1843,7 +2149,21 @@ function setResourceIdParameters(transformer) {
 					        );
 					    };
 	    // Primary location path: componentOf → encompassingEncounter → location → healthCareFacility → location
-	    var componentOf = new XMLList();
+	    /*if (
+	        xmlDoc.componentOf &amp;&amp;
+	        xmlDoc.componentOf.encompassingEncounter &amp;&amp;
+	        xmlDoc.componentOf.encompassingEncounter.location &amp;&amp;
+	        xmlDoc.componentOf.encompassingEncounter.location.length() &gt; 0 &amp;&amp;
+	        xmlDoc.componentOf.encompassingEncounter.location[0].healthCareFacility &amp;&amp;
+	        xmlDoc.componentOf.encompassingEncounter.location[0].healthCareFacility.location
+	    ) {
+	    	   location = xmlDoc.componentOf.encompassingEncounter.location[0].healthCareFacility.location;
+	        location_name = location.name;
+	        location_address = location.addr;
+	        if (isValidLocation(location_name, location_address)) { locationSuccess = true; }
+	    }*/
+
+	    	var componentOf = new XMLList();
 		if (xmlDoc.*::componentOf.length() &gt; 0) {
 		    componentOf = xmlDoc.*::componentOf[0];
 		}
@@ -1931,7 +2251,6 @@ function set_fhir_resource_profile_urls(transformer) {
 	var practitionerMetaProfileUrl = java.lang.System.getenv(&quot;PROFILE_URL_PRACTITIONER&quot;);
 	var procedureMetaProfileUrl = java.lang.System.getenv(&quot;PROFILE_URL_PROCEDURE&quot;);
 	var locationMetaProfileUrl = java.lang.System.getenv(&quot;PROFILE_URL_LOCATION&quot;);
-//	var locationMetaProfileUrl = &quot;http://hl7.org/fhir/us/sdoh-clinicalcare/StructureDefinition/SDOHCC-Location&quot;;
 
 	transformer = set_profile_url(transformer, baseFhirUrl, &apos;BASE_FHIR_URL&apos;, &apos;baseFhirUrl&apos;);
 	transformer = set_profile_url(transformer, bundleMetaProfileUrl, &apos;PROFILE_URL_BUNDLE&apos;, &apos;bundleMetaProfileUrl&apos;);
@@ -2078,10 +2397,16 @@ function validateMandatoryFields() {
 
 	        // 3. Gender
 	        var genderValue = &quot;&quot;;
+	        var genderHasNullFlavor = false;
 		   if (patient) {
 			    var genderEl = patient.*::administrativeGenderCode[0];
 			
-			    if (genderEl) {
+			    if (genderEl &amp;&amp; genderEl.length() &gt; 0) {
+			    	   // Check for nullFlavor
+			        if (genderEl.@nullFlavor &amp;&amp; genderEl.@nullFlavor.toString().trim() !== &quot;&quot;) {			
+			            genderHasNullFlavor = true;
+			        }
+        
 			        // Prefer code
 			        if (genderEl.@code &amp;&amp; genderEl.@code.toString().trim() !== &quot;&quot;) {
 			            genderValue = genderEl.@code.toString().trim();
@@ -2091,8 +2416,10 @@ function validateMandatoryFields() {
 			            genderValue = genderEl.@displayName.toString().trim();
 			        }
 			    }
-		   }			
-		   if (genderValue === &quot;&quot;) {
+		   }
+
+		   // Error only if there is no value AND no nullFlavor
+		   if (genderValue === &quot;&quot; &amp;&amp; !genderHasNullFlavor) {
 			    errors.push(
 			        &quot;Patient gender -&gt; ClinicalDocument.recordTarget.patientRole.patient.administrativeGenderCode.&quot;
 			    );
@@ -2377,9 +2704,6 @@ if (requestedPath == &quot;/ccda/Bundle/$validate/&quot; ||
     try {
         phiFilteredXml = applyPhiFilter(sourceXml);
         channelMap.put(&apos;phi_filtered_ccd&apos;, phiFilteredXml);
-
-        //logger.info(&quot;phi_filtered_ccd: &quot; + phiFilteredXml);
-        
     } catch (e) {
         failAndExit(
             &quot;CCD XML PHI filtering failed. &quot; + e.message,
@@ -2884,7 +3208,7 @@ return;</undeployScript>
     <metadata>
       <enabled>true</enabled>
       <lastModified>
-        <time>1784192850366</time>
+        <time>1793599215454</time>
         <timezone>Asia/Calcutta</timezone>
       </lastModified>
       <pruningSettings>
@@ -2894,6 +3218,5 @@ return;</undeployScript>
       </pruningSettings>
       <userId>1</userId>
     </metadata>
-    <channelTags/>
   </exportData>
 </channel>

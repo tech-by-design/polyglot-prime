@@ -49,6 +49,7 @@
   <xsl:param name="X-TechBD-OMH"/>
   <xsl:param name="X-TechBD-OPWDD"/>
   <xsl:param name="organizationName"/>
+  <xsl:param name="latestEffectiveTime"/>
 
   <!-- Parameters to get FHIR resource profile URLs -->
   <xsl:param name="baseFhirUrl"/>
@@ -1314,6 +1315,173 @@
   </xsl:template>
 
   <!-- Observation Template -->
+  <!-- ================================================================ -->
+  <!-- 1. KEY: index every answer entryRelationship by its question code -->
+  <!-- ================================================================ -->
+  <xsl:key name="erByCode"
+           match="ccda:section[@ID='observations']/ccda:entry/ccda:observation/ccda:entryRelationship/ccda:observation/ccda:entryRelationship[ccda:observation/ccda:code/@code]"
+           use="ccda:observation/ccda:code/@code"/>
+
+  <!-- ================================================================ -->
+  <!-- 2. HELPER: validity check (same rules as the original template).  -->
+  <!--    Outputs '1' when the entryRelationship is valid.              -->
+  <!-- ================================================================ -->
+  <xsl:template name="isValidObs">
+    <xsl:param name="er"/>
+    <xsl:for-each select="$er">
+      <xsl:if test="(string(ccda:observation/ccda:value/ccda:translation/@code) = 'X-SDOH-FLO-1570000066-Patient-unable-to-answer'
+                     or string(ccda:observation/ccda:value/ccda:translation/@code) = 'X-SDOH-FLO-1570000066-Patient-declined')
+                  or (
+                    string(ccda:observation/ccda:value/@code) != 'UNK' 
+                    and string-length(ccda:observation/ccda:value/@code) > 0 
+                    and string(ccda:observation/ccda:code/@code) != 'UNK' 
+                    and string-length(ccda:observation/ccda:code/@code) > 0
+                    and string-length(ccda:observation/ccda:value/@nullFlavor) = 0
+                    and string-length(ccda:observation/ccda:code/@nullFlavor) = 0
+                    and (ccda:observation/ccda:code/@codeSystemName = 'LOINC'
+                         or ccda:observation/ccda:code/@codeSystemName = 'SNOMED'
+                         or ccda:observation/ccda:code/@codeSystemName = 'SNOMED CT')
+                  )
+                  or (string(ccda:observation/ccda:code/@code) = '95614-4'
+                      and string-length(ccda:observation/ccda:value/@value) > 0)">
+        <xsl:text>1</xsl:text>
+      </xsl:if>
+    </xsl:for-each>
+  </xsl:template>
+
+  <!-- ================================================================ -->
+  <!-- 3. HELPER: sortable 14-digit key (yyyyMMddHHmmss) for the         -->
+  <!--    observation's effective time. Missing date => 00000000000000.  -->
+  <!-- ================================================================ -->
+  <xsl:template name="obsSortKey">
+    <xsl:param name="er"/>
+    <xsl:for-each select="$er">
+      <xsl:variable name="raw">
+        <xsl:choose>
+          <xsl:when test="ccda:observation/ccda:effectiveTime/@value">
+            <xsl:value-of select="ccda:observation/ccda:effectiveTime/@value"/>
+          </xsl:when>
+          <xsl:when test="ccda:observation/ccda:effectiveTime/ccda:low/@value">
+            <xsl:value-of select="ccda:observation/ccda:effectiveTime/ccda:low/@value"/>
+          </xsl:when>
+          <xsl:when test="../../ccda:observation/ccda:effectiveTime/@value">
+            <xsl:value-of select="../../ccda:observation/ccda:effectiveTime/@value"/>
+          </xsl:when>
+          <xsl:otherwise>0</xsl:otherwise>
+        </xsl:choose>
+      </xsl:variable>
+      <xsl:variable name="first14" select="substring($raw, 1, 14)"/>
+      <!-- keep digits only, then right-pad with zeros so 20251029 and 20251029101500 compare correctly -->
+      <xsl:variable name="digits"
+                    select="translate($first14, translate($first14, '0123456789', ''), '')"/>
+      <xsl:value-of select="substring(concat($digits, '00000000000000'), 1, 14)"/>
+    </xsl:for-each>
+  </xsl:template>
+
+  <!-- ================================================================ -->
+  <!-- 4. HELPER: is this entryRelationship the valid one with the       -->
+  <!--    latest effectiveTime for its code? Outputs '1' if so.          -->
+  <!--    Tie on date => the LATER one in document order wins.           -->
+  <!--    (change &gt; to &lt; in the tie-break to keep the first instead)-->
+  <!-- ================================================================ -->
+  <xsl:template name="isLatestObs">
+    <xsl:param name="er" select="."/>
+    <xsl:variable name="code" select="string($er/ccda:observation/ccda:code/@code)"/>
+
+    <xsl:variable name="myValid">
+      <xsl:call-template name="isValidObs">
+        <xsl:with-param name="er" select="$er"/>
+      </xsl:call-template>
+    </xsl:variable>
+
+    <xsl:if test="string($myValid) = '1'">
+      <xsl:variable name="myKey">
+        <xsl:call-template name="obsSortKey">
+          <xsl:with-param name="er" select="$er"/>
+        </xsl:call-template>
+      </xsl:variable>
+
+      <!-- Does any OTHER valid candidate with the same code beat me? -->
+      <xsl:variable name="beaten">
+        <xsl:for-each select="key('erByCode', $code)[generate-id() != generate-id($er)]">
+          <xsl:variable name="otherValid">
+            <xsl:call-template name="isValidObs">
+              <xsl:with-param name="er" select="."/>
+            </xsl:call-template>
+          </xsl:variable>
+          <xsl:if test="string($otherValid) = '1'">
+            <xsl:variable name="otherKey">
+              <xsl:call-template name="obsSortKey">
+                <xsl:with-param name="er" select="."/>
+              </xsl:call-template>
+            </xsl:variable>
+            <xsl:if test="number($otherKey) > number($myKey)
+                          or (number($otherKey) = number($myKey)
+                              and count(preceding::*) > count($er/preceding::*))">
+              <xsl:text>1</xsl:text>
+            </xsl:if>
+          </xsl:if>
+        </xsl:for-each>
+      </xsl:variable>
+
+      <xsl:if test="not(string($beaten))">
+        <xsl:text>1</xsl:text>
+      </xsl:if>
+    </xsl:if>
+  </xsl:template>
+
+  <!-- ================================================================ -->
+  <!-- 5. HELPER: FHIR Observation resource id for an entryRelationship. -->
+  <!--    Used by BOTH the main resource and derivedFrom so the ids      -->
+  <!--    always match.                                                  -->
+  <!-- ================================================================ -->
+  <xsl:template name="computeObsId">
+    <xsl:param name="er" select="."/>
+    <xsl:variable name="qCode" select="string($er/ccda:observation/ccda:code/@code)"/>
+
+    <xsl:variable name="effTime">
+      <xsl:choose>
+        <xsl:when test="$er/ccda:observation/ccda:effectiveTime/@value">
+          <xsl:call-template name="formatDateTime">
+            <xsl:with-param name="dateTime" select="$er/ccda:observation/ccda:effectiveTime/@value"/>
+          </xsl:call-template>
+        </xsl:when>
+        <xsl:when test="$er/../../ccda:observation/ccda:effectiveTime/@value">
+          <xsl:call-template name="formatDateTime">
+            <xsl:with-param name="dateTime" select="$er/../../ccda:observation/ccda:effectiveTime/@value"/>
+          </xsl:call-template>
+        </xsl:when>
+        <xsl:when test="$encounterEffectiveTimeValue">
+          <xsl:value-of select="$encounterEffectiveTimeValue"/>
+        </xsl:when>
+        <xsl:otherwise>
+          <xsl:value-of select="$currentTimestamp"/>
+        </xsl:otherwise>
+      </xsl:choose>
+    </xsl:variable>
+
+    <xsl:variable name="effTimeDigits" select="translate($effTime, '-:TZ', '')"/>
+
+    <xsl:variable name="idSource">
+      <xsl:choose>
+        <xsl:when test="$er/ccda:observation/ccda:id/@extension and normalize-space($er/ccda:observation/ccda:id/@extension) != ''">
+          <xsl:value-of select="concat($qCode, '-', $er/ccda:observation/ccda:id/@extension)"/>
+        </xsl:when>
+        <xsl:otherwise>
+          <xsl:value-of select="concat($qCode, '-', $effTimeDigits)"/>
+        </xsl:otherwise>
+      </xsl:choose>
+    </xsl:variable>
+
+    <xsl:call-template name="generateFixedLengthResourceId">
+      <xsl:with-param name="prefixString" select="concat($facilityID, '-')"/>
+      <xsl:with-param name="sha256ResourceId" select="string($idSource)"/>
+    </xsl:call-template>
+  </xsl:template>
+
+  <!-- ================================================================ -->
+  <!-- 6. MAIN TEMPLATE: Observation                                     -->
+  <!-- ================================================================ -->
   <xsl:template name="Observation" match="/ccda:ClinicalDocument/ccda:component/ccda:structuredBody/ccda:component/ccda:section[@ID='observations']/ccda:entry/ccda:observation/ccda:entryRelationship/ccda:observation/ccda:entryRelationship">
     <xsl:variable name="allowedCodes" select="' 71802-3 96778-6 96779-4 88122-7 88123-5 93030-5 96780-2 96782-8 95618-5 95617-7 95616-9 95615-1 95614-4 '" />
     <!--The observation resource will be generated only for the question codes present in the list specified in 'mapObservationCategoryCodes'-->
@@ -1321,312 +1489,252 @@
 
     <!-- Check if questionCode is in the allowed list -->
     <xsl:if test="contains(concat(' ', $allowedCodes, ' '), concat(' ', $questionCode, ' '))">
-      <!-- Generate the observation only if it is the first occurrence of this code -->
-      <xsl:if test="not(preceding::ccda:entryRelationship[ccda:observation/ccda:code/@code = $questionCode])">
-        <xsl:if test="(string(ccda:observation/ccda:value/ccda:translation/@code) = 'X-SDOH-FLO-1570000066-Patient-unable-to-answer' or string(ccda:observation/ccda:value/ccda:translation/@code) = 'X-SDOH-FLO-1570000066-Patient-declined' ) 
-                or (
-                  string(ccda:observation/ccda:value/@code) != 'UNK' 
-                  and string-length(ccda:observation/ccda:value/@code) > 0 
-                  and string(ccda:observation/ccda:code/@code) != 'UNK' 
-                  and string-length(ccda:observation/ccda:code/@code) > 0
-                  and string-length(ccda:observation/ccda:value/@nullFlavor) = 0
-                  and string-length(ccda:observation/ccda:code/@nullFlavor) = 0
-                  and (ccda:observation/ccda:code/@codeSystemName = 'LOINC' or ccda:observation/ccda:code/@codeSystemName = 'SNOMED' or ccda:observation/ccda:code/@codeSystemName = 'SNOMED CT')
-                )
-                or (string(ccda:observation/ccda:code/@code) = '95614-4' and string-length(ccda:observation/ccda:value/@value) > 0)
-              ">
 
-          <!--The observation resource will be generated only for the question codes present in the list specified in 'mapObservationCategoryCodes'-->
-          <xsl:variable name="categoryCode">
-                  <xsl:call-template name="mapObservationCategoryCodes">
-                    <xsl:with-param name="questionCode" select="$questionCode"/>
-                  </xsl:call-template>
-                </xsl:variable>
+      <!-- Generate the observation only if it is the valid one with the most recent effectiveTime for this code -->
+      <xsl:variable name="isLatest">
+        <xsl:call-template name="isLatestObs"/>
+      </xsl:variable>
 
-          <xsl:if test="string($categoryCode)">
-              <xsl:variable name="encounterEffectiveTime">
-                  <xsl:choose>
-                      <xsl:when test="ccda:observation/ccda:effectiveTime/@value">
-                          <xsl:call-template name="formatDateTime">
-                              <xsl:with-param name="dateTime" select="ccda:observation/ccda:effectiveTime/@value"/>
-                          </xsl:call-template>
-                      </xsl:when>
-                      <xsl:when test="$encounterEffectiveTimeValue">
-                          <xsl:value-of select="$encounterEffectiveTimeValue"/>
-                      </xsl:when>
-                      <xsl:otherwise>
-                          <xsl:value-of select="$currentTimestamp"/>
-                      </xsl:otherwise>
-                  </xsl:choose>
-              </xsl:variable>
+      <xsl:if test="string($isLatest) = '1'">
 
-              <xsl:variable name="encounterEffectiveTimeDigits" select="translate($encounterEffectiveTime, '-:TZ', '')"/> <!-- Remove non-digit characters for ID generation -->
+        <!--The observation resource will be generated only for the question codes present in the list specified in 'mapObservationCategoryCodes'-->
+        <xsl:variable name="categoryCode">
+          <xsl:call-template name="mapObservationCategoryCodes">
+            <xsl:with-param name="questionCode" select="$questionCode"/>
+          </xsl:call-template>
+        </xsl:variable>
 
-              <xsl:variable name="observationIdSource">
-                <xsl:choose>
-                  <!-- Use extension if present and not empty -->
-                  <xsl:when test="ccda:observation/ccda:id/@extension and normalize-space(ccda:observation/ccda:id/@extension) != ''">
-                    <xsl:value-of select="concat($questionCode, '-', ccda:observation/ccda:id/@extension)"/>
-                  </xsl:when>
-
-                  <!-- Fallback: questionCode + encounterEffectiveTime -->
-                  <xsl:otherwise>
-                    <xsl:value-of
-                      select="concat($questionCode, '-', $encounterEffectiveTimeDigits)"/>
-                  </xsl:otherwise>
-                </xsl:choose>
-              </xsl:variable>
-
-              <xsl:variable name="observationResourceId">
-                <xsl:call-template name="generateFixedLengthResourceId">
-                  <xsl:with-param name="prefixString" select="concat($facilityID, '-')"/>
-                  <xsl:with-param name="sha256ResourceId" select="$observationIdSource"/>
+        <xsl:if test="string($categoryCode)">
+          <xsl:variable name="encounterEffectiveTime">
+            <xsl:choose>
+              <xsl:when test="ccda:observation/ccda:effectiveTime/@value">
+                <xsl:call-template name="formatDateTime">
+                  <xsl:with-param name="dateTime" select="ccda:observation/ccda:effectiveTime/@value"/>
                 </xsl:call-template>
-              </xsl:variable>
-              ,{
-                "fullUrl": "<xsl:value-of select='$baseFhirUrl'/>/Observation/<xsl:value-of select='$observationResourceId'/>",
-                "resource": {
-                  "resourceType": "Observation",
-                  "id": "<xsl:value-of select='$observationResourceId'/>",
-                  "meta": {
-                    "lastUpdated": "<xsl:value-of select='$currentTimestamp'/>",
-                    "profile": ["<xsl:value-of select='$observationMetaProfileUrlFull'/>"]
-                  },
-                  "language": "en",
-                  "status": "<xsl:call-template name='mapObservationStatus'>
-                                <xsl:with-param name='statusCode' select='ccda:observation/ccda:statusCode/@code'/>
-                            </xsl:call-template>",
-                  "category": [
-                    {
-                      "coding": [{
-                        "system": "http://hl7.org/fhir/us/sdoh-clinicalcare/CodeSystem/SDOHCC-CodeSystemTemporaryCodes",
-                        "code": "<xsl:value-of select='$categoryCode'/>",
-                        "display": "<xsl:call-template name="mapSDOHCategoryCodeDisplay">
-                                      <xsl:with-param name="questionCode" select="$questionCode"/>
-                                      <xsl:with-param name="categoryCode" select="$categoryCode"/>
-                                    </xsl:call-template>"
-                      }
-                      ],
-                      "text" : "<xsl:call-template name="mapSDOHCategoryText">
+              </xsl:when>
+              <xsl:when test="../../ccda:observation/ccda:effectiveTime/@value">
+                <xsl:call-template name="formatDateTime">
+                  <xsl:with-param name="dateTime" select="../../ccda:observation/ccda:effectiveTime/@value"/>
+                </xsl:call-template>
+              </xsl:when>
+              <xsl:when test="$encounterEffectiveTimeValue">
+                <xsl:value-of select="$encounterEffectiveTimeValue"/>
+              </xsl:when>
+              <xsl:otherwise>
+                <xsl:value-of select="$currentTimestamp"/>
+              </xsl:otherwise>
+            </xsl:choose>
+          </xsl:variable>
+
+          <xsl:variable name="observationResourceId">
+            <xsl:call-template name="computeObsId">
+              <xsl:with-param name="er" select="."/>
+            </xsl:call-template>
+          </xsl:variable>
+          ,{
+            "fullUrl": "<xsl:value-of select='$baseFhirUrl'/>/Observation/<xsl:value-of select='$observationResourceId'/>",
+            "resource": {
+              "resourceType": "Observation",
+              "id": "<xsl:value-of select='$observationResourceId'/>",
+              "meta": {
+                "lastUpdated": "<xsl:value-of select='$currentTimestamp'/>",
+                "profile": ["<xsl:value-of select='$observationMetaProfileUrlFull'/>"]
+              },
+              "language": "en",
+              "status": "<xsl:call-template name='mapObservationStatus'>
+                            <xsl:with-param name='statusCode' select='ccda:observation/ccda:statusCode/@code'/>
+                        </xsl:call-template>",
+              "category": [
+                {
+                  "coding": [{
+                    "system": "http://hl7.org/fhir/us/sdoh-clinicalcare/CodeSystem/SDOHCC-CodeSystemTemporaryCodes",
+                    "code": "<xsl:value-of select='$categoryCode'/>",
+                    "display": "<xsl:call-template name="mapSDOHCategoryCodeDisplay">
                                   <xsl:with-param name="questionCode" select="$questionCode"/>
                                   <xsl:with-param name="categoryCode" select="$categoryCode"/>
                                 </xsl:call-template>"
-                    },
-                    <xsl:choose>
-                      <xsl:when test="string($categoryCode) = 'sdoh-category-unspecified'">
-                        <xsl:choose>
-                          <xsl:when test="ccda:observation/ccda:code/@code = '96782-8'">
-                            { 
-                              "coding": [{
-                                "system": "http://snomed.info/sct",
-                                "code": "365458002",
-                                "display": "Education and/or schooling finding"
-                              }]
-                            },
-                          </xsl:when>
-                        </xsl:choose>
-                      </xsl:when>
-                    </xsl:choose>
-                    {
-                      "coding": [{
-                          "system": "http://terminology.hl7.org/CodeSystem/observation-category",
-                          "code": "social-history"
-                      }]
-                    },
-                    {
-                      "coding": [{
-                          "system": "http://terminology.hl7.org/CodeSystem/observation-category",
-                          "code": "survey"
-                      }]
-                    }
-                  ],
-                  "code": {
-                    "coding": [
-                      {
-                        "system": "http://loinc.org",
-                        "code": "<xsl:value-of select='ccda:observation/ccda:code/@code'/>",
-                        "display": "<xsl:value-of select='normalize-space(ccda:observation/ccda:code/@displayName)'/>"
-                      }
-                    ]
-                    <xsl:choose>
-                      <xsl:when test="ccda:observation/ccda:code/@originalText">
-                        , "text": "<xsl:value-of select='normalize-space(ccda:observation/ccda:code/@originalText)'/>"
-                      </xsl:when>
-                      <xsl:when test="ccda:observation/ccda:code/@displayName">
-                        , "text": "<xsl:value-of select='normalize-space(ccda:observation/ccda:code/@displayName)'/>"
-                      </xsl:when>
-                    </xsl:choose>
-                  },
-                  <xsl:choose>
-                    <xsl:when test="ccda:observation/ccda:value/ccda:translation/@code = 'X-SDOH-FLO-1570000066-Patient-unable-to-answer' 
-                                  or ccda:observation/ccda:value/ccda:translation/@code = 'X-SDOH-FLO-1570000066-Patient-declined'">
-                      <xsl:variable name="dataAbsentReasonCode">
-                        <xsl:call-template name="getDataAbsentReasonFhirCode">
-                          <xsl:with-param name="dataAbsentReason" select="ccda:observation/ccda:value/ccda:translation/@code"/>
-                        </xsl:call-template>
-                      </xsl:variable>
-                      "dataAbsentReason": {
-                          "coding": [
-                              {
-                                  "system": "http://terminology.hl7.org/CodeSystem/data-absent-reason",
-                                  "code": "<xsl:value-of select="$dataAbsentReasonCode"/>",
-                                  "display": "<xsl:call-template name="getDataAbsentReasonFhirDisplay">
-                                                <xsl:with-param name="dataAbsentReasonCode" select="$dataAbsentReasonCode"/>
-                                              </xsl:call-template>"
-                              }
-                          ]
-                      },
-                    </xsl:when>
-                    <!-- https://test.shinny.org/change_log.html#v150 
-                    According to v1.5.0 change log, add component element for the question code '96778-6' -->
-                    <xsl:when test="string(ccda:observation/ccda:code/@code) = '96778-6'">
-                      "component": [
-                            {
-                                "code": {
-                                  "coding": [
-                                    {
-                                      "system": "http://loinc.org",
-                                      "code": "<xsl:value-of select='ccda:observation/ccda:code/@code'/>",
-                                      "display": "<xsl:value-of select='normalize-space(ccda:observation/ccda:code/@displayName)'/>"
-                                    }
-                                  ]
-                                  <xsl:choose>
-                                    <xsl:when test="ccda:observation/ccda:code/@originalText">
-                                      , "text": "<xsl:value-of select='normalize-space(ccda:observation/ccda:code/@originalText)'/>"
-                                    </xsl:when>
-                                    <xsl:when test="ccda:observation/ccda:code/@displayName">
-                                      , "text": "<xsl:value-of select='normalize-space(ccda:observation/ccda:code/@displayName)'/>"
-                                    </xsl:when>
-                                  </xsl:choose>
-                                }
-                                <xsl:if test="string($componentAnswersXml) and string-length($componentAnswersXml) > 0">
-                                  , "valueCodeableConcept": {
-                                    "coding": <xsl:value-of select='$componentAnswersXml'/>
-                                  }
-                                </xsl:if>
-                            }
-                      ],
-                    </xsl:when>
-                    <xsl:when test="string(ccda:observation/ccda:code/@code) = '95614-4' and string(ccda:observation/ccda:value/@value)"> <!--Total Safety Score-->
-                        <!-- "valueCodeableConcept" : {
-                          "coding": [{
-                            "system": "http://unitsofmeasure.org",
-                            "display": "{Number}"
-                          }],
-                          "text": "<xsl:value-of select='ccda:observation/ccda:value/@value'/>"
-                        }, -->
-                        "valueQuantity": {
-                            "value": <xsl:value-of select='ccda:observation/ccda:value/@value'/>
-                        },
-
-                        <!-- Gather all filtered observations for derivedFrom -->
-                        <xsl:variable name="derivedFromCodes" select="'|95618-5|95617-7|95616-9|95615-1|'" />
-                        <!-- Gather valid derivedFrom observations -->
-                        <xsl:variable name="derivedObservations">
-                          <xsl:for-each select="/ccda:ClinicalDocument//ccda:observation">
-                            <xsl:variable name="code" select="ccda:code/@code"/>
-                            <xsl:if test="string($code)
-                                          and contains($derivedFromCodes, concat('|', $code, '|'))
-                                          and not(preceding::ccda:observation[ccda:code/@code = $code])">
-                              <xsl:copy-of select="."/>
-                            </xsl:if>
-                          </xsl:for-each>
-                        </xsl:variable>
-
-                        <!-- Output derivedFrom JSON if observations found -->
-                        <xsl:if test="exsl:node-set($derivedObservations)/ccda:observation">
-                          "derivedFrom": [
-                            <xsl:for-each select="exsl:node-set($derivedObservations)/ccda:observation">
- 
-                              <xsl:variable name="encounterEffectiveTimeDF">
-                                  <xsl:choose>
-                                      <xsl:when test="ccda:effectiveTime/@value">
-                                          <xsl:call-template name="formatDateTime">
-                                              <xsl:with-param name="dateTime" select="ccda:effectiveTime/@value"/>
-                                          </xsl:call-template>
-                                      </xsl:when>
-                                      <xsl:when test="$encounterEffectiveTimeValue">
-                                          <xsl:value-of select="$encounterEffectiveTimeValue"/>
-                                      </xsl:when>
-                                      <xsl:otherwise>
-                                          <xsl:value-of select="$currentTimestamp"/>
-                                      </xsl:otherwise>
-                                  </xsl:choose>
-                              </xsl:variable>
-
-                              <xsl:variable name="encounterEffectiveTimeDigitsDF" select="translate($encounterEffectiveTimeDF, '-:TZ', '')"/> <!-- Remove non-digit characters for ID generation -->
-                              <xsl:variable name="questionCodeDF" select="ccda:code/@code"/>
-
-                              <xsl:variable name="observationIdSourceDF">
-                                <xsl:choose>
-                                  <!-- Use extension if present and not empty -->
-                                  <xsl:when test="ccda:id/@extension and normalize-space(ccda:id/@extension) != ''">
-                                    <xsl:value-of select="concat($questionCodeDF, '-', ccda:id/@extension)"/>
-                                  </xsl:when>
-
-                                  <!-- Fallback: questionCode + encounterEffectiveTime -->
-                                  <xsl:otherwise>
-                                    <xsl:value-of
-                                      select="concat($questionCodeDF, '-', $encounterEffectiveTimeDigitsDF)"/>
-                                  </xsl:otherwise>
-                                </xsl:choose>
-                              </xsl:variable>
-
-                              <xsl:variable name="observationResourceIdDF">
-                                <xsl:call-template name="generateFixedLengthResourceId">
-                                  <xsl:with-param name="prefixString" select="concat($facilityID, '-')"/>
-                                  <xsl:with-param name="sha256ResourceId" select="$observationIdSourceDF"/>
-                                </xsl:call-template>
-                              </xsl:variable>
-
-                              { "reference": "Observation/<xsl:value-of select='$observationResourceIdDF'/>" }<xsl:if test="position() != last()">,</xsl:if>
-                            </xsl:for-each>
-                          ],
-                        </xsl:if>
-                    </xsl:when>
-                    <xsl:when test="string(ccda:observation/ccda:value/@code) != 'UNK' and string-length(ccda:observation/ccda:value/@code) > 0">
-                        "valueCodeableConcept" : {
-                          "coding": [{
-                            "system": "http://loinc.org",
-                            "code": "<xsl:value-of select='ccda:observation/ccda:value/@code'/>",
-                            "display": "<xsl:value-of select='normalize-space(ccda:observation/ccda:value/@displayName)'/>"
-                          }]
-                          <xsl:choose>
-                            <xsl:when test="ccda:observation/ccda:value/@originalText">
-                              , "text": "<xsl:value-of select='normalize-space(ccda:observation/ccda:value/@originalText)'/>"
-                            </xsl:when>
-                            <xsl:when test="ccda:observation/ccda:value/@displayName">
-                              , "text": "<xsl:value-of select='normalize-space(ccda:observation/ccda:value/@displayName)'/>"
-                            </xsl:when>
-                          </xsl:choose>
-                        },
-                    </xsl:when>
-                  </xsl:choose>
-                  "subject": {
-                    "reference": "Patient/<xsl:value-of select='$patientResourceId'/>",
-                    "display": "<xsl:value-of select="$patientResourceName"/>"
                   }
-                  <xsl:if test="normalize-space($encounterResourceId) != '' and $encounterResourceId != 'null'">
-                  , "encounter": {
-                      "reference": "Encounter/<xsl:value-of select='$encounterResourceId'/>"
-                    }
-                  </xsl:if>
-                  , "effectiveDateTime": "<xsl:value-of select='$encounterEffectiveTime'/>"
-                  <xsl:if test="string($organizationResourceId)">
-                  , "performer": [{
-                                "reference": "Organization/<xsl:value-of select='$organizationResourceId'/>"
-                            }]
-                  </xsl:if>
+                  ],
+                  "text" : "<xsl:call-template name="mapSDOHCategoryText">
+                              <xsl:with-param name="questionCode" select="$questionCode"/>
+                              <xsl:with-param name="categoryCode" select="$categoryCode"/>
+                            </xsl:call-template>"
                 },
-                "request": {
-                  "method": "POST",
-                  "url": "<xsl:value-of select='$baseFhirUrl'/>/Observation/<xsl:value-of select='$observationResourceId'/>"
+                <xsl:choose>
+                  <xsl:when test="string($categoryCode) = 'sdoh-category-unspecified'">
+                    <xsl:choose>
+                      <xsl:when test="ccda:observation/ccda:code/@code = '96782-8'">
+                        {
+                          "coding": [{
+                            "system": "http://snomed.info/sct",
+                            "code": "365458002",
+                            "display": "Education and/or schooling finding"
+                          }]
+                        },
+                      </xsl:when>
+                    </xsl:choose>
+                  </xsl:when>
+                </xsl:choose>
+                {
+                  "coding": [{
+                      "system": "http://terminology.hl7.org/CodeSystem/observation-category",
+                      "code": "social-history"
+                  }]
+                },
+                {
+                  "coding": [{
+                      "system": "http://terminology.hl7.org/CodeSystem/observation-category",
+                      "code": "survey"
+                  }]
                 }
+              ],
+              "code": {
+                "coding": [
+                  {
+                    "system": "http://loinc.org",
+                    "code": "<xsl:value-of select='ccda:observation/ccda:code/@code'/>",
+                    "display": "<xsl:value-of select='normalize-space(ccda:observation/ccda:code/@displayName)'/>"
+                  }
+                ]
+                <xsl:choose>
+                  <xsl:when test="ccda:observation/ccda:code/@originalText">
+                    , "text": "<xsl:value-of select='normalize-space(ccda:observation/ccda:code/@originalText)'/>"
+                  </xsl:when>
+                  <xsl:when test="ccda:observation/ccda:code/@displayName">
+                    , "text": "<xsl:value-of select='normalize-space(ccda:observation/ccda:code/@displayName)'/>"
+                  </xsl:when>
+                </xsl:choose>
+              },
+              <xsl:choose>
+                <xsl:when test="ccda:observation/ccda:value/ccda:translation/@code = 'X-SDOH-FLO-1570000066-Patient-unable-to-answer'
+                              or ccda:observation/ccda:value/ccda:translation/@code = 'X-SDOH-FLO-1570000066-Patient-declined'">
+                  <xsl:variable name="dataAbsentReasonCode">
+                    <xsl:call-template name="getDataAbsentReasonFhirCode">
+                      <xsl:with-param name="dataAbsentReason" select="ccda:observation/ccda:value/ccda:translation/@code"/>
+                    </xsl:call-template>
+                  </xsl:variable>
+                  "dataAbsentReason": {
+                      "coding": [
+                          {
+                              "system": "http://terminology.hl7.org/CodeSystem/data-absent-reason",
+                              "code": "<xsl:value-of select="$dataAbsentReasonCode"/>",
+                              "display": "<xsl:call-template name="getDataAbsentReasonFhirDisplay">
+                                            <xsl:with-param name="dataAbsentReasonCode" select="$dataAbsentReasonCode"/>
+                                          </xsl:call-template>"
+                          }
+                      ]
+                  },
+                </xsl:when>
+                <!-- https://test.shinny.org/change_log.html#v150
+                According to v1.5.0 change log, add component element for the question code '96778-6' -->
+                <xsl:when test="string(ccda:observation/ccda:code/@code) = '96778-6'">
+                  "component": [
+                        {
+                            "code": {
+                              "coding": [
+                                {
+                                  "system": "http://loinc.org",
+                                  "code": "<xsl:value-of select='ccda:observation/ccda:code/@code'/>",
+                                  "display": "<xsl:value-of select='normalize-space(ccda:observation/ccda:code/@displayName)'/>"
+                                }
+                              ]
+                              <xsl:choose>
+                                <xsl:when test="ccda:observation/ccda:code/@originalText">
+                                  , "text": "<xsl:value-of select='normalize-space(ccda:observation/ccda:code/@originalText)'/>"
+                                </xsl:when>
+                                <xsl:when test="ccda:observation/ccda:code/@displayName">
+                                  , "text": "<xsl:value-of select='normalize-space(ccda:observation/ccda:code/@displayName)'/>"
+                                </xsl:when>
+                              </xsl:choose>
+                            }
+                            <xsl:if test="string($componentAnswersXml) and string-length($componentAnswersXml) &gt; 0">
+                              , "valueCodeableConcept": {
+                                "coding": <xsl:value-of select='$componentAnswersXml'/>
+                              }
+                            </xsl:if>
+                        }
+                  ],
+                </xsl:when>
+                <xsl:when test="string(ccda:observation/ccda:code/@code) = '95614-4' and string(ccda:observation/ccda:value/@value)"> <!--Total Safety Score-->
+                    <!-- "valueCodeableConcept" : {
+                      "coding": [{
+                        "system": "http://unitsofmeasure.org",
+                        "display": "{Number}"
+                      }],
+                      "text": "<xsl:value-of select='ccda:observation/ccda:value/@value'/>"
+                    }, -->
+                    "valueQuantity": {
+                        "value": <xsl:value-of select='ccda:observation/ccda:value/@value'/>
+                    },
+
+                    <!-- derivedFrom: reference ONLY the latest valid observation of each component code,
+                         using the same rule and the same id logic as the main resource -->
+                    <xsl:variable name="derivedRefs">
+                      <xsl:for-each select="key('erByCode', '95618-5') | key('erByCode', '95617-7') | key('erByCode', '95616-9') | key('erByCode', '95615-1')">
+                        <xsl:variable name="latestDF">
+                          <xsl:call-template name="isLatestObs"/>
+                        </xsl:variable>
+                        <xsl:if test="string($latestDF) = '1'">
+                          <ref>
+                            <xsl:call-template name="computeObsId">
+                              <xsl:with-param name="er" select="."/>
+                            </xsl:call-template>
+                          </ref>
+                        </xsl:if>
+                      </xsl:for-each>
+                    </xsl:variable>
+
+                    <xsl:if test="exsl:node-set($derivedRefs)/ref">
+                      "derivedFrom": [
+                        <xsl:for-each select="exsl:node-set($derivedRefs)/ref">
+                          { "reference": "Observation/<xsl:value-of select='normalize-space(.)'/>" }<xsl:if test="position() != last()">,</xsl:if>
+                        </xsl:for-each>
+                      ],
+                    </xsl:if>
+                </xsl:when>
+                <xsl:when test="string(ccda:observation/ccda:value/@code) != 'UNK' and string-length(ccda:observation/ccda:value/@code) > 0">
+                    "valueCodeableConcept" : {
+                      "coding": [{
+                        "system": "http://loinc.org",
+                        "code": "<xsl:value-of select='ccda:observation/ccda:value/@code'/>",
+                        "display": "<xsl:value-of select='normalize-space(ccda:observation/ccda:value/@displayName)'/>"
+                      }]
+                      <xsl:choose>
+                        <xsl:when test="ccda:observation/ccda:value/@originalText">
+                          , "text": "<xsl:value-of select='normalize-space(ccda:observation/ccda:value/@originalText)'/>"
+                        </xsl:when>
+                        <xsl:when test="ccda:observation/ccda:value/@displayName">
+                          , "text": "<xsl:value-of select='normalize-space(ccda:observation/ccda:value/@displayName)'/>"
+                        </xsl:when>
+                      </xsl:choose>
+                    },
+                </xsl:when>
+              </xsl:choose>
+              "subject": {
+                "reference": "Patient/<xsl:value-of select='$patientResourceId'/>",
+                "display": "<xsl:value-of select="$patientResourceName"/>"
               }
-          </xsl:if>
-        </xsl:if>
-      </xsl:if>
-    </xsl:if>  
+              <xsl:if test="normalize-space($encounterResourceId) != '' and $encounterResourceId != 'null'">
+              , "encounter": {
+                  "reference": "Encounter/<xsl:value-of select='$encounterResourceId'/>"
+                }
+              </xsl:if>
+              , "effectiveDateTime": "<xsl:value-of select='$encounterEffectiveTime'/>"
+              <xsl:if test="string($organizationResourceId)">
+              , "performer": [{
+                            "reference": "Organization/<xsl:value-of select='$organizationResourceId'/>"
+                        }]
+              </xsl:if>
+            },
+            "request": {
+              "method": "POST",
+              "url": "<xsl:value-of select='$baseFhirUrl'/>/Observation/<xsl:value-of select='$observationResourceId'/>"
+            }
+          }
+        </xsl:if> <!-- categoryCode -->
+
+      </xsl:if> <!-- isLatest -->
+    </xsl:if> <!-- allowedCodes -->
   </xsl:template>
 
 <!-- Grouper Observation Template -->
@@ -1683,9 +1791,9 @@
               },
             </xsl:if>
             "effectiveDateTime": "<xsl:choose>
-                                      <xsl:when test='$grouperScreening/ccda:effectiveTime/@value'>
+                                      <xsl:when test='$latestEffectiveTime'>
                                         <xsl:call-template name='formatDateTime'>
-                                          <xsl:with-param name='dateTime' select='$grouperScreening/ccda:effectiveTime/@value'/>
+                                          <xsl:with-param name='dateTime' select='$latestEffectiveTime'/>
                                         </xsl:call-template>
                                       </xsl:when>
                                       <xsl:when test='$encounterEffectiveTimeValue'>
@@ -1721,80 +1829,42 @@
             "hasMember": [
               <xsl:variable name="allowedCodes" select="'|71802-3|96778-6|96779-4|88122-7|88123-5|93030-5|96780-2|96782-8|95618-5|95617-7|95616-9|95615-1|95614-4|'" />
 
-              <!-- Gather filtered observations first -->
-              <xsl:variable name="filteredObservations">
-                <xsl:for-each select="$grouperObs/ccda:observation">
-                  <xsl:variable name="questionCode" select="ccda:code/@code"/>
-                  <xsl:if test="string($questionCode) 
-                                and contains($allowedCodes, concat('|', $questionCode, '|'))
-                                and not(preceding::ccda:observation[ccda:code/@code = $questionCode])
-                                and (
-                                  (ccda:value/ccda:translation/@code = 'X-SDOH-FLO-1570000066-Patient-unable-to-answer'
-                                  or ccda:value/ccda:translation/@code = 'X-SDOH-FLO-1570000066-Patient-declined')
-                                  or (
-                                    string(ccda:value/@code) != 'UNK'
-                                    and string-length(ccda:value/@code) > 0
-                                    and string($questionCode) != 'UNK'
-                                    and string-length($questionCode) > 0
-                                    and string-length(ccda:value/@nullFlavor) = 0
-                                    and string-length(ccda:code/@nullFlavor) = 0
-                                    and (ccda:code/@codeSystemName = 'LOINC' or ccda:code/@codeSystemName = 'SNOMED' or ccda:code/@codeSystemName = 'SNOMED CT')
-                                  )
-                                  or (
-                                      $questionCode = '95614-4'
-                                      and string-length(ccda:value/@value) > 0
-                                    )
-                                )">
-                    <xsl:copy-of select="."/>
+              <!-- Collect the id of every Observation that Observation_latest.xsl emits:
+                   allowed code, valid, most recent for its code, and with a mapped category.
+                   This loops over the REAL source nodes (not a copy), because isLatestObs
+                   uses key() and needs the original document. -->
+              <xsl:variable name="memberRefs">
+                <xsl:for-each select="$grouperObs">
+                  <xsl:variable name="questionCode" select="ccda:observation/ccda:code/@code"/>
+                  <xsl:if test="string($questionCode)
+                                and contains($allowedCodes, concat('|', string($questionCode), '|'))">
+
+                    <xsl:variable name="isLatestMember">
+                      <xsl:call-template name="isLatestObs"/>
+                    </xsl:variable>
+
+                    <xsl:if test="string($isLatestMember) = '1'">
+                      <xsl:variable name="memberCategoryCode">
+                        <xsl:call-template name="mapObservationCategoryCodes">
+                          <xsl:with-param name="questionCode" select="$questionCode"/>
+                        </xsl:call-template>
+                      </xsl:variable>
+
+                      <xsl:if test="string($memberCategoryCode)">
+                        <ref>
+                          <xsl:call-template name="computeObsId">
+                            <xsl:with-param name="er" select="."/>
+                          </xsl:call-template>
+                        </ref>
+                      </xsl:if>
+                    </xsl:if>
                   </xsl:if>
                 </xsl:for-each>
               </xsl:variable>
 
-              <!-- Output JSON from filtered set -->
-              <xsl:for-each select="exsl:node-set($filteredObservations)/ccda:observation">
-                <xsl:variable name="questionCode" select="ccda:code/@code"/>
-
-                <xsl:variable name="encounterEffectiveTime">
-                    <xsl:choose>
-                        <xsl:when test="ccda:effectiveTime/@value">
-                            <xsl:call-template name="formatDateTime">
-                                <xsl:with-param name="dateTime" select="ccda:effectiveTime/@value"/>
-                            </xsl:call-template>
-                        </xsl:when>
-                        <xsl:when test="$encounterEffectiveTimeValue">
-                            <xsl:value-of select="$encounterEffectiveTimeValue"/>
-                        </xsl:when>
-                        <xsl:otherwise>
-                            <xsl:value-of select="$currentTimestamp"/>
-                        </xsl:otherwise>
-                    </xsl:choose>
-                </xsl:variable>
-
-                <xsl:variable name="encounterEffectiveTimeDigits" select="translate($encounterEffectiveTime, '-:TZ', '')"/> <!-- Remove non-digit characters for ID generation -->
-
-                <xsl:variable name="observationIdSource">
-                  <xsl:choose>
-                    <!-- Use extension if present and not empty -->
-                    <xsl:when test="ccda:id/@extension and normalize-space(ccda:id/@extension) != ''">
-                      <xsl:value-of select="concat($questionCode, '-', ccda:id/@extension)"/>
-                    </xsl:when>
-
-                    <!-- Fallback: questionCode + encounterEffectiveTime -->
-                    <xsl:otherwise>
-                      <xsl:value-of
-                        select="concat($questionCode, '-', $encounterEffectiveTimeDigits)"/>
-                    </xsl:otherwise>
-                  </xsl:choose>
-                </xsl:variable>
-
-                <xsl:variable name="observationResourceId">
-                  <xsl:call-template name="generateFixedLengthResourceId">
-                    <xsl:with-param name="prefixString" select="concat($facilityID, '-')"/>
-                    <xsl:with-param name="sha256ResourceId" select="$observationIdSource"/>
-                  </xsl:call-template>
-                </xsl:variable>
-
-                { "reference": "Observation/<xsl:value-of select='$observationResourceId'/>" }<xsl:if test="position() != last()">,</xsl:if>
+              <!-- Output JSON references -->
+              <xsl:for-each select="exsl:node-set($memberRefs)/ref">
+                { "reference": "Observation/<xsl:value-of select='normalize-space(.)'/>" }<xsl:if test="position() != last()">,</xsl:if>
               </xsl:for-each>
             ]
           },
