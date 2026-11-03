@@ -153,6 +153,7 @@ public class PrimeController {
             return Map.ofEntries(  
                     Map.entry("total_mco", 0L),
                     Map.entry("total_files_received", 0L),
+                    Map.entry("partially_processed", 0L),
                     Map.entry("inprogress", 0L),
                     Map.entry("fully_processed", 0L),
                     Map.entry("errored", 0L),
