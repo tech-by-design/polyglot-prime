@@ -12,7 +12,9 @@ import org.springframework.security.oauth2.client.authentication.OAuth2Authentic
 import org.springframework.security.oauth2.core.user.DefaultOAuth2User;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.ResponseBody;
 import org.techbd.service.http.hub.prime.route.RouteMapping;
 import org.techbd.udi.auto.jooq.ingress.Tables;
@@ -128,16 +130,19 @@ public class SettingsController {
 
     @GetMapping("/api/tenants/active")
     @ResponseBody
-    public Object getActiveTenants() {
-        final var typableTable = JooqRowsSupplier.TypableTable.fromTablesRegistry(
-                Tables.class,
-                "techbd_udi_ingress",
-                "active_tenants");
+    public ResponseEntity<?> getActiveTenants(@RequestParam("tenant_type") String tenantType) {
+        String normalizedTenantType = tenantType.trim().toUpperCase(java.util.Locale.ROOT);
+        if (!"MCO".equals(normalizedTenantType) && !"QE".equals(normalizedTenantType)) {
+            return ResponseEntity.badRequest()
+                    .body(java.util.Map.of("message", "tenant_type must be MCO or QE."));
+        }
 
-        return getDsl()
-                .selectFrom(typableTable.table())
+        return ResponseEntity.ok(getDsl()
+                .resultQuery(
+                        "select * from techbd_udi_ingress.get_active_tenant_list(?)",
+                        normalizedTenantType)
                 .fetch()
-                .intoMaps();
+                .intoMaps());
     }
 
 }

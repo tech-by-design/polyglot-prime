@@ -555,13 +555,23 @@ public class TabularRowsController {
         }
 
         Integer resourceTypeId;
+        boolean invalidResourceTypeId = false;
         try {
             resourceTypeId = payload == null || payload.get("resource_type_id") == null
                     ? null
                     : Integer.valueOf(payload.get("resource_type_id").toString());
         } catch (NumberFormatException e) {
             resourceTypeId = null;
+            invalidResourceTypeId = true;
         }
+
+        Object isActiveValue = payload == null ? null : payload.get("is_active");
+        if (isActiveValue != null && !(isActiveValue instanceof Boolean)) {
+            Map<String, Object> responseBody = new HashMap<>();
+            responseBody.put("message", "is_active must be a boolean.");
+            return ResponseEntity.badRequest().body(responseBody);
+        }
+        Boolean isActive = isActiveValue instanceof Boolean ? (Boolean) isActiveValue : null;
 
         var resourceTypesTable = JooqRowsSupplier.TypableTable.fromTablesRegistry(
             Tables.class, "screening_extracts", "mco_resource_types");
@@ -570,7 +580,9 @@ public class TabularRowsController {
                 .from(resourceTypesTable.table())
                 .where(DSL.field(resourceTypesTable.column("resource_type_id")).eq(resourceTypeId))
                 .fetchOne(0, int.class) > 0;
-        if (!resourceTypeExists) {
+        if (invalidResourceTypeId
+                || (resourceTypeId != null && !resourceTypeExists)
+                || (!Boolean.FALSE.equals(isActive) && !resourceTypeExists)) {
             Map<String, Object> responseBody = new HashMap<>();
             responseBody.put("message", "resource_type_id is required and must be an active MCO resource type.");
             return ResponseEntity.badRequest().body(responseBody);
@@ -595,8 +607,14 @@ public class TabularRowsController {
             if (updatedRows > 0) {
                 var preferencesTable = JooqRowsSupplier.TypableTable.fromTablesRegistry(
                         Tables.class, "screening_extracts", "mco_screening_preferences");
-                int updatedPreferenceRows = primaryDslContext.update(preferencesTable.table())
-                        .set(DSL.field(preferencesTable.column("resource_type_id")), DSL.val(resourceTypeId))
+                var preferenceUpdate = primaryDslContext.update(preferencesTable.table())
+                        .set(DSL.field(preferencesTable.column("resource_type_id")), DSL.val(resourceTypeId));
+                if (isActive != null) {
+                    preferenceUpdate = preferenceUpdate.set(
+                            DSL.field(preferencesTable.column("is_active")),
+                            DSL.val(isActive));
+                }
+                int updatedPreferenceRows = preferenceUpdate
                         .where(DSL.field(preferencesTable.column("tenant_id")).eq(tenantId))
                         .execute();
 
@@ -604,7 +622,8 @@ public class TabularRowsController {
                     primaryDslContext.insertInto(preferencesTable.table())
                         .set(DSL.field(preferencesTable.column("tenant_id")), DSL.val(tenantId))
                         .set(DSL.field(preferencesTable.column("resource_type_id")), DSL.val(resourceTypeId))
-                        .set(DSL.field(preferencesTable.column("is_active")), DSL.val(Boolean.TRUE))
+                        .set(DSL.field(preferencesTable.column("is_active")),
+                                DSL.val(isActive == null ? Boolean.TRUE : isActive))
                         .set(DSL.field(preferencesTable.column("created_on_utc")), DSL.currentTimestamp())
                         .execute();
                 }

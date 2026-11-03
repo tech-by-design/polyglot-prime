@@ -628,3 +628,41 @@ SELECT
 
 FROM latest
 ORDER BY GREATEST(fhir, csv, ccda, hl7v2) DESC NULLS LAST;
+
+
+DROP FUNCTION IF EXISTS techbd_udi_ingress.get_active_tenant_list(TEXT);
+
+CREATE OR REPLACE FUNCTION techbd_udi_ingress.get_active_tenant_list(
+    p_tenant_type TEXT
+)
+RETURNS TABLE (
+    tenant_id TEXT,
+    tenant_name TEXT,
+    tenant_displayname TEXT,
+    tenant_short_code TEXT,
+    tenant_type TEXT,
+    resource_type_id TEXT,
+    is_active BOOLEAN
+)
+LANGUAGE sql
+STABLE
+AS $function$
+
+    SELECT
+        t.tenant_id,
+        t.tenant_name,
+        t.tenant_displayname,
+        t.tenant_short_code,
+        t.tenant_type,
+        msp.resource_type_id,
+        msp.is_active
+    FROM techbd_udi_ingress.tenants t
+    LEFT JOIN screening_extracts.mco_screening_preferences msp
+        ON t.tenant_id = msp.tenant_id
+    WHERE
+        t.is_active = TRUE
+        AND t.tenant_type = p_tenant_type
+    ORDER BY
+        t.tenant_displayname ASC;
+
+$function$;
