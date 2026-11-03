@@ -2,9 +2,10 @@
   <id>a8630d07-6ac1-46f8-8d95-01a70ac59206</id>
   <nextMetaDataId>17</nextMetaDataId>
   <name>Excellus</name>
-  <description>Version: 0.1.18
-Update file transfer to S3 via FUSE and SFTP via SSH keys, and fix bigint input validation</description>
-  <revision>17</revision>
+  <description>Version: 0.1.19
+Fixed database entry saving during file rejection resubmission.
+</description>
+  <revision>21</revision>
   <sourceConnector version="26.6.0">
     <metaDataId>0</metaDataId>
     <name>sourceConnector</name>
@@ -2161,100 +2162,258 @@ Update file transfer to S3 via FUSE and SFTP via SSH keys, and fix bigint input 
     }
   }
 
-   if (globalChannelMap.get(&quot;fileRejected&quot;) == true &amp;&amp; !$(&quot;batch_id&quot;) &amp;&amp;
-    $(&quot;originalFilename&quot;).indexOf(&quot;RS_&quot;) == -1) {
- 
+   if (
+    globalChannelMap.get(&quot;fileRejected&quot;) == true &amp;&amp;
+    !globalChannelMap.get(&quot;batch_id&quot;)
+) {
+
     var fileName = $(&quot;originalFilename&quot;);
     var reportingMonth = String(calculateReportingMonthNew());
-                        var rootFileName = fileName; 
-    if (rootFileName.toLowerCase().indexOf(&quot;filerejected_&quot;) === 0) 
-    {
-    	rootFileName = rootFileName.substring(&quot;FileRejected_&quot;.length); 
-    	}
+    var rootFileName = fileName;
+    var originalRootFileName = fileName;
+    var isResubmission = false;
+
+    if (rootFileName.toLowerCase().indexOf(&quot;filerejected_&quot;) === 0) {
+        rootFileName = rootFileName.substring(&quot;FileRejected_&quot;.length);
+    }
+
+    // Check if this is a resubmission
+    if (rootFileName.indexOf(&quot;RS_&quot;) === 0) {
+
+        isResubmission = true;
+
+        var splittedFileName = rootFileName.split(&quot;_&quot;);
+        originalRootFileName = &quot;&quot;;
+
+        for (var part = 1; part &lt; splittedFileName.length - 1; part++) {
+            if (part != splittedFileName.length - 2) {
+                originalRootFileName =
+                    originalRootFileName + splittedFileName[part] + &quot;_&quot;;
+            } else {
+                originalRootFileName =
+                    originalRootFileName + splittedFileName[part] + &quot;.txt&quot;;
+            }
+        }
+
+        logger.info(
+            &quot;Resubmission detected. Current file=&quot; +
+            rootFileName +
+            &quot;, Original file=&quot; +
+            originalRootFileName
+        );
+    }
+
     var rejectDbConn = null;
     var batch_insert = null;
- 
+
     try {
- 
+
         rejectDbConn = DatabaseConnectionFactory.createDatabaseConnection(
             jdbdcDriver,
             jbdcUrl,
             dbName,
             dbPassword
         );
-        var existingBatch = rejectDbConn.executeCachedQuery(
-        &quot;SELECT batch_id &quot; +
-        &quot;FROM mco_data.mco_records &quot; +
-        &quot;WHERE root_file_name = ? &quot; +
-        &quot;AND tenant_id = ? &quot; +
-        &quot;AND is_active = &apos;1&apos; &quot; +
-        &quot;ORDER BY batch_id DESC LIMIT 1&quot;,
-        [rootFileName, mco_id]
-    );
-     if (existingBatch.next()) {
 
-        var existingBatchId = existingBatch.getLong(&quot;batch_id&quot;);
+        var existingBatch = null;
 
-        globalChannelMap.put(&quot;batch_id&quot;, existingBatchId);
+        // ---------------------------------------------------------
+        // 1. For resubmission, first check the ORIGINAL filename
+        // ---------------------------------------------------------
+        if (isResubmission) {
 
-        logger.info(
-            &quot;FILE_REJECTED: Root file already exists. &quot; +
-            &quot;Skipping new mco_records insertion. batch_id=&quot; +
-            existingBatchId +
-            &quot;, root_file_name=&quot; +
-            rootFileName
-        );
-
-    } else {
-        batch_insert = rejectDbConn.executeCachedQuery(
-            &quot;INSERT INTO mco_data.mco_records &quot; +
-            &quot;(root_file_name, created_on_utc, updated_on_utc, total_records, &quot; +
-            &quot;processed_count, errored_count, is_active, status, tenant_id, &quot; +
-            &quot;file_size_in_kb, resubmitted_count, sent_to_datalake_time, &quot; +
-            &quot;qa_completed_time, sent_to_mco_time, reporting_month) &quot; +
-            &quot;VALUES (?, current_timestamp, current_timestamp, ?, null, null, &quot; +
-            &quot;&apos;1&apos;, &apos;FILE_REJECTED&apos;, ?, ?, ?, null, null, null, ?::varchar) &quot; +
-            &quot;RETURNING batch_id&quot;,
-            [
-                rootFileName,
-                0,
-                mco_id,
-                0,
-                0,
-                reportingMonth
-            ]
-        );
- 
-        if (batch_insert.next()) {
-            var rejectedBatchId = batch_insert.getLong(&quot;batch_id&quot;);
- 
-            globalChannelMap.put(&quot;batch_id&quot;, rejectedBatchId);
- 
-            logger.info(
-                &quot;FILE_REJECTED: Created mco_records entry. batch_id=&quot; +
-                rejectedBatchId +
-                &quot;, file=&quot; +
-                fileName
+            existingBatch = rejectDbConn.executeCachedQuery(
+                &quot;SELECT batch_id &quot; +
+                &quot;FROM mco_data.mco_records &quot; +
+                &quot;WHERE root_file_name = ? &quot; +
+                &quot;AND tenant_id = ? &quot; +
+                &quot;AND is_active = &apos;1&apos; &quot; +
+                &quot;ORDER BY batch_id DESC LIMIT 1&quot;,
+                [
+                    new java.lang.String(originalRootFileName),
+                    mco_id
+                ]
             );
+
         } else {
-            throw new Error(
-                &quot;FILE_REJECTED: INSERT succeeded but no batch_id was returned&quot;
+
+            // Normal file - existing behavior
+            existingBatch = rejectDbConn.executeCachedQuery(
+                &quot;SELECT batch_id &quot; +
+                &quot;FROM mco_data.mco_records &quot; +
+                &quot;WHERE root_file_name = ? &quot; +
+                &quot;AND tenant_id = ? &quot; +
+                &quot;AND is_active = &apos;1&apos; &quot; +
+                &quot;ORDER BY batch_id DESC LIMIT 1&quot;,
+                [
+                    new java.lang.String(rootFileName),
+                    mco_id
+                ]
             );
         }
-    }
+
+        // ---------------------------------------------------------
+        // 2. Original file found
+        // ---------------------------------------------------------
+        if (existingBatch.next()) {
+
+            var existingBatchId = existingBatch.getLong(&quot;batch_id&quot;);
+
+            globalChannelMap.put(&quot;batch_id&quot;, existingBatchId);
+
+            logger.info(
+                &quot;FILE_REJECTED: Existing batch found. &quot; +
+                &quot;Using batch_id=&quot; + existingBatchId +
+                &quot;, original_file=&quot; + originalRootFileName
+            );
+
+        } else {
+
+            // ---------------------------------------------------------
+            // 3. Resubmission + original file NOT found
+            //    Before INSERT, check if RS filename already exists
+            // ---------------------------------------------------------
+            var existingResubmission = null;
+
+            if (isResubmission) {
+
+                existingResubmission = rejectDbConn.executeCachedQuery(
+                    &quot;SELECT batch_id &quot; +
+                    &quot;FROM mco_data.mco_records &quot; +
+                    &quot;WHERE root_file_name = ? &quot; +
+                    &quot;AND tenant_id = ? &quot; +
+                    &quot;AND is_active = &apos;1&apos; &quot; +
+                    &quot;ORDER BY batch_id DESC LIMIT 1&quot;,
+                    [
+                        new java.lang.String(rootFileName),
+                        mco_id
+                    ]
+                );
+
+                if (existingResubmission.next()) {
+
+                    var resubmissionBatchId =
+                        existingResubmission.getLong(&quot;batch_id&quot;);
+
+                    globalChannelMap.put(
+                        &quot;batch_id&quot;,
+                        resubmissionBatchId
+                    );
+
+                    logger.info(
+                        &quot;FILE_REJECTED: Resubmission record already exists. &quot; +
+                        &quot;Using existing batch_id=&quot; +
+                        resubmissionBatchId +
+                        &quot;, root_file_name=&quot; +
+                        rootFileName
+                    );
+
+                } else {
+
+                    // RS file does not exist - create it
+                    batch_insert = rejectDbConn.executeCachedQuery(
+                        &quot;INSERT INTO mco_data.mco_records &quot; +
+                        &quot;(root_file_name, created_on_utc, updated_on_utc, total_records, &quot; +
+                        &quot;processed_count, errored_count, is_active, status, tenant_id, &quot; +
+                        &quot;file_size_in_kb, resubmitted_count, sent_to_datalake_time, &quot; +
+                        &quot;qa_completed_time, sent_to_mco_time, reporting_month) &quot; +
+                        &quot;VALUES (?, current_timestamp, current_timestamp, ?, null, null, &quot; +
+                        &quot;&apos;1&apos;, &apos;FILE_REJECTED&apos;, ?, ?, ?, null, null, null, ?::varchar) &quot; +
+                        &quot;RETURNING batch_id&quot;,
+                        [
+                            new java.lang.String(rootFileName),
+                            0,
+                            mco_id,
+                            0,
+                            0,
+                            reportingMonth
+                        ]
+                    );
+
+                    if (batch_insert.next()) {
+
+                        var rejectedBatchId =
+                            batch_insert.getLong(&quot;batch_id&quot;);
+
+                        globalChannelMap.put(
+                            &quot;batch_id&quot;,
+                            rejectedBatchId
+                        );
+
+                        logger.info(
+                            &quot;FILE_REJECTED: Created resubmission batch. &quot; +
+                            &quot;batch_id=&quot; + rejectedBatchId +
+                            &quot;, root_file_name=&quot; + rootFileName
+                        );
+
+                    } else {
+                        throw new Error(
+                            &quot;FILE_REJECTED: INSERT succeeded but no batch_id was returned&quot;
+                        );
+                    }
+                }
+
+            } else {
+
+                // -------------------------------------------------
+                // Normal file - keep existing INSERT behavior
+                // -------------------------------------------------
+                batch_insert = rejectDbConn.executeCachedQuery(
+                    &quot;INSERT INTO mco_data.mco_records &quot; +
+                    &quot;(root_file_name, created_on_utc, updated_on_utc, total_records, &quot; +
+                    &quot;processed_count, errored_count, is_active, status, tenant_id, &quot; +
+                    &quot;file_size_in_kb, resubmitted_count, sent_to_datalake_time, &quot; +
+                    &quot;qa_completed_time, sent_to_mco_time, reporting_month) &quot; +
+                    &quot;VALUES (?, current_timestamp, current_timestamp, ?, null, null, &quot; +
+                    &quot;&apos;1&apos;, &apos;FILE_REJECTED&apos;, ?, ?, ?, null, null, null, ?::varchar) &quot; +
+                    &quot;RETURNING batch_id&quot;,
+                    [
+                        new java.lang.String(rootFileName),
+                        0,
+                        mco_id,
+                        0,
+                        0,
+                        reportingMonth
+                    ]
+                );
+
+                if (batch_insert.next()) {
+
+                    var rejectedBatchId =
+                        batch_insert.getLong(&quot;batch_id&quot;);
+
+                    globalChannelMap.put(
+                        &quot;batch_id&quot;,
+                        rejectedBatchId
+                    );
+
+                    logger.info(
+                        &quot;FILE_REJECTED: Created batch. &quot; +
+                        &quot;batch_id=&quot; + rejectedBatchId +
+                        &quot;, root_file_name=&quot; + rootFileName
+                    );
+
+                } else {
+                    throw new Error(
+                        &quot;FILE_REJECTED: INSERT succeeded but no batch_id was returned&quot;
+                    );
+                }
+            }
+        }
+
     } catch (err) {
- 
+
         logger.error(
             &quot;FILE_REJECTED: Failed to insert mco_records entry for file &quot; +
             fileName +
             &quot;. Error: &quot; +
             err
         );
- 
+
         throw err;
- 
+
     } finally {
- 
+
         if (batch_insert) {
             try {
                 batch_insert.close();
@@ -2262,7 +2421,7 @@ Update file transfer to S3 via FUSE and SFTP via SSH keys, and fix bigint input 
                 logger.warn(&quot;Unable to close batch_insert: &quot; + e);
             }
         }
- 
+
         if (rejectDbConn) {
             try {
                 rejectDbConn.close();
@@ -5773,10 +5932,22 @@ try {
 
   //Insert initial entries to the mco_records table
   batch_select = dbConn.executeCachedQuery(
-    &quot;select batch_id, resubmitted_count, status, total_records from mco_data.mco_records where root_file_name = ? and is_active = &apos;1&apos; &quot;,
-    [rootFilename]
+    &quot;select batch_id, resubmitted_count, status, total_records from mco_data.mco_records where root_file_name = ? and tenant_id = ? and is_active = &apos;1&apos; order by batch_id desc limit 1&quot;,
+    [rootFilename, mco_id]
   );
   batch_id = batch_select.next() ? batch_select.getInt(&quot;batch_id&quot;) : null;
+  // For resubmission, if batch_id is not found in DB,
+  // use the batch_id created/found by the previous script
+	if (isResubmission != -1 &amp;&amp; batch_id == null) {
+	  batch_id = globalChannelMap.get(&quot;batch_id&quot;);
+	
+	  logger.info(
+	    &quot;Resubmission file: batch_id not found for rootFilename=&quot; +
+	      rootFilename +
+	      &quot;. Using batch_id from globalChannelMap=&quot; +
+	      batch_id
+	  );
+	}
   if (&quot;EC084&quot; in errorJson) {
     //Insert initial entries to the mco_record_details table with the batch_id we received from the previous call
     batch_details_insert = dbConn.executeCachedQuery(
@@ -6196,7 +6367,7 @@ return;</undeployScript>
     <metadata>
       <enabled>true</enabled>
       <lastModified>
-        <time>1790762883858</time>
+        <time>1793685504615</time>
         <timezone>Asia/Calcutta</timezone>
       </lastModified>
       <pruningSettings>
@@ -6207,17 +6378,15 @@ return;</undeployScript>
     </metadata>
     <channelTags>
       <channelTag>
-        <id>5a73058d-b93a-46dd-b157-9fbc440fc625</id>
-        <name>0_1_18</name>
+        <id>c0914be5-438d-4104-935b-18002f981c38</id>
+        <name>0_1_19</name>
         <channelIds>
           <string>281247c5-fb87-4b56-9691-190174cc834f</string>
           <string>a8630d07-6ac1-46f8-8d95-01a70ac59206</string>
           <string>ecb5ad78-09f4-4206-81a1-7d9383871580</string>
-          <string>be60d481-5755-4ad7-81ed-246e4af4d86a</string>
-          <string>47283a5e-090c-41d7-8b5d-14994d64d395</string>
         </channelIds>
         <backgroundColor>
-          <red>128</red>
+          <red>255</red>
           <green>0</green>
           <blue>0</blue>
           <alpha>255</alpha>
