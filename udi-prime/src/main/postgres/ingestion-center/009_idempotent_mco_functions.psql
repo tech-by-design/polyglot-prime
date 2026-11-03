@@ -173,6 +173,7 @@ RETURNS TABLE (
     total_mco bigint,
     total_files_received bigint,
     inprogress bigint,
+    partially_processed bigint,
     fully_processed bigint,
     errored bigint,
     records_received bigint,
@@ -211,8 +212,9 @@ BEGIN
         COUNT(DISTINCT mr.tenant_id) AS total_mco,
         COUNT(*) AS total_files_received,
         COUNT(*) FILTER (WHERE mr.status = 'INPROGRESS') AS inprogress,
+        COUNT(*) FILTER (WHERE mr.status = 'PARTIALLY_PROCESSED') AS partially_processed,
         COUNT(*) FILTER (WHERE mr.status = 'FULLY_PROCESSED') AS fully_processed,
-        COUNT(*) FILTER (WHERE mr.status = 'ERRORED') AS errored,
+        COUNT(*) FILTER (WHERE mr.status IN ('ERRORED', 'FILE_REJECTED')) AS errored,
         COALESCE(SUM(mr.total_records), 0)::bigint AS records_received,
         COALESCE(SUM(mr.processed_count), 0)::bigint AS records_processed,
         COALESCE(SUM(mr.errored_count), 0)::bigint AS records_with_errors
