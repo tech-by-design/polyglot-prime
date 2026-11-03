@@ -58,7 +58,6 @@
             font-size: 11px;
             font-weight: 700;
             color: #64748b;
-            text-transform: uppercase;
             letter-spacing: 0.6px;
             margin-bottom: 8px;
         }
@@ -73,6 +72,7 @@
             width: 100%;
             padding: 10px 38px 10px 14px;
             font-size: 14px;
+            font-family: inherit;
             border: 1px solid #cbd5e1;
             border-radius: 6px;
             background-color: #ffffff;
@@ -97,6 +97,28 @@
         select.form-control {
             padding-right: 14px;
             cursor: pointer;
+        }
+
+        .tenant-type-select-wrapper {
+            position: relative;
+            width: 100%;
+        }
+
+        .tenant-type-select {
+            appearance: none !important;
+            -webkit-appearance: none !important;
+            background-image: none !important;
+            padding-right: 38px !important;
+        }
+
+        .tenant-type-select-wrapper .tenant-select-arrow {
+            position: absolute;
+            top: 50%;
+            right: 14px;
+            margin: 0;
+            transform: translateY(-50%);
+            pointer-events: none;
+            padding-right: 26px;
         }
 
         .field-icon {
@@ -130,6 +152,11 @@
             text-align: left;
             cursor: pointer;
             padding-right: 14px;
+        }
+
+        .tenant-select-button,
+        .tenant-type-select {
+            height: 40px;
         }
 
         .tenant-select-button:disabled {
@@ -232,6 +259,19 @@
             color: #dc2626;
         }
 
+        .checkbox-control {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            min-height: 40px;
+            font-size: 14px;
+            color: #0f172a;
+        }
+
+        .mco-preference-field[hidden] {
+            display: none;
+        }
+
         .save-loader {
             display: inline-flex;
             align-items: center;
@@ -305,6 +345,18 @@
                     <form id="tenantForm" onsubmit="handleSave(event)">
 
                         <div class="form-grid">
+                            <div class="form-group full-width">
+                                <label class="form-label" for="tenantTypeSelect">Select Tenant Type</label>
+                                <div class="tenant-type-select-wrapper">
+                                    <select id="tenantTypeSelect" class="form-control tenant-type-select">
+                                        <option value="" selected disabled>Select tenant type</option>
+                                        <option value="MCO">MCO</option>
+                                        <option value="QE">QE</option>
+                                    </select>
+                                    <span class="tenant-select-arrow" aria-hidden="true">▾</span>
+                                </div>
+                            </div>
+
                             <!-- Row 1: Select Tenant Dropdown (Full Width) -->
                             <div class="form-group full-width">
                                 <label class="form-label" for="tenantSelect">Select Tenant</label>
@@ -313,7 +365,7 @@
                                         class="form-control tenant-select-button"
                                         aria-haspopup="listbox"
                                         aria-expanded="false">
-                                        <span id="selectedTenantText">Loading tenants...</span>
+                                        <span id="selectedTenantText">Select a tenant type first</span>
                                         <span class="tenant-select-arrow">▾</span>
                                     </button>
 
@@ -351,16 +403,6 @@
                  
                                 </div>
                             </div>
-                        <!-- Row 3: Read-only Tenant Type -->
-                         <div class="form-group">
-                                <label class="form-label">Tenant Type</label>
-                                <div class="input-wrapper">
-                                    <input type="text" id="tenantType" class="form-control" readonly>
-                                    <!-- <span class="field-icon" title="Read-only">
-                                        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect><path d="M7 11V7a5 5 0 0 1 10 0v4"></path></svg>
-                                    </span> -->
-                                </div>
-                            </div>                            
 
                             <!-- Row 4: Read-only Tenant ID with Copy Icon -->
                             <div class="form-group">
@@ -388,8 +430,16 @@
                                     </span> -->
                                 </div>
                             </div>
-                            <!-- Row 2: Editable MCO File Type -->
-                            <div class="form-group">
+                            <!-- MCO Preferences -->
+                            <div class="form-group mco-preference-field" id="isActiveField" hidden>
+                                <label class="form-label" for="isActive">HRSN Data Sending Status</label>
+                                <select id="isActive" class="form-control"
+                                    onchange="updateMcoPreferenceVisibility(); checkDirtyState()">
+                                    <option value="active">Active</option>
+                                    <option value="inactive">Inactive</option>
+                                </select>
+                            </div>
+                            <div class="form-group mco-preference-field" id="mcoFileTypeField" hidden>
                                 <label class="form-label" for="mcoFileType">MCO File Format Preference</label>
                                 <select id="mcoFileType" class="form-control" onchange="checkDirtyState()">
                                     <option value="" disabled selected hidden>Choose file type</option>
@@ -413,32 +463,49 @@
 
         <script>
             let tenantsList = [];
-            let currentTenantIndex = 0;
+            let currentTenantIndex = -1;
+            let tenantFetchRequestId = 0;
 
+            const tenantTypeSelectEl = document.getElementById('tenantTypeSelect');
             const tenantSelectEl = document.getElementById('tenantSelect');
             const selectedTenantTextEl = document.getElementById('selectedTenantText');
             const tenantOptionsEl = document.getElementById('tenantOptions');
             const displayNameEl = document.getElementById('displayName');
             const mcoFileTypeEl = document.getElementById('mcoFileType');
             const tenantNameEl = document.getElementById('tenantName');
-            const tenantTypeEl = document.getElementById('tenantType');
             const tenantIdEl = document.getElementById('tenantId');
             const shortCodeEl = document.getElementById('shortCode');
+            const mcoFileTypeFieldEl = document.getElementById('mcoFileTypeField');
+            const isActiveFieldEl = document.getElementById('isActiveField');
+            const isActiveEl = document.getElementById('isActive');
             const saveBtnEl = document.getElementById('saveBtn');
             const saveBtnDefaultText = saveBtnEl.textContent;
             const schemaName = 'techbd_udi_ingress';
 
             async function fetchAndPopulateTenants() {
+                const tenantType = tenantTypeSelectEl.value;
+                if (!tenantType) return;
+
+                const requestId = ++tenantFetchRequestId;
+                tenantsList = [];
+                currentTenantIndex = -1;
+                tenantOptionsEl.innerHTML = '';
+                selectedTenantTextEl.textContent = 'Loading tenants...';
+                clearTenantDetails();
                 setTenantLoading(true);
+                tenantTypeSelectEl.disabled = true;
 
                 try {
-                    const apiUrl = window.shell.serverSideUrl(`/api/tenants/active`);
+                    const apiUrl = window.shell.serverSideUrl(
+                        `/api/tenants/active?tenant_type=${encodeURIComponent(tenantType)}`
+                    );
                     const response = await fetch(apiUrl);
                     if (!response.ok) {
                         throw new Error(`Server error: ${response.status}`);
                     }
 
                     const data = await response.json();
+                    if (requestId !== tenantFetchRequestId) return;
 
                     tenantsList = data.map(item => ({
                         tenantId: item.tenant_id,
@@ -447,6 +514,7 @@
                         tenantType: item.tenant_type,
                         shortCode: item.tenant_short_code,
                         resourceTypeId: item.resource_type_id,
+                        isActive: item.is_active !== false,
                         createdAt: item.created_at
                     }));
 
@@ -476,14 +544,31 @@
                     tenantSelectEl.disabled = false;
                     selectTenant(0);
                 } catch (error) {
+                    if (requestId !== tenantFetchRequestId) return;
                     console.error('Failed to fetch active tenants:', error);
                     selectedTenantTextEl.textContent = 'Failed to load tenants';
                     tenantSelectEl.disabled = true;
                     tenantOptionsEl.innerHTML =
                         '<div class="tenant-error">Failed to load tenants. Please try again.</div>';
                 } finally {
-                    setTenantLoading(false);
+                    if (requestId === tenantFetchRequestId) {
+                        tenantTypeSelectEl.disabled = false;
+                        if (tenantsList.length === 0) {
+                            tenantSelectEl.disabled = true;
+                        }
+                    }
                 }
+            }
+
+            function clearTenantDetails() {
+                displayNameEl.value = '';
+                tenantNameEl.value = '';
+                tenantIdEl.value = '';
+                shortCodeEl.value = '';
+                mcoFileTypeEl.value = '';
+                isActiveEl.value = 'inactive';
+                updateMcoPreferenceVisibility();
+                saveBtnEl.disabled = true;
             }
 
             function setTenantLoading(isLoading) {
@@ -550,10 +635,11 @@
                 const tenant = tenantsList[index];
                 displayNameEl.value = tenant.displayName;
                 tenantNameEl.value = tenant.tenantName;
-                tenantTypeEl.value = tenant.tenantType;
                 tenantIdEl.value = tenant.tenantId;
                 shortCodeEl.value = tenant.shortCode;
                 mcoFileTypeEl.value = tenant.resourceTypeId == null ? '' : String(tenant.resourceTypeId);
+                isActiveEl.value = tenant.isActive ? 'active' : 'inactive';
+                updateMcoPreferenceVisibility();
                 saveBtnEl.disabled = true;
             }
 
@@ -564,7 +650,8 @@
                     ? ''
                     : String(tenantsList[currentTenantIndex].resourceTypeId);
                 saveBtnEl.disabled = displayNameEl.value.trim() === originalName
-                    && mcoFileTypeEl.value === originalResourceTypeId;
+                    && mcoFileTypeEl.value === originalResourceTypeId
+                    && (isActiveEl.value === 'active') === tenantsList[currentTenantIndex].isActive;
             }
 
             function setSaveLoading(isLoading) {
@@ -585,6 +672,7 @@
                 const newDisplayName = displayNameEl.value.trim();
                 const oldDisplayName = tenantsList[currentTenantIndex].displayName;
                 const newResourceTypeId = mcoFileTypeEl.value;
+                const newIsActive = isActiveEl.value === 'active';
 
                 if (newDisplayName.length === 0) {
                     showToast('Tenant display name cannot be empty.', true);
@@ -592,7 +680,7 @@
                     return;
                 }
 
-                if (!newResourceTypeId) {
+                if (newIsActive && !newResourceTypeId) {
                     showToast('MCO file type must be selected.', true);
                     return;
                 }
@@ -601,7 +689,9 @@
                     ? ''
                     : String(tenantsList[currentTenantIndex].resourceTypeId);
 
-                if (newDisplayName === oldDisplayName && newResourceTypeId === oldResourceTypeId) {
+                if (newDisplayName === oldDisplayName
+                    && newResourceTypeId === oldResourceTypeId
+                    && newIsActive === tenantsList[currentTenantIndex].isActive) {
                     saveBtnEl.disabled = true;
                     return;
                 }
@@ -620,7 +710,8 @@
                         },
                         body: JSON.stringify({
                             tenant_displayname: newDisplayName,
-                            resource_type_id: Number(newResourceTypeId)
+                            resource_type_id: newResourceTypeId ? Number(newResourceTypeId) : null,
+                            is_active: newIsActive
                         })
                     });
 
@@ -630,16 +721,21 @@
                     }
 
                     tenantsList[currentTenantIndex].displayName = newDisplayName;
-                    tenantsList[currentTenantIndex].resourceTypeId = Number(newResourceTypeId);
+                    tenantsList[currentTenantIndex].resourceTypeId = newResourceTypeId
+                        ? Number(newResourceTypeId)
+                        : null;
+                    tenantsList[currentTenantIndex].isActive = newIsActive;
+                    selectedTenantTextEl.textContent = newDisplayName;
+                    tenantOptionsEl.querySelectorAll('.tenant-option')[currentTenantIndex].textContent = newDisplayName;
                     setSaveLoading(false);
                     saveBtnEl.disabled = true;
-                    showToast(`Tenant display name updated successfully to "${newDisplayName}"`);
-                    window.location.reload();
+                    showToast(`Tenant settings saved for "${newDisplayName}" (${tenantsList[currentTenantIndex].tenantType}).`);
                 } catch (error) {
                     setSaveLoading(false);
                     console.error('Error updating tenant display name:', error);
                     showToast('Failed to save tenant display name. Please try again.', true);
                     displayNameEl.value = oldDisplayName;
+                    checkDirtyState();
                 }
             }
 
@@ -671,7 +767,16 @@
                 navigator.clipboard.writeText(tenantIdEl.value);
             }
 
-            document.addEventListener('DOMContentLoaded', fetchAndPopulateTenants);
+            function updateMcoPreferenceVisibility() {
+                const isMcoSelected = tenantTypeSelectEl.value === 'MCO';
+                isActiveFieldEl.hidden = !isMcoSelected;
+                mcoFileTypeFieldEl.hidden = !isMcoSelected || isActiveEl.value !== 'active';
+            }
+
+            tenantTypeSelectEl.addEventListener('change', () => {
+                updateMcoPreferenceVisibility();
+                fetchAndPopulateTenants();
+            });
         </script>
     </div>
 </body>
