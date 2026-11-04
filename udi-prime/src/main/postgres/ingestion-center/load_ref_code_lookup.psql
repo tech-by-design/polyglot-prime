@@ -1430,8 +1430,7 @@ INSERT INTO techbd_udi_ingress.ref_code_lookup (ref_code_lookup_id,code_type,cod
 INSERT INTO techbd_udi_ingress.ref_code_lookup (ref_code_lookup_id,code_type,code,display_string,system_value,description,ig_version,created_at,created_by,provenance) VALUES
 	 ('f4322125-bbb1-40cf-b6df-3a2072e375ad','race','2106-3','White','urn:oid:2.16.840.1.113883.6.238','ombCategory','1.4.2','2025-04-30 15:50:54.008256+05:30','postgres','TechBD'),
 	 ('eb02747a-6cfe-45c0-9858-20e67e3447d1','ethnicity','2135-2','Hispanic or Latino','urn:oid:2.16.840.1.113883.6.238','ombCategory','1.4.2','2025-04-30 15:50:54.008256+05:30','postgres','TechBD'),
-	 ('d0b10365-0493-4d54-a719-66597bcc02e8','ethnicity','2186-5','Non Hispanic or Latino','urn:oid:2.16.840.1.113883.6.238','ombCategory','1.4.2','2025-04-30 15:50:54.008256+05:30','postgres','TechBD'),
-	 ('0080d144-b668-487b-b5bd-d39401951755','screening_code','NYS-AHC-HRSN','NYS Accountable Health Communities (AHC) Health-Related Social Needs Screening (HRSN) tool','http://shinny.org/us/ny/hrsn/CodeSystem/NYS-HRSN-Questionnaire',NULL,'1.5.2','2025-06-19 16:02:19.676768+05:30','postgres','TechBD'),
+	 ('d0b10365-0493-4d54-a719-66597bcc02e8','ethnicity','2186-5','Non Hispanic or Latino','urn:oid:2.16.840.1.113883.6.238','ombCategory','1.4.2','2025-04-30 15:50:54.008256+05:30','postgres','TechBD'),	 
 	 ('5f3037d0-0ea8-4423-891c-197db818503e','screening_code','NA','not applicable','http://shinny.org/us/ny/hrsn/CodeSystem/NYS-HRSN-Questionnaire',NULL,'1.5.2','2025-06-19 16:02:19.676768+05:30','postgres','TechBD'),
 	 ('4f4aab00-c2dd-4401-93fb-e3ed86160ff1','organization_type','other','Other','http://terminology.hl7.org/CodeSystem/organization-type',NULL,'1.4.2','2025-04-30 15:50:54.008256+05:30','postgres','TechBD'),
 	 ('bdf363d1-fb44-4aab-8686-833de170b328','organization_type','cg','Community Group','http://terminology.hl7.org/CodeSystem/organization-type',NULL,'1.4.2','2025-04-30 15:50:54.008256+05:30','postgres','TechBD'),
@@ -1608,11 +1607,22 @@ INSERT INTO techbd_udi_ingress.ref_code_lookup (ref_code_lookup_id,code_type,cod
 INSERT INTO techbd_udi_ingress.ref_code_lookup (ref_code_lookup_id,code_type,code,display_string,system_value,description,ig_version,created_at,created_by,provenance) VALUES
 	 ('b0f5a577-4215-4258-ab24-7b38bf577e31','screening_code','93025-5','Protocol for Responding to and Assessing Patients'' Assets, Risks, and Experiences [PRAPARE]','http://loinc.org',NULL,'1.9.2','2026-06-23 11:22:54.008256+05:30','postgres','TechBD') ON CONFLICT DO NOTHING;	 
  
+
 -- Update system_value for the relevant screening codes
 UPDATE techbd_udi_ingress.ref_code_lookup
-SET system_value = 'http://shinny.org/us/ny/hrsn/CodeSystem/NYS-HRSN-Questionnaire'
+SET system_value = 'http://shinny.org/us/ny/hrsn/CodeSystem/NYSHRSNQuestionnaire'
 WHERE code_type = 'screening_code'
-  AND code IN ('NA', 'NYSAHCHRSN');  
+  AND code IN ('NA', 'NYSAHCHRSN');
+
+DELETE FROM techbd_udi_ingress.ref_code_lookup
+WHERE code_type = 'screening_code'
+  AND code = 'NYS-AHC-HRSN'
+  AND EXISTS (
+      SELECT 1
+      FROM techbd_udi_ingress.ref_code_lookup
+      WHERE code_type = 'screening_code'
+        AND code = 'NYS-AHC-HRSN'
+  );
 
 PERFORM pg_advisory_unlock_shared(hashtext('insert_code_lookup_data'));
  
