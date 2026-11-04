@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<!-- Version : 0.1.0 -->
+<!-- Version : 0.1.1 -->
 <xsl:stylesheet xmlns:xsl="http://www.w3.org/1999/XSL/Transform" version="1.0"
     xmlns:hl7="urn:hl7-org:v3"
     xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
@@ -42,7 +42,7 @@
             <xsl:copy-of select="hl7:author"/>
             <xsl:copy-of select="hl7:custodian"/>
             <xsl:copy-of select="hl7:legalAuthenticator"/>
-            <xsl:copy-of select="hl7:documentationOf"/>
+            <!-- <xsl:copy-of select="hl7:documentationOf"/> -->
 
             <!-- CureMD - always have consent details in Social History section with  Entry.observation.entryRelationship.observation.code = "105511-0" and answer in Entry.observation.entryRelationship.observation.value.code (LA33-6 = Yes/ LA33-8 = No) or value.displayName="Yes" or "No"  -->
             <xsl:variable name="consent" select="
