@@ -98,7 +98,7 @@ public class PatientConverter extends BaseConverter {
         }                                                                                         
         patient.setLanguage("en");
         populatePatientWithExtensions(patient, demographicData, interactionId, baseUrl);
-        populateMrIdentifier(patient, demographicData,qeAdminData, idsGenerated );
+        populateMrIdentifier(patient, demographicData,qeAdminData, idsGenerated, baseUrl);
         populateMaIdentifier(patient, demographicData);
         populateSsnIdentifier(patient, demographicData);
         populatePatientName(patient, demographicData, baseUrl);
@@ -243,7 +243,7 @@ public class PatientConverter extends BaseConverter {
             String[] systems = StringUtils.defaultString(demographicData.getGenderIdentityCodeSystem()).split(";");
             String[] descriptions = StringUtils.defaultString(demographicData.getGenderIdentityCodeDescription()).split(";");
 
-            Extension genderIdentityExtension = new Extension(baseUrl + "/StructureDefinition/shinny-gender-identity");
+            Extension genderIdentityExtension = new Extension("http://hl7.org/fhir/us/core/StructureDefinition/us-core-genderIdentity");
             CodeableConcept genderConcept = new CodeableConcept();
 
             for (int i = 0; i < rawCodes.length; i++) {
@@ -313,7 +313,7 @@ public class PatientConverter extends BaseConverter {
 
    
 
-    private static void populateMrIdentifier(Patient patient, DemographicData data,QeAdminData qeAdminData,Map<String,String> idsGenerated) {
+    private static void populateMrIdentifier(Patient patient, DemographicData data,QeAdminData qeAdminData,Map<String,String> idsGenerated, String baseUrl) {
         if (StringUtils.isNotEmpty(data.getPatientMrIdValue())) {
             Identifier identifier = new Identifier();
             Coding coding = new Coding();
@@ -327,7 +327,7 @@ public class PatientConverter extends BaseConverter {
 
             // Optional: Add assigner if needed (uncomment if required)
             Reference assigner = new Reference();
-            assigner.setReference("Organization/"+idsGenerated.get(CsvConstants.ORGANIZATION_ID));
+            assigner.setReference(baseUrl + "/Organization/"+idsGenerated.get(CsvConstants.ORGANIZATION_ID));
             // populate while organization is populated
             identifier.setAssigner(assigner);
 
@@ -362,7 +362,7 @@ public class PatientConverter extends BaseConverter {
             type.addCoding(coding);
             type.setText("Social Security Number");
             identifier.setType(type);
-            identifier.setSystem("http://www.ssa.gov/"); // TODO : remove static reference
+            identifier.setSystem("http://hl7.org/fhir/sid/us-ssn/"); // TODO : remove static reference
             identifier.setValue(data.getPatientSsIdValue());
             patient.addIdentifier(identifier);
         }

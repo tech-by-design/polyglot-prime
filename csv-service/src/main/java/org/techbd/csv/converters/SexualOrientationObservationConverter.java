@@ -11,6 +11,7 @@ import org.hl7.fhir.r4.model.Bundle.HTTPVerb;
 import org.hl7.fhir.r4.model.CanonicalType;
 import org.hl7.fhir.r4.model.CodeableConcept;
 import org.hl7.fhir.r4.model.Coding;
+import org.hl7.fhir.r4.model.DateTimeType;
 import org.hl7.fhir.r4.model.Meta;
 import org.hl7.fhir.r4.model.Observation;
 import org.hl7.fhir.r4.model.Reference;
@@ -77,12 +78,15 @@ public class SexualOrientationObservationConverter extends BaseConverter {
             
             observation.setStatus(Observation.ObservationStatus.fromCode("final")); // TODO : remove static reference
             Reference subjectReference = new Reference();
-            subjectReference.setReference("Patient/" + idsGenerated.get(CsvConstants.PATIENT_ID)); // TODO : remove static reference
+            subjectReference.setReference(baseUrl + "/Patient/" + idsGenerated.get(CsvConstants.PATIENT_ID)); // TODO : remove static reference
             observation.setSubject(subjectReference);
             CodeableConcept code = new CodeableConcept();
             code.addCoding(new Coding("http://loinc.org", // TODO : remove static reference
                     "76690-7", "Sexual orientation")); // TODO : remove static reference
             observation.setCode(code);
+            if (StringUtils.isNotEmpty(demographicData.getSexualOrientationLastUpdated())) {
+            observation.setEffective(new DateTimeType(DateUtil.convertStringToDate(demographicData.getSexualOrientationLastUpdated())));
+            }
 
             CodeableConcept value = new CodeableConcept();
             String originalCode = fetchCode(demographicData.getSexualOrientationCode(), CsvConstants.SEXUAL_ORIENTATION_CODE, interactionId);
