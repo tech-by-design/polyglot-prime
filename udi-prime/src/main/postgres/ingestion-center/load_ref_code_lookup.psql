@@ -37,7 +37,7 @@ INSERT INTO techbd_udi_ingress.ref_code_lookup (ref_code_lookup_id,code_type,cod
 	 ('f601548d-b8ac-48e6-81b0-dfa1ef7c05ec','administrative_sex','female','Female','http://hl7.org/fhir/administrative-gender',NULL,'1.4.2','2025-04-30 15:50:54.008256+05:30','postgres','TechBD'),
 	 ('445f6368-5803-49ad-b05c-d76d3b0857b8','administrative_sex','unknown','Unknown','http://hl7.org/fhir/administrative-gender',NULL,'1.4.2','2025-04-30 15:50:54.008256+05:30','postgres','TechBD'),
 	 ('ff1f304f-007f-4d21-9e6d-a6a66a3a5aae','administrative_sex','other','Other','http://hl7.org/fhir/administrative-gender',NULL,'1.4.2','2025-04-30 15:50:54.008256+05:30','postgres','TechBD'),
-	 ('edd3d504-baf9-4d76-949f-36ddb92603bd','screening_code','NYSAHCHRSN','NYS Accountable Health Communities (AHC) Health-Related Social Needs Screening (HRSN) tool','http://shinny.org/us/ny/hrsn/CodeSystem/NYS-HRSN-Questionnaire',NULL,'1.4.2','2025-04-30 15:50:54.008256+05:30','postgres','TechBD'),
+	 ('edd3d504-baf9-4d76-949f-36ddb92603bd','screening_code','NYSAHCHRSN','NYS Accountable Health Communities (AHC) Health-Related Social Needs Screening (HRSN) tool','http://test.shinny.org/us/ny/hrsn/CodeSystem/NYSHRSNQuestionnaire',NULL,'1.4.2','2025-04-30 15:50:54.008256+05:30','postgres','TechBD'),
 	 ('9b13ba6b-069d-4fdf-b39d-9ed7f7dec774','ethnicity','2137-8','Spaniard','urn:oid:2.16.840.1.113883.6.238',NULL,'1.4.2','2025-04-30 15:50:54.008256+05:30','postgres','TechBD'),
 	 ('cee82c55-d1c6-4432-b330-3e66e295f858','ethnicity','2148-5','Mexican','urn:oid:2.16.840.1.113883.6.238',NULL,'1.4.2','2025-04-30 15:50:54.008256+05:30','postgres','TechBD'),
 	 ('c04cd591-ed8d-4faf-bea1-fbe59bb4eba6','ethnicity','2155-0','Central American','urn:oid:2.16.840.1.113883.6.238',NULL,'1.4.2','2025-04-30 15:50:54.008256+05:30','postgres','TechBD'),
@@ -1431,7 +1431,7 @@ INSERT INTO techbd_udi_ingress.ref_code_lookup (ref_code_lookup_id,code_type,cod
 	 ('f4322125-bbb1-40cf-b6df-3a2072e375ad','race','2106-3','White','urn:oid:2.16.840.1.113883.6.238','ombCategory','1.4.2','2025-04-30 15:50:54.008256+05:30','postgres','TechBD'),
 	 ('eb02747a-6cfe-45c0-9858-20e67e3447d1','ethnicity','2135-2','Hispanic or Latino','urn:oid:2.16.840.1.113883.6.238','ombCategory','1.4.2','2025-04-30 15:50:54.008256+05:30','postgres','TechBD'),
 	 ('d0b10365-0493-4d54-a719-66597bcc02e8','ethnicity','2186-5','Non Hispanic or Latino','urn:oid:2.16.840.1.113883.6.238','ombCategory','1.4.2','2025-04-30 15:50:54.008256+05:30','postgres','TechBD'),	 
-	 ('5f3037d0-0ea8-4423-891c-197db818503e','screening_code','NA','not applicable','http://shinny.org/us/ny/hrsn/CodeSystem/NYS-HRSN-Questionnaire',NULL,'1.5.2','2025-06-19 16:02:19.676768+05:30','postgres','TechBD'),
+	 ('5f3037d0-0ea8-4423-891c-197db818503e','screening_code','NA','not applicable','http://test.shinny.org/us/ny/hrsn/CodeSystem/NYSHRSNQuestionnaire',NULL,'1.5.2','2025-06-19 16:02:19.676768+05:30','postgres','TechBD'),
 	 ('4f4aab00-c2dd-4401-93fb-e3ed86160ff1','organization_type','other','Other','http://terminology.hl7.org/CodeSystem/organization-type',NULL,'1.4.2','2025-04-30 15:50:54.008256+05:30','postgres','TechBD'),
 	 ('bdf363d1-fb44-4aab-8686-833de170b328','organization_type','cg','Community Group','http://terminology.hl7.org/CodeSystem/organization-type',NULL,'1.4.2','2025-04-30 15:50:54.008256+05:30','postgres','TechBD'),
 	 ('2ad98dc8-17f9-4230-ab21-a850ee1a4346','organization_type','prov','Healthcare Provider','http://terminology.hl7.org/CodeSystem/organization-type',NULL,'1.4.2','2025-04-30 15:50:54.008256+05:30','postgres','TechBD'),
@@ -1610,7 +1610,7 @@ INSERT INTO techbd_udi_ingress.ref_code_lookup (ref_code_lookup_id,code_type,cod
 
 -- Update system_value for the relevant screening codes
 UPDATE techbd_udi_ingress.ref_code_lookup
-SET system_value = 'http://shinny.org/us/ny/hrsn/CodeSystem/NYSHRSNQuestionnaire'
+SET system_value = 'http://test.shinny.org/us/ny/hrsn/CodeSystem/NYSHRSNQuestionnaire'
 WHERE code_type = 'screening_code'
   AND code IN ('NA', 'NYSAHCHRSN');
 
