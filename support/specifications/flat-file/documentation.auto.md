@@ -349,7 +349,7 @@
   - `type` string
   - `constraints`:
     - `required` True
-    - `pattern` `^(?i:http://loinc\.org|https://shinny\.org/us/ny/hrsn/codesystem-nys-hrsn-questionnaire\.html|http://shinny\.org/us/ny/hrsn/codesystem/nyshrsnquestionnaire)$`
+    - `pattern` `^(?i:http://loinc\.org|https://shinny\.org/us/ny/hrsn/codesystem-nys-hrsn-questionnaire\.html|http://test\.shinny\.org/us/ny/hrsn/codesystem/nyshrsnquestionnaire)$`
 ### `QUESTION_CODE`
   - `description` Bundle.entry.resource.where(resourceType ='Observation' and not(hasMember.exists())).code.coding.code
   - `type` string
