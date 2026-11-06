@@ -1,0 +1,3262 @@
+<channel version="4.5.0">
+  <id>8ac74b49-acb3-48f9-90fa-914cacdbe16f</id>
+  <nextMetaDataId>12</nextMetaDataId>
+  <name>TechBD CCD Workflow</name>
+  <description>Version: 0.4.54
+Grouper effectiveDateTime updates.</description>
+  <revision>5</revision>
+  <sourceConnector version="4.5.0">
+    <metaDataId>0</metaDataId>
+    <name>sourceConnector</name>
+    <properties class="com.mirth.connect.connectors.http.HttpReceiverProperties" version="4.5.0">
+      <pluginProperties>
+        <com.mirth.connect.plugins.httpauth.NoneHttpAuthProperties version="4.5.0">
+  <authType>NONE</authType>
+        </com.mirth.connect.plugins.httpauth.NoneHttpAuthProperties>
+      </pluginProperties>
+      <listenerConnectorProperties version="4.5.0">
+        <host>0.0.0.0</host>
+        <port>9443</port>
+      </listenerConnectorProperties>
+      <sourceConnectorProperties version="4.5.0">
+        <responseVariable>finalResponse</responseVariable>
+        <respondAfterProcessing>true</respondAfterProcessing>
+        <processBatch>false</processBatch>
+        <firstResponse>false</firstResponse>
+        <processingThreads>1</processingThreads>
+        <resourceIds class="linked-hash-map">
+          <entry>
+            <string>Default Resource</string>
+            <string>[Default Resource]</string>
+          </entry>
+        </resourceIds>
+        <queueBufferSize>1000</queueBufferSize>
+      </sourceConnectorProperties>
+      <xmlBody>false</xmlBody>
+      <parseMultipart>false</parseMultipart>
+      <includeMetadata>false</includeMetadata>
+      <binaryMimeTypes>text/xml</binaryMimeTypes>
+      <binaryMimeTypesRegex>false</binaryMimeTypesRegex>
+      <responseContentType>application/json</responseContentType>
+      <responseDataTypeBinary>false</responseDataTypeBinary>
+      <responseStatusCode></responseStatusCode>
+      <responseHeaders class="linked-hash-map">
+        <entry>
+          <string>Access-Control-Allow-Origin</string>
+          <list>
+            <string>*</string>
+          </list>
+        </entry>
+        <entry>
+          <string>Access-Control-Allow-Methods</string>
+          <list>
+            <string>GET, POST, OPTIONS</string>
+          </list>
+        </entry>
+        <entry>
+          <string>Access-Control-Allow-Headers</string>
+          <list>
+            <string>Content-Type,Authorization,X-TechBD-Tenant-ID,User-Agent,X-TechBD-REMOTE-IP,X-TechBD-Override-Request-URI,accept,X-TechBD-CIN,X-TechBD-OrgNPI,X-TechBD-OrgTIN,X-TechBD-Base-FHIR-URL,X-TechBD-Validation-Severity-Level,X-TechBD-Facility-ID,X-TechBD-Encounter-Type,X-TechBD-Screening-Code,X-TechBD-Part2,X-TechBD-OMH,X-TechBD-OPWDD</string>
+          </list>
+        </entry>
+        <entry>
+          <string>Access-Control-Allow-Credentials</string>
+          <list>
+            <string>true</string>
+          </list>
+        </entry>
+      </responseHeaders>
+      <responseHeadersVariable></responseHeadersVariable>
+      <useResponseHeadersVariable>false</useResponseHeadersVariable>
+      <charset>DEFAULT_ENCODING</charset>
+      <contextPath>/</contextPath>
+      <timeout>300000</timeout>
+      <staticResources/>
+    </properties>
+    <transformer version="4.5.0">
+      <elements>
+        <com.mirth.connect.plugins.javascriptstep.JavaScriptStep version="4.5.0">
+          <name>Initialize DB Config and CCDA Save Utilities</name>
+          <sequenceNumber>0</sequenceNumber>
+          <enabled>true</enabled>
+          <script>var PGobject = Packages.org.postgresql.util.PGobject;
+
+var jdbcUrl = java.lang.System.getenv(&quot;MC_JDBC_URL&quot;);
+if(jdbcUrl != null) {
+    channelMap.put(&apos;jdbcUrl&apos;, jdbcUrl);
+    //logger.info(&quot;jdbcUrl: &quot; + jdbcUrl);
+} else {
+    var errorMessage = &apos;MC_JDBC_URL variable is not set&apos;;
+    logger.error(errorMessage);
+    setErrorResponse(500, errorMessage); // Set the HTTP response status to 500 (Server error)
+    throw errorMessage; // Stop further processing by throwing an exception
+}
+
+var jdbcUsername = java.lang.System.getenv(&quot;MC_JDBC_USERNAME&quot;);
+if(jdbcUsername != null) {
+    channelMap.put(&apos;jdbcUsername&apos;, jdbcUsername);
+} else {
+    var errorMessage = &apos;MC_JDBC_USERNAME variable is not set&apos;;
+    logger.error(errorMessage);
+    setErrorResponse(500, errorMessage); // Set the HTTP response status to 500 (Server error)
+    throw errorMessage; // Stop further processing by throwing an exception
+}
+
+var jdbcPassword = java.lang.System.getenv(&quot;MC_JDBC_PASSWORD&quot;);
+if(jdbcPassword != null) {
+    channelMap.put(&apos;jdbcPassword&apos;, jdbcPassword);
+} else {
+    var errorMessage = &apos;MC_JDBC_PASSWORD variable is not set&apos;;
+    logger.error(errorMessage);
+    setErrorResponse(500, errorMessage); // Set the HTTP response status to 500 (Server error)
+    throw errorMessage; // Stop further processing by throwing an exception
+}
+
+function toJsonb(value) {
+    var jsonbObj = new PGobject();
+    jsonbObj.setType(&quot;jsonb&quot;);
+
+	if (typeof value === &quot;object&quot;) {
+        value = JSON.stringify(value);
+    }
+    
+    jsonbObj.setValue(value);
+    return jsonbObj;
+}
+
+function getHeaderValues() {
+	var headerJson = JSON.stringify({
+        headers: {
+            interactionId: channelMap.get(&apos;interactionId&apos;),
+            tenantName: channelMap.get(&apos;tenantId&apos;),
+            userAgent : channelMap.get(&apos;userAgent&apos;),
+            SeverityLevel : channelMap.get(&apos;SeverityLevel&apos;), 
+            uri : channelMap.get(&apos;uri&apos;),
+            contextPath : channelMap.get(&apos;contextPath&apos;),
+            CIN : channelMap.get(&apos;patientCIN&apos;),
+            NPI : channelMap.get(&apos;organizationNPI&apos;),
+            TIN : channelMap.get(&apos;organizationTIN&apos;),
+            FacilityID : channelMap.get(&apos;facilityID&apos;),
+            EncounterType : channelMap.get(&apos;encounterType&apos;),
+            ScreeningCode : channelMap.get(&apos;X-TechBD-Screening-Code&apos;),
+            Part2 : channelMap.get(&apos;X-TechBD-Part2&apos;),
+            OMH : channelMap.get(&apos;X-TechBD-OMH&apos;),
+            OPWDD : channelMap.get(&apos;X-TechBD-OPWDD&apos;),
+            BaseFHIRURL : channelMap.get(&apos;baseFhirUrl&apos;),
+            ValidationSeverityLevel : channelMap.get(&apos;SeverityLevel&apos;)
+        }
+    });
+    return headerJson;
+}
+
+function saveCcdaPayload(interactionId, tenantId, requestUri, payloadJson, operation) {
+	var ccdaAuthoringDevice = channelMap.get(&apos;ehrVendor&apos;);
+	//If any error happens in between, find the ccda source type from the input file
+	if (operation === &quot;saveOgCCDAPayload&quot; &amp;&amp; typeof ccdaAuthoringDevice === &apos;undefined&apos; || ccdaAuthoringDevice === &quot;&quot; || ccdaAuthoringDevice === null){
+		if (/epic/i.test(payloadJson)) { channelMap.put(&apos;ehrVendor&apos;, &apos;Epic&apos;); }
+		if (/medent/i.test(payloadJson)) { channelMap.put(&apos;ehrVendor&apos;, &apos;Medent&apos;); }
+		if (/athenahealth/i.test(payloadJson)) { channelMap.put(&apos;ehrVendor&apos;, &apos;AthenaHealth&apos;); }
+		ccdaAuthoringDevice = channelMap.get(&apos;ehrVendor&apos;);
+	}
+	if (ccdaAuthoringDevice == &apos;Other&apos;) { ccdaAuthoringDevice = null; }
+	
+	var DriverManager = java.sql.DriverManager;
+	var conn = null;
+	var stmt = null;
+	
+	try {
+	    // Database connection details
+		var dbUrl = channelMap.get(&apos;jdbcUrl&apos;);
+		var dbUser = channelMap.get(&apos;jdbcUsername&apos;);
+		var dbPassword = channelMap.get(&apos;jdbcPassword&apos;);
+
+		//Devl
+	    conn = DriverManager.getConnection(dbUrl, dbUser, dbPassword);
+		
+		var sql = &quot;select techbd_udi_ingress.register_interaction_ccda_request(?::text,?::text,?::jsonb,?::text,?::text,?::jsonb,?::text,?::text,?::jsonb,?::text,?::text,?::text,?::text,?::text,?::text,?::text,?,?::text,?,?::text,?::text,?::text,?::text,?::text,?::text,?::text,?::text,?::text,?::text)&quot;;
+	    stmt = conn.prepareCall(sql);
+
+		stmt.setString(1, interactionId);
+		stmt.setString(2, requestUri);		
+		if(operation === &quot;saveOgCCDAPayload&quot;){
+			stmt.setObject(3, toJsonb(JSON.stringify({
+			    nature: &apos;Original CCDA Payload&apos;,
+			    tenant_id: tenantId
+			})), java.sql.Types.OTHER);
+			stmt.setString(4, &quot;NONE&quot;);	
+			stmt.setString(5, &quot;CCDA_ACCEPT&quot;);		
+		} else if (operation === &quot;saveValidationSuccess&quot;) {
+			stmt.setObject(3, toJsonb(JSON.stringify({
+			    nature: &apos;CCDA Validation Result&apos;,
+			    tenant_id: tenantId
+			})), java.sql.Types.OTHER);
+			stmt.setString(4, &quot;CCDA_ACCEPT&quot;);	
+			stmt.setString(5, &quot;VALIDATION_SUCCESS&quot;);
+		} else if (operation === &quot;saveConversionSuccess&quot;) {
+			stmt.setObject(3, toJsonb(JSON.stringify({
+			    nature: &apos;Converted to FHIR&apos;,
+			    tenant_id: tenantId
+			})), java.sql.Types.OTHER);
+			stmt.setString(4, &quot;VALIDATION_SUCCESS&quot;);	
+			stmt.setString(5, &quot;CONVERTED_TO_FHIR&quot;);
+		} else {
+			stmt.setObject(3, toJsonb(JSON.stringify({
+			    nature: &apos;CCDA Validation Result&apos;,
+			    tenant_id: tenantId
+			})), java.sql.Types.OTHER);
+			stmt.setString(4, &quot;CCDA_ACCEPT&quot;);	
+			stmt.setString(5, &quot;VALIDATION_FAILED&quot;);
+		}
+		
+		if(operation === &quot;saveOgCCDAPayload&quot;){
+			stmt.setNull(6, java.sql.Types.OTHER);
+		} else {
+			stmt.setObject(6, toJsonb(payloadJson), java.sql.Types.OTHER);	
+		}
+		
+		if(operation == &quot;saveValidationSuccess&quot; || operation == &quot;saveValidationFailed&quot; || operation === &quot;saveConversionSuccess&quot;){
+			stmt.setNull(7, java.sql.Types.OTHER);
+		} else {
+			stmt.setString(7, payloadJson);
+		}	
+		stmt.setNull(8, java.sql.Types.VARCHAR);
+		if(operation === &quot;saveOgCCDAPayload&quot;){
+			stmt.setObject(9, toJsonb(getHeaderValues()), java.sql.Types.OTHER); //elaboration - save the values from headers here	
+		} else {
+			stmt.setNull(9, java.sql.Types.OTHER);
+		}
+		stmt.setNull(10, java.sql.Types.VARCHAR);
+		stmt.setNull(11, java.sql.Types.VARCHAR);
+		stmt.setNull(12, java.sql.Types.VARCHAR);
+		stmt.setNull(13, java.sql.Types.VARCHAR);
+		stmt.setNull(14, java.sql.Types.VARCHAR);
+		stmt.setNull(15, java.sql.Types.VARCHAR);
+		stmt.setNull(16, java.sql.Types.VARCHAR);
+		stmt.setNull(17, java.sql.Types.TIMESTAMP_WITH_TIMEZONE);
+		stmt.setString(18, &quot;CCDA&quot;); //provenance  
+		stmt.setNull(19, java.sql.Types.BOOLEAN);
+		stmt.setNull(20, java.sql.Types.VARCHAR);
+		stmt.setNull(21, java.sql.Types.VARCHAR);
+		stmt.setString(22, channelMap.get(&apos;userAgent&apos;)); //user_agent
+		stmt.setNull(23, java.sql.Types.VARCHAR);
+		stmt.setNull(24, java.sql.Types.VARCHAR);
+		stmt.setNull(25, java.sql.Types.VARCHAR);
+		stmt.setNull(26, java.sql.Types.VARCHAR);
+		stmt.setNull(27, java.sql.Types.VARCHAR);
+		stmt.setString(28, channelMap.get(&apos;filename&apos;));
+		stmt.setString(29, ccdaAuthoringDevice);
+
+	    var result = stmt.execute();
+	
+	} catch (e) {
+	    logger.error(&quot;Error executing stored procedure: &quot; + e);
+	} finally {
+	    if (stmt != null) stmt.close();
+	    if (conn != null) conn.close();
+	}
+}</script>
+        </com.mirth.connect.plugins.javascriptstep.JavaScriptStep>
+        <com.mirth.connect.plugins.javascriptstep.JavaScriptStep version="4.5.0">
+          <name>Common Utility Functions</name>
+          <sequenceNumber>1</sequenceNumber>
+          <enabled>true</enabled>
+          <script>/**
+* Replacer function to remove empty values
+*/
+
+var interactionId = java.util.UUID.randomUUID().toString();
+channelMap.put(&apos;interactionId&apos;, interactionId);
+var tenantId = $(&apos;headers&apos;).getHeader(&apos;X-TechBD-Tenant-ID&apos;);
+var requestedPath = sourceMap.get(&apos;contextPath&apos;);
+		
+function removeEmptyValues(key, value) {
+  // Remove values that are empty strings, null, undefined, or empty objects/arrays
+  if (value === &quot;&quot; || value === null || value === undefined || 
+      (typeof value === &quot;object&quot; &amp;&amp; Object.keys(value).length === 0) ||
+      (Array.isArray(value) &amp;&amp; value.length === 0)) {
+    return undefined; // Exclude the key from the result
+  }
+  return value; // Keep the value as is
+}
+
+
+/**
+* Util function to generate json string wit hstatus and message
+*/
+function createJsonResponse(status, message) {
+    return JSON.stringify({ status: status, message: message });
+}
+
+/**
+* Util function to set error response.
+*/
+function setErrorResponse(statusCode, errorMessage) {
+    responseMap.put(&apos;status&apos;, String(statusCode)); // Convert statusCode to string
+    responseMap.put(&apos;message&apos;, errorMessage);
+    responseMap.put(&apos;finalResponse&apos;, createJsonResponse(statusCode, errorMessage));
+}
+
+/*
+* Util function to generate json error message
+*/
+function getJsonInvalidOperationOutcome(errorMsg, code, severity) {
+	if (!severity) { severity = &quot;error&quot;;}
+	return { &quot;OperationOutcome&quot;: {
+                    &quot;validationResults&quot;: [
+                        {
+                            &quot;operationOutcome&quot;: {
+                                &quot;resourceType&quot;: &quot;OperationOutcome&quot;,
+                                &quot;interaction_id&quot;: channelMap.get(&apos;interactionId&apos;),
+                                &quot;issue&quot;: [
+                                    {
+                                        &quot;severity&quot;: severity,
+                                        &quot;code&quot;: code,
+                                        &quot;details&quot;: {
+                                            &quot;text&quot;: errorMsg
+                                        }
+                                    }
+                                ]
+                            }
+                        }
+                    ]
+                }
+            };
+}
+
+function sendDataLedgerSync(payload) {
+    
+    var apiUrl = java.lang.System.getenv(&quot;DATA_LEDGER_API_URL&quot;);
+    var dataLedgerApiKey = java.lang.System.getenv(&quot;TECHBD_NYEC_DATALEDGER_API_KEY&quot;);
+
+    if (apiUrl == null) {
+        throw new Error(&quot;Environment variable DATA_LEDGER_API_URL is not set.&quot;);
+    }
+    if (dataLedgerApiKey == null) {
+        throw new Error(&quot;Environment variable &apos;TECHBD_NYEC_DATALEDGER_API_KEY&apos; is not set.&quot;);
+    }
+
+    try {
+        var HttpClients = org.apache.http.impl.client.HttpClients;
+        var HttpPost = org.apache.http.client.methods.HttpPost;
+        var StringEntity = org.apache.http.entity.StringEntity;
+        var EntityUtils = org.apache.http.util.EntityUtils;
+
+        var httpClient = HttpClients.createDefault();
+        var httpPost = new HttpPost(apiUrl);
+
+        httpPost.setHeader(&quot;Content-Type&quot;, &quot;application/json&quot;);
+        httpPost.setHeader(&quot;Accept&quot;, &quot;application/json&quot;);
+       
+        if (dataLedgerApiKey != null) {
+        	httpPost.setHeader(&quot;x-api-key&quot;, dataLedgerApiKey); // ✅ Add x-api-key header
+        }
+
+        var entity = new StringEntity(payload, &quot;UTF-8&quot;);
+        httpPost.setEntity(entity);
+
+        var response = httpClient.execute(httpPost);
+        try {
+            var statusCode = response.getStatusLine().getStatusCode();
+            logger.info(&quot;sendDataLedgerSync response status: &quot; + statusCode);
+            var responseBody = EntityUtils.toString(response.getEntity());
+
+            if (statusCode &gt;= 200 &amp;&amp; statusCode &lt; 300) {
+                //logger.info(&quot;Data Ledger API Response: &quot; + responseBody);
+                return {
+                    statusCode: statusCode,
+                    body: responseBody
+                };
+            } else {
+                logger.error(&quot;Data Ledger API Error. Status: &quot; + statusCode + &quot;, Response: &quot; + responseBody);
+                throw new Error(&quot;Request failed with status &quot; + statusCode);
+            }
+        } finally {
+            EntityUtils.consumeQuietly(response.getEntity());
+        }
+    } catch (error) {
+        logger.error(&quot;Data Ledger API Request Failed: &quot; + error.message);
+        throw error;
+    }
+}
+
+function saveDataLedgerSync(interactionId) {
+	//*********** DATA LEDGER ***************
+     var  currentTimestamEnd = new Date().toISOString().replace(/\.(\d{3})Z$/, function(match, millis) {
+		// Add 3 more random digits to simulate microseconds
+		var micros = millis + (Math.floor(Math.random() * 1000)).toString().padStart(3, &apos;0&apos;);
+		return &apos;.&apos; + micros + &apos;Z&apos;;
+	});
+	var payload = JSON.stringify({
+        executedAt: currentTimestamEnd,
+        actor: &quot;TechBD&quot;,
+        action: &quot;sent&quot;, 
+        destination: &quot;Invalid - CCD Conversion Failed&quot;,
+        dataId: interactionId,
+        payloadType: &quot;hrsnBundle&quot;
+  	});		
+		
+	// Check if tracking is enabled
+	var trackingEnabled = java.lang.System.getenv(&quot;DATA_LEDGER_TRACKING&quot;);
+	if (trackingEnabled != null &amp;&amp; trackingEnabled.toLowerCase() == &quot;true&quot;) {
+	   try {
+        	sendDataLedgerSync(payload);
+	   } catch (e) {
+	        logger.error(&quot;Error occurred while sending data to Data Ledger: &quot; + e.message);
+	   }
+	} else {
+	   logger.info(&quot;DATA_LEDGER_TRACKING is not true; skipping Data Ledger sync for sent.&quot;);
+	}
+	//*********** DATA LEDGER ***************
+}			
+
+// Function to validate addr dates
+function validateAddrDates(addr, contextTag) {
+	try {
+		default xml namespace = &quot;urn:hl7-org:v3&quot;; // Set default namespace
+			
+		for each (var period in addr.useablePeriod) {
+		  var low = period.low.@value.toString();
+		  var high = period.high.@value.toString();
+		
+		  if (low &amp;&amp; high &amp;&amp; high !== &quot;UNK&quot;) {
+		      var lowDate = new Date(low.substring(0, 4), low.substring(4, 6) - 1, low.substring(6, 8));
+		      var highDate = new Date(high.substring(0, 4), high.substring(4, 6) - 1, high.substring(6, 8));
+		
+		      if (highDate &lt; lowDate) {
+		          var errorMessage = &apos;Validation Error: high date (&apos; + high + &apos;) is earlier than low date (&apos; + low + &apos;) in &apos; + contextTag + &apos;.useablePeriod.&apos;;
+			     logger.error(errorMessage);
+			     setErrorResponse(400, errorMessage); // Set the HTTP response status to 400 (Bad Request)
+			     responseMap.put(&apos;finalResponse&apos;, JSON.stringify(getJsonInvalidOperationOutcome(errorMessage, &quot;invalid&quot;)));
+			     return;
+		      }
+		  }
+		}
+     } catch (error) {
+        logger.error(&quot;Validation Error: &quot; + error.message);
+        return;
+     }
+}
+    
+function validateLowHighDates(xmlData) {
+	try {	
+	    var xml = new XML(xmlData);
+	    default xml namespace = &quot;urn:hl7-org:v3&quot;; // Set default namespace
+	
+	    // 1. patientRole → addr
+	    for each (var recordTarget in xml.recordTarget) {
+	        var patientRole = recordTarget.patientRole;
+	        for each (var addr in patientRole.addr) {
+	            validateAddrDates(addr, &quot;recordTarget.patientRole&quot;);
+	        }
+	    }
+	
+	    // 2. author → assignedAuthor → representedOrganization → addr
+	    for each (var author in xml.author) {
+	        var assignedAuthor = author.assignedAuthor;
+	        if (assignedAuthor &amp;&amp; assignedAuthor.representedOrganization) {
+	            for each (var addr in assignedAuthor.representedOrganization.addr) {
+	                validateAddrDates(addr, &quot;author.assignedAuthor.representedOrganization&quot;);
+	            }
+	        }
+	    }
+	} catch (error) {
+        logger.error(&quot;Validation Error: &quot; + error.message);
+        throw new Error(&quot;Validation Error: &quot; + error.message);
+     }
+}
+
+/**
+ * Extract ClinicalDocument XML safely from raw input
+ * @param rawXml - raw request body
+ * @return extracted ClinicalDocument XML string OR null
+ */
+function extractClinicalDocumentFromRawXML(rawXml) {
+
+    if (!rawXml) {
+        return null;
+    }
+
+    try {
+        // Normalize input
+        rawXml = String(rawXml)
+				    .replace(/^\uFEFF/, &apos;&apos;)      // real BOM
+				    .replace(/^ï»¿/, &apos;&apos;)        // mis-decoded BOM
+				    .trim();
+		
+        var xmlDeclaration = &apos;&lt;?xml version=&quot;1.0&quot; encoding=&quot;UTF-8&quot;?&gt;\n&apos;;
+        var hasXmlDeclaration = rawXml.indexOf(&apos;&lt;?xml&apos;) !== -1;
+
+        var startTag = hasXmlDeclaration ? &apos;&lt;?xml&apos; : &apos;&lt;ClinicalDocument&apos;;
+        var start = rawXml.indexOf(startTag);
+        var end = rawXml.indexOf(&apos;&lt;/ClinicalDocument&gt;&apos;);
+
+        if (start === -1 || end === -1) {
+            return null;
+        }
+
+        end += &apos;&lt;/ClinicalDocument&gt;&apos;.length;
+        var extractedXml = rawXml.substring(start, end);
+        extractedXml = extractedXml.trim();  //Trim extra spaces
+
+        // Add XML declaration if missing
+        if (!hasXmlDeclaration) {
+            extractedXml = xmlDeclaration + extractedXml;
+        }
+
+        return extractedXml;
+
+    } catch (e) {
+        logger.error(&quot;extractClinicalDocumentFromRawXML failed: &quot; + e.message);
+        return null;
+    }
+}
+
+function extractBoundaries(rawCcdaXml) {
+	try {
+		// Remove boundary
+		var rawXml = String(rawCcdaXml)
+				    .replace(/^\uFEFF/, &apos;&apos;)      // real BOM
+				    .replace(/^ï»¿/, &apos;&apos;)        // mis-decoded BOM
+				    .trim();		
+	        // Extract everything after first blank line
+	        var match = rawXml.match(/\r?\n\r?\n([\s\S]*)/);
+	        if (match &amp;&amp; match[1]) {
+			    rawXml = match[1];
+		   }
+		   
+	        // Remove trailing boundary (last line starting with --)
+	        rawXml = rawXml.replace(/\r?\n--.*--\r?\n?$/, &apos;&apos;);
+	        rawXml = rawXml.replace(/\r?\n--.*$/, &apos;&apos;);
+
+			if (rawXml.indexOf(&quot;Content-Disposition:&quot;) !== -1) {
+			   // Find the index where Content-Disposition starts
+			    var cdIndex = rawXml.indexOf(&quot;Content-Disposition:&quot;);
+			
+			    // Find the first newline AFTER Content-Disposition
+			    var firstNewLineAfterCD = rawXml.indexOf(&quot;\n&quot;, cdIndex);
+			
+			    if (firstNewLineAfterCD !== -1) {
+			        // Keep everything after that newline
+			        rawXml = rawXml.substring(firstNewLineAfterCD + 1);
+			    }
+			}
+
+			if (rawXml.indexOf(&quot;Content-Type:&quot;) !== -1) {
+			   // Find the index where Content-Disposition starts
+			    var cdIndex1 = rawXml.indexOf(&quot;Content-Type:&quot;);
+			
+			    // Find the first newline AFTER Content-Disposition
+			    var firstNewLineAfterCD1 = rawXml.indexOf(&quot;\n&quot;, cdIndex1);
+			
+			    if (firstNewLineAfterCD1 !== -1) {
+			        // Keep everything after that newline
+			        rawXml = rawXml.substring(firstNewLineAfterCD1 + 1);
+			    }
+			}
+	        
+	    rawXml = String(rawXml)
+				    .replace(/^\uFEFF/, &apos;&apos;)      // real BOM
+				    .replace(/^ï»¿/, &apos;&apos;)        // mis-decoded BOM
+				    .trim();
+	    return rawXml;
+	} catch (e) {
+        logger.error(&quot;extractBoundaries failed: &quot; + e.message);
+        return null;
+    }
+}
+
+function extractClinicalDocument(rawXml) {
+	try {
+		var rawCcdaXml = rawXml;
+		var extractedXml = extractClinicalDocumentFromRawXML(rawXml);
+		
+		if (!extractedXml || extractedXml.trim().length == 0 || extractedXml.trim() == &apos;&apos;) {
+			rawCcdaXml = extractBoundaries(rawXml);
+		} else {
+			rawCcdaXml = extractedXml;
+		}
+
+		// Save Original Payload
+	     saveCcdaPayload(
+	        interactionId,
+	        tenantId,
+	        requestedPath,
+	        rawCcdaXml,
+	        &quot;saveOgCCDAPayload&quot;
+	     ); 
+		
+		if (!extractedXml || extractedXml.trim().length == 0 || extractedXml.trim() == &apos;&apos;) {
+		    var errorMsg = &quot;Could not find ClinicalDocument boundaries in XML.&quot;;
+		    var errorResponse = getJsonInvalidOperationOutcome(errorMsg, &quot;invalid&quot;);
+		
+		    saveCcdaPayload(
+		        interactionId,
+		        tenantId,
+		        requestedPath,
+		        errorResponse,
+		        &quot;saveValidationFailed&quot;
+		    );
+		
+		    responseMap.put(&apos;finalResponse&apos;, JSON.stringify(errorResponse));		    
+		    return;
+		}
+		
+		channelMap.put(&apos;fileContent&apos;, extractedXml);
+		return extractedXml;
+		    
+	} catch (e) {
+        logger.error(&quot;extractClinicalDocument failed: &quot; + e.message);
+        return null;
+    }
+}
+
+function buildValidationErrorMessage(baseMessage, e) {
+    var errorMessage = baseMessage;
+
+    if (e.javaException) {
+        errorMessage += &quot; Message: &quot; + e.javaException.getMessage();
+
+        if (typeof e.javaException.getLineNumber === &apos;function&apos;) {
+            errorMessage += &quot; Line: &quot; + e.javaException.getLineNumber();
+        }
+
+        if (typeof e.javaException.getColumnNumber === &apos;function&apos;) {
+            errorMessage += &quot; Column: &quot; + e.javaException.getColumnNumber();
+        }
+        
+    } else if (e.message) {
+        errorMessage += &quot; &quot; + e.message;
+        
+    } else {
+        errorMessage += &quot; Unknown validation error occurred.&quot;;    }
+
+    logger.error(errorMessage);
+    return errorMessage;
+}
+
+function failAndExit(errorMsg, code, severity, interactionId, tenantId, requestedPath) {
+    var outcome = getJsonInvalidOperationOutcome(errorMsg, code, severity);
+    try {
+		saveCcdaPayload(interactionId, tenantId, requestedPath, outcome, &quot;saveValidationFailed&quot;);
+		logger.info(&quot;Successfully saved validation failure information&quot;);
+    } catch (e) {
+        	logger.error(&quot;Failed to save validation failure: &quot; + e.message);
+    }
+
+    responseMap.put(&apos;finalResponse&apos;, JSON.stringify(outcome));
+    channelMap.put(&apos;jsonResult&apos;, JSON.stringify(outcome));
+    logger.error(&quot;STOPPING PROCESSING: &quot; + errorMsg);
+
+    throw new Error(&quot;STOP_PROCESSING&quot;);
+}
+
+function applyPhiFilter(xmlString) {
+    var xsltPath = channelMap.get(&apos;cdaPhiFilter&apos;);
+    var transformer = javax.xml.transform.TransformerFactory
+        .newInstance()
+        .newTransformer(
+            new javax.xml.transform.stream.StreamSource(
+                new java.io.File(xsltPath)
+            )
+        );
+
+    var writer = new java.io.StringWriter();
+    transformer.transform(
+        new javax.xml.transform.stream.StreamSource(new java.io.StringReader(xmlString)),
+        new javax.xml.transform.stream.StreamResult(writer)
+    );
+    return writer.toString();
+}
+
+function validateAgainstXsd(xmlString) {
+    var xsdFilePath = channelMap.get(&apos;xsdFilePath&apos;);
+    var schema = javax.xml.validation.SchemaFactory
+        .newInstance(javax.xml.XMLConstants.W3C_XML_SCHEMA_NS_URI)
+        .newSchema(new javax.xml.transform.stream.StreamSource(new java.io.File(xsdFilePath)));
+
+    var validator = schema.newValidator();
+    validator.validate(
+        new javax.xml.transform.stream.StreamSource(
+            new java.io.StringReader(xmlString)
+        )
+    );
+}
+
+function convertCcdaToFhirBundle(phiFilteredXml) {
+
+    // -----------------------------------
+    // Load the XSLT template
+    // -----------------------------------
+    var xsltPath = channelMap.get(&apos;cdaPhiBundle&apos;);
+    var xsltFile = new java.io.File(xsltPath);
+    var xsltStream = new java.io.FileInputStream(xsltFile);
+
+    var transformerFactory = javax.xml.transform.TransformerFactory.newInstance();
+    // Set URIResolver — this resolves xsl:include/xsl:import at runtime
+    transformerFactory.setURIResolver(new javax.xml.transform.URIResolver({
+	    resolve: function(href, base) {
+	        // href = &quot;cda-fhir-bundle-common-utils.xslt&quot; (from xsl:include)
+	        // We resolve it against the same dynamic folder
+	        var resolvedPath = ccdaSchemaFolder + &quot;/&quot; + href;
+	        var file = new java.io.File(resolvedPath);
+	        return new javax.xml.transform.stream.StreamSource(file);
+	    }
+    }));
+    var xsltSource = new javax.xml.transform.stream.StreamSource(xsltStream);
+    var transformer = transformerFactory.newTransformer(xsltSource);
+
+    // -----------------------------------
+    // Timestamp parameter
+    // -----------------------------------
+    // Set the current timestamp parameter in ISO 8601 format
+    var currentTimestamp = new java.text.SimpleDateFormat(&quot;yyyy-MM-dd&apos;T&apos;HH:mm:ss.SS&apos;Z&apos;&quot;).format(new java.util.Date());
+    transformer.setParameter(&quot;currentTimestamp&quot;, currentTimestamp);
+
+    transformer = set_fhir_resource_profile_urls(transformer); // Pass all the profile urls as parameters to XSLT
+
+    // -----------------------------------
+    // Base FHIR URL handling
+    // -----------------------------------
+    var customBaseFhirUrl = $(&apos;headers&apos;).getHeader(&apos;X-TechBD-Base-FHIR-URL&apos;);  // Retrieve the X-TechBD-Base-FHIR-URL header
+    logger.info(&quot;X-TechBD-Base-FHIR-URL: &quot; + customBaseFhirUrl);
+    
+    var validUrlsEnv = Packages.java.lang.System.getenv(&quot;MC_VALID_FHIR_URLS&quot;); // Retrieve the VALID_URLS environment variable (comma-separated list)
+    logger.info(&quot;MC_VALID_FHIR_URLS from environment: &quot; + validUrlsEnv);
+	
+    // Convert VALID_URLS to an array for validation
+    var validUrls = validUrlsEnv ? validUrlsEnv.split(&quot;,&quot;).map(function(url) { return url.trim(); }) : [];
+	
+    // Check if the header value is valid
+    if (customBaseFhirUrl !== null &amp;&amp; customBaseFhirUrl.trim() != &quot;&quot;) {
+	    if (validUrls.includes(customBaseFhirUrl)) {
+	        // Store valid value in channelMap
+	        transformer.setParameter(&quot;baseFhirUrl&quot;, customBaseFhirUrl);
+		   channelMap.put(&apos;baseFhirUrl&apos;, customBaseFhirUrl);
+	    } else {
+	        // Throw a Bad Request error if the URL is not in the valid list
+			var errorMessage = &apos;The provided X-TechBD-Base-FHIR-URL is invalid. Base-FHIR-URL taken from the environment variable.&apos;;
+			logger.error(errorMessage);
+	    }
+    }
+
+    // -----------------------------------
+    // Transform CCDA → FHIR Bundle
+    // -----------------------------------
+    var writer = new java.io.StringWriter();
+    transformer.transform(
+        new javax.xml.transform.stream.StreamSource(
+            new java.io.StringReader(phiFilteredXml)
+        ),
+        new javax.xml.transform.stream.StreamResult(writer)
+    );
+
+    // -----------------------------------
+    // Clean JSON
+    // -----------------------------------
+    var rawJson = writer.toString();
+    var jsonObject = JSON.parse(rawJson);
+    var cleanedJsonString = JSON.stringify(jsonObject, removeEmptyValues, 2);
+
+    //logger.info(&quot;Cleaned FHIR Bundle JSON : &quot; + cleanedJsonString);	
+    channelMap.put(&apos;ccd_fhir_bundle&apos;, cleanedJsonString);
+    return cleanedJsonString;
+}</script>
+        </com.mirth.connect.plugins.javascriptstep.JavaScriptStep>
+        <com.mirth.connect.plugins.javascriptstep.JavaScriptStep version="4.5.0">
+          <name>Validate HTTP Request and Collect Headers</name>
+          <sequenceNumber>2</sequenceNumber>
+          <enabled>true</enabled>
+          <script>var requestedPath = sourceMap.get(&apos;contextPath&apos;);
+logger.info(&quot;Request URL: &quot; + requestedPath);
+
+if (requestedPath == &quot;/&quot;) {
+	return;
+}
+
+// Initialize missing headers array
+var missingHeaders = [];
+
+// Helper to check and store missing header
+function checkRequiredHeader(headerName, displayName, storeInMap, mapKey) {
+    var value = $(&apos;headers&apos;).getHeader(headerName);
+    //logger.info(headerName + &quot;: &quot; + value);
+
+    if (value == null || String(value).trim() === &quot;&quot;) {
+        missingHeaders.push(&quot;Missing required header &quot; + displayName);
+    } else if (storeInMap) {
+        channelMap.put(mapKey || headerName, value);
+    }
+
+    return value;
+}
+
+///////////////////////////////////////////////////////////////////////////
+// Access the required header values using getHeader method
+// Mandatory: X-TechBD-Tenant-ID
+checkRequiredHeader(&apos;X-TechBD-Tenant-ID&apos;, &apos;X-TechBD-Tenant-ID&apos;, true, &apos;tenantId&apos;);
+
+// Retrieve the Content-Type header
+var contentType = $(&apos;headers&apos;).getHeader(&apos;Content-Type&apos;);
+// Check if the Content-Type is &apos;multipart/form-data&apos; and contains a boundary
+if (!contentType || !contentType.startsWith(&apos;multipart/form-data&apos;) /*|| !contentType.includes(&apos;boundary=&apos;)*/) {
+    missingHeaders.push(&quot;Content-Type must be &apos;multipart/form-data&apos; with boundary details&quot;);
+}
+
+// Get User-Agent header to set at HTTP Writer not to show &apos;Mirth connect&apos; as Agent at the application side.
+var userAgent = $(&apos;headers&apos;).getHeader(&apos;User-Agent&apos;);
+channelMap.put(&apos;userAgent&apos;, userAgent);
+
+var severityLevel = String($(&apos;headers&apos;).getHeader(&apos;X-TechBD-Validation-Severity-Level&apos;) || &quot;&quot;).trim();
+channelMap.put(&apos;SeverityLevel&apos;, severityLevel || &quot;error&quot;);
+
+channelMap.put(&apos;uri&apos;, sourceMap.get(&apos;uri&apos;));
+channelMap.put(&apos;contextPath&apos;, sourceMap.get(&apos;contextPath&apos;));
+
+//** Get CIN, NPI and TIN from headers for CCDA FHIR Bundle - Required for FHIR Bundle conversion only**//
+if (requestedPath == &quot;/ccda/Bundle/&quot; || requestedPath == &quot;/ccda/Bundle&quot;) {
+	//1.CIN
+	checkRequiredHeader(&apos;X-TechBD-CIN&apos;, &apos;X-TechBD-CIN&apos;, true, &apos;patientCIN&apos;);
+	
+	//2.NPI
+	var organizationNPI = $(&apos;headers&apos;).getHeader(&apos;X-TechBD-OrgNPI&apos;);
+	
+	//3.TIN
+	var organizationTIN = $(&apos;headers&apos;).getHeader(&apos;X-TechBD-OrgTIN&apos;);
+	
+	// Check if both are missing — only then it&apos;s an error
+	if ((organizationNPI == null || String(organizationNPI).trim() === &quot;&quot;) &amp;&amp;
+	    (organizationTIN == null || String(organizationTIN).trim() === &quot;&quot;)) {
+	    missingHeaders.push(&quot;Missing required header X-TechBD-OrgNPI and X-TechBD-OrgTIN. One is mandatory.&quot;);
+	} else {
+	    if (organizationNPI &amp;&amp; String(organizationNPI).trim() !== &quot;&quot;) {
+	        channelMap.put(&apos;organizationNPI&apos;, organizationNPI);
+	    }
+	    if (organizationTIN &amp;&amp; String(organizationTIN).trim() !== &quot;&quot;) {
+	        channelMap.put(&apos;organizationTIN&apos;, organizationTIN);
+	    }
+	}
+	
+	//4. Facility Code
+	checkRequiredHeader(&apos;X-TechBD-Facility-ID&apos;, &apos;X-TechBD-Facility-ID&apos;, true, &apos;facilityID&apos;);
+
+	//5. Encounter Type
+	checkRequiredHeader(&apos;X-TechBD-Encounter-Type&apos;, &apos;X-TechBD-Encounter-Type&apos;, true, &apos;encounterType&apos;);
+
+	//6. Screening code (used for Grouper resource) for Epic CCD files
+	var screeningCode = $(&apos;headers&apos;).getHeader(&apos;X-TechBD-Screening-Code&apos;);
+	if (screeningCode &amp;&amp; String(screeningCode).trim() !== &quot;&quot;) {
+	    channelMap.put(&apos;X-TechBD-Screening-Code&apos;, screeningCode);
+	}
+
+	//7. Part 2 Data Flagging 
+	var part2DataFlag = $(&apos;headers&apos;).getHeader(&apos;X-TechBD-Part2&apos;);
+	if (part2DataFlag &amp;&amp; String(part2DataFlag).trim() !== &quot;&quot;) {
+	    channelMap.put(&apos;X-TechBD-Part2&apos;, part2DataFlag);
+	}
+
+	// 8. OMH Flagging
+	var OMHFlag = $(&apos;headers&apos;).getHeader(&apos;X-TechBD-OMH&apos;);
+	if (OMHFlag &amp;&amp; String(OMHFlag).trim() !== &quot;&quot;) {
+	    channelMap.put(&apos;X-TechBD-OMH&apos;, OMHFlag);
+	}
+	
+	// 9. OPWDD Flagging
+	var OPWDDFlag = $(&apos;headers&apos;).getHeader(&apos;X-TechBD-OPWDD&apos;);
+	if (OPWDDFlag &amp;&amp; String(OPWDDFlag).trim() !== &quot;&quot;) {
+	    channelMap.put(&apos;X-TechBD-OPWDD&apos;, OPWDDFlag);
+	}
+}
+
+// If any missing headers were found, throw a single error
+if (missingHeaders.length &gt; 0) {
+    var errorMessage = &quot;Bad Request: &quot; + missingHeaders.join(&quot;; &quot;);
+    logger.error(errorMessage);
+    setErrorResponse(400, errorMessage);
+    throw errorMessage;
+}
+
+///////////////////////////////////////////////////////////////////////////
+// Parse the incoming request (assumes multipart form data)
+var rawData = connectorMessage.getRawData();
+
+// Check if rawData is empty
+if (!rawData || rawData.trim().length == 0 || rawData.trim() == &apos;&apos;) {
+    errorMessage = &quot;Uploaded file is empty or missing.&quot;;
+    setErrorResponse(400, errorMessage);
+    throw errorMessage;
+}
+
+// Parse the rawData as multipart form data
+var boundary = rawData.split(&quot;\r\n&quot;)[0];
+var parts = rawData.split(boundary);
+
+//Check the file type, only .xml and .txt allowed
+var filename = null;
+var filenameMatch = rawData.match(/filename=&quot;([^&quot;]+)&quot;/); // Use regex to extract the filename from the Content-Disposition line
+
+if (filenameMatch &amp;&amp; filenameMatch.length &gt; 1) {
+    filename = filenameMatch[1];
+    logger.info(&quot;Filename: &quot; + filename);
+    channelMap.put(&apos;filename&apos;, filename);
+
+    //var extensionMatch = filename.match(/\.([0-9a-z]+)(?=[?#])?/i);
+    var extensionMatch = filename.match(/\.([0-9a-z]+)$/i);
+    var extension = extensionMatch ? extensionMatch[1].toLowerCase().trim() : null;
+    //logger.info(&quot;File extension: &quot; + extension);
+
+    if (extension !== &quot;xml&quot; &amp;&amp; extension !== &quot;txt&quot;) {
+       var errorMessage = &quot;Unsupported file extension: &quot; + extension + &quot;. Only .xml and .txt are allowed.&quot;;
+       setErrorResponse(400, errorMessage); // Set the HTTP response status to 400 (Bad Request)
+    	  throw errorMessage; // Stop further processing by throwing an exception
+    }
+} else {
+    logger.warn(&quot;Filename not found in message content.&quot;);
+    errorMessage = &quot;Uploaded file is empty or missing.&quot;;
+    setErrorResponse(400, errorMessage);
+    throw errorMessage;
+}
+
+var xmlExtracted = extractClinicalDocument(rawData);
+if (!xmlExtracted || xmlExtracted.trim().length == 0 || xmlExtracted.trim() == &apos;&apos;) {
+    errorMessage = &quot;Could not find ClinicalDocument boundaries in XML.&quot;;
+    throw errorMessage;
+}
+
+//////////////////////////////////////////////////////
+// Read environment variables and set to global map //
+//////////////////////////////////////////////////////
+
+// Initialize missing environment variables array
+var missingEnvVars = [];
+
+// Fetch and check environment variable: MC_FHIR_BUNDLE_SUBMISSION_API_URL
+var fhirBundleSubmissionApiUrl = java.lang.System.getenv(&quot;MC_FHIR_BUNDLE_SUBMISSION_API_URL&quot;);
+if(fhirBundleSubmissionApiUrl != null) {
+    globalMap.put(&apos;fhirBundleSubmissionApiUrl&apos;, fhirBundleSubmissionApiUrl);
+    logger.info(&quot;fhirBundleSubmissionApiUrl: &quot; + fhirBundleSubmissionApiUrl);
+} else {
+    missingEnvVars.push(&quot;MC_FHIR_BUNDLE_SUBMISSION_API_URL is not set&quot;);
+}
+
+// Fetch and check environment variable: MC_CCDA_SCHEMA_FOLDER
+var ccdaSchemaFolder = java.lang.System.getenv(&quot;MC_CCDA_SCHEMA_FOLDER&quot;);
+if (ccdaSchemaFolder != null) {
+    channelMap.put(&apos;ccdaSchemaFolder&apos;, ccdaSchemaFolder);
+    channelMap.put(&apos;xsdFilePath&apos;, ccdaSchemaFolder + &apos;/CDA.xsd&apos;);
+    //logger.info(&quot;using xsdFilePath: &quot; + channelMap.get(&apos;xsdFilePath&apos;));
+} else {
+    missingEnvVars.push(&quot;MC_CCDA_SCHEMA_FOLDER is not set&quot;);
+}
+
+// If any env vars are missing, throw a single error
+if (missingEnvVars.length &gt; 0) {
+    var errorMessage = &quot;Server Error: &quot; + missingEnvVars.join(&quot;; &quot;);
+    logger.error(errorMessage);
+    setErrorResponse(500, errorMessage); // Internal Server Error
+    throw errorMessage;
+}
+
+function isCureMD(xmlDoc) {
+    try {
+        var documentId = xmlDoc.*::id[0];
+        if (documentId &amp;&amp; documentId.@root) {
+            var root = documentId.@root.toString().trim();
+            logger.info(&quot;ClinicalDocument id root: &quot; + root);
+            return (root == &quot;2.16.840.1.113883.3.669&quot; || root.indexOf(&quot;2.16.840.1.113883.3.669.&quot;) === 0);
+        }
+        return false;
+    } catch (e) {
+        logger.warn(&quot;Unable to determine if CCDA is CureMD: &quot; + e);
+        return false;
+    }
+}
+
+/*
+* Util function to get vender identifier details and choose the xslt file according to the vendor
+*/
+function getManufacturerModelName(xmlData) {
+	try {
+		if (xmlData) {
+			var ccdaSchemaFolder = channelMap.get(&apos;ccdaSchemaFolder&apos;);
+			var xmlDoc = new XML(xmlData); // Convert XML string to XML object
+			var cdaPhiFilterXsltPath = ccdaSchemaFolder + &quot;/cda-phi-filter.xslt&quot;;
+			var cdaFhirBundleXsltPath = ccdaSchemaFolder + &quot;/cda-fhir-bundle.xslt&quot;;
+			
+			var manufacturerModelName = &apos;&apos;;
+			var softwareName = &apos;&apos;;
+			var ehrVendor = &apos;&apos;;
+			var lowerName = &apos;&apos;;
+			var modelNode = &apos;&apos;;
+			
+			// To get the ehrVendor name check both manufacturerModelName as well as softwareName -- update done for Greenway
+			var device = xmlDoc.*::author.*::assignedAuthor.*::assignedAuthoringDevice[0];
+		     if (device) {
+		        var modelEl = device.*::manufacturerModelName[0];
+		        if (modelEl) {manufacturerModelName = modelEl.toString().trim();}
+		
+		        var softwareEl = device.*::softwareName[0];
+		        if (softwareEl) {softwareName = softwareEl.toString().trim();}
+		     }
+		     logger.info(&quot;Manufacturer Model Name: &quot; + manufacturerModelName);
+			logger.info(&quot;Software Name: &quot; + softwareName);
+
+			combinedVendorText = (manufacturerModelName + &quot; &quot; + softwareName).trim();
+			if (combinedVendorText.length &gt; 0) {
+			    lowerName = combinedVendorText.toLowerCase();
+			} else {
+			    logger.warn(&quot;Both manufacturerModelName and softwareName are empty&quot;);
+			    lowerName = &quot;&quot;;
+			}
+			                    
+			if (lowerName.indexOf(&quot;epic&quot;) !== -1) {
+			    	ehrVendor = &quot;Epic&quot;;
+			    	cdaPhiFilterXsltPath = ccdaSchemaFolder + &quot;/cda-phi-filter-epic.xslt&quot;;
+				cdaFhirBundleXsltPath = ccdaSchemaFolder + &quot;/cda-fhir-bundle-epic.xslt&quot;;
+			} else if (lowerName.indexOf(&quot;medent&quot;) !== -1) {
+			    	ehrVendor = &quot;Medent&quot;;
+			    	cdaPhiFilterXsltPath = ccdaSchemaFolder + &quot;/cda-phi-filter-medent.xslt&quot;;
+				cdaFhirBundleXsltPath = ccdaSchemaFolder + &quot;/cda-fhir-bundle-medent.xslt&quot;;
+			} else if (lowerName.indexOf(&quot;athenahealth&quot;) !== -1) {
+			    	ehrVendor = &quot;Athenahealth&quot;;
+			    	cdaPhiFilterXsltPath = ccdaSchemaFolder + &quot;/cda-phi-filter-athenahealth.xslt&quot;;
+				cdaFhirBundleXsltPath = ccdaSchemaFolder + &quot;/cda-fhir-bundle-athenahealth.xslt&quot;;
+			} else if (isCureMD(xmlDoc)) {
+			    ehrVendor = &quot;CureMD&quot;;
+			    cdaPhiFilterXsltPath = ccdaSchemaFolder + &quot;/cda-phi-filter-curemd.xslt&quot;;
+			    cdaFhirBundleXsltPath = ccdaSchemaFolder + &quot;/cda-fhir-bundle-curemd.xslt&quot;;
+			} else {
+			    	ehrVendor = &quot;Other&quot;;
+			    	cdaPhiFilterXsltPath = ccdaSchemaFolder + &quot;/cda-phi-filter.xslt&quot;;
+				cdaFhirBundleXsltPath = ccdaSchemaFolder + &quot;/cda-fhir-bundle.xslt&quot;;
+			}
+			
+			logger.info(&quot;ehrVendor: &quot; + ehrVendor);
+			channelMap.put(&apos;ehrVendor&apos;, ehrVendor);
+			channelMap.put(&apos;cdaPhiFilter&apos;, cdaPhiFilterXsltPath);
+			channelMap.put(&apos;cdaPhiBundle&apos;, cdaFhirBundleXsltPath);
+
+		} else {
+		    logger.error(&quot;xmlData is undefined or empty.&quot;);
+		}
+	} catch (e) {
+        var errorMsg;
+        if (e instanceof JavaException) {
+           errorMsg = &quot;Error parsing manufacturerModelName: &quot; + e.toString();
+        } else {
+           errorMsg = &quot;Unexpected error during validation: &quot; + e.message;
+        }
+        logger.error(errorMsg);
+
+        // Failure: Return an OperationOutcome JSON response with validation errors
+        responseMap.put(&apos;finalResponse&apos;, JSON.stringify(getJsonInvalidOperationOutcome(errorMsg, &quot;invalid&quot;)));
+
+        throw new Error(errorMsg);
+     }
+}
+
+</script>
+        </com.mirth.connect.plugins.javascriptstep.JavaScriptStep>
+        <com.mirth.connect.plugins.javascriptstep.JavaScriptStep version="4.5.0">
+          <name>Validate Profile URLs and Environment variables</name>
+          <sequenceNumber>3</sequenceNumber>
+          <enabled>true</enabled>
+          <script>/**
+* Util function to generate a hash string using sha-256 that can be used as the resource id in FHIR Bundle.
+*/
+function generateSHA256(inputString) {
+    var md = Packages.java.security.MessageDigest.getInstance(&quot;SHA-256&quot;);
+    md.update(inputString.getBytes(&quot;UTF-8&quot;));   
+    var digest = md.digest();
+    return bytesToHex(digest);
+}
+
+function bytesToHex(byteArray) {
+    var hexString = new java.lang.StringBuilder();
+    for (var i = 0; i &lt; byteArray.length; i++) {
+        var hex = java.lang.Integer.toHexString(0xff &amp; byteArray[i]);
+        if (hex.length == 1) hexString.append(&apos;0&apos;);
+        hexString.append(hex);
+    }
+    return hexString.toString();
+}
+
+function generateSHA256Id(resource, resourceName, resourceIdName, transformer, additionalString) {
+    if (resource != undefined) { 
+        // Get MRN and CIN from channelMap
+        var mrn = channelMap.get(&apos;Patient-MRN&apos;) || &quot;&quot;;
+        var cin = channelMap.get(&apos;patientCIN&apos;) || &quot;&quot;;
+        var combinedText = mrn + cin;
+
+        if (typeof additionalString !== &apos;undefined&apos; &amp;&amp; additionalString != null &amp;&amp; additionalString !== &apos;&apos;) {
+            combinedText += additionalString;
+        }
+
+        var resourceText = resourceName + resource.toString().trim();
+        combinedText += resourceText;
+
+        // Generate SHA-256 hash
+        var sha256Hash = generateSHA256(new java.lang.String(combinedText));
+        transformer.setParameter(resourceIdName, sha256Hash);
+    } else {
+        logger.error(resourceName + &quot; not found in the XML.&quot;);
+    }
+
+    return transformer;
+}
+
+function generateCompactSha256(sourceXml, resourceName, resourceIdName, transformer) {
+    if (sourceXml != undefined) { 
+	    var MessageDigest = Packages.java.security.MessageDigest;
+	    var digest = MessageDigest.getInstance(&quot;SHA-256&quot;);
+	
+	    // Raw SHA-256 bytes
+	    var hashBytes = digest.digest(new java.lang.String(sourceXml).getBytes(&quot;UTF-8&quot;));
+	
+	    // Base64 URL-safe encoding
+	    var sha256Hash = Packages.java.util.Base64
+	        .getUrlEncoder()
+	        .withoutPadding()
+	        .encodeToString(hashBytes);
+	    // Convert Java String to JavaScript String
+    	    sha256Hash = String(sha256Hash).replace(/_/g, &apos;-&apos;);
+	
+	    transformer.setParameter(resourceIdName, sha256Hash);
+	    channelMap.put(resourceName + &quot;_Resource_ID&quot;, sha256Hash);
+	    logger.info(resourceName + &quot; Resource_ID : &quot; + sha256Hash);
+    } else {
+	        logger.error(resourceName + &quot; not found.&quot;);
+	    }
+
+    return transformer;
+}
+
+function getPatientMRN(patientRoles) {
+    var extensionAttr = &apos;&apos;;
+    var ehrVendor = channelMap.get(&apos;ehrVendor&apos;);
+
+    function isSSNFormat(ext) {
+        return (
+            ext &amp;&amp;
+            ext.length === 11 &amp;&amp;
+            ext.charAt(3) === &apos;-&apos; &amp;&amp;
+            ext.charAt(6) === &apos;-&apos; &amp;&amp;
+            /^\d{3}-\d{2}-\d{4}$/.test(ext)
+        );
+    }
+
+	if (patientRoles != undefined) {
+        var patientRole = patientRoles;
+        var idNodes = patientRole.*::id;
+
+        // Step 1: Check for Medent MRN
+        if (ehrVendor == &apos;Medent&apos;) {
+             for each (var idNode in idNodes) {
+                var root = idNode.@root.toString();
+                var ext  = idNode.@extension.toString().trim();
+
+                if (
+                    ext !== &quot;&quot; &amp;&amp;                                  // extension exists
+                    root !== &quot;2.16.840.1.113883.4.1&quot; &amp;&amp;            // not SSN root
+                    !isSSNFormat(ext)
+                ) {
+                    extensionAttr = ext;
+                    //logger.info(&quot;Patient MRN (Medent): &quot; + extensionAttr);
+                    break;
+                }
+            }
+        }
+	   // Step 2: Athenahealth MRN (from first ID, after &quot;P-&quot;)
+        else if (ehrVendor == &apos;Athenahealth&apos;) {
+            for each (var idNode in idNodes) {
+                var ext = idNode.@extension.toString().trim();
+
+                // Only process if &quot;P-&quot; exists
+                if (ext !== &quot;&quot; &amp;&amp; ext.indexOf(&quot;P-&quot;) &gt; -1) {
+                    var mrnPart = ext.split(&quot;P-&quot;)[1]; // part after &quot;P-&quot;
+                    // Check if the extracted part is not SSN
+                    if (mrnPart &amp;&amp; mrnPart.trim() !== &quot;&quot; &amp;&amp; !isSSNFormat(mrnPart)) {
+                        extensionAttr = mrnPart.trim();
+                        //logger.info(&quot;Patient MRN (Athenahealth): &quot; + extensionAttr);
+                        break; // Only first valid occurrence
+                    }
+                }
+            }
+        }
+	   else if (ehrVendor == &apos;Epic&apos;){	
+        // Step 3: If Epic
+            for each (var idNode in idNodes) {
+                var root  = idNode.@root.toString();
+                var ext   = idNode.@extension.toString().trim();
+                var auth  = idNode.@assigningAuthorityName.toString().trim();
+
+                if (
+                    ext !== &quot;&quot; &amp;&amp;                                 // extension exists
+                    auth === &quot;EPI&quot; &amp;&amp;
+                    (root === &quot;1.2.840.114350.1.13.570.2.7.5.737384.14&quot; ||
+                     root !== &quot;1.2.840.114350.1.1&quot;) &amp;&amp;
+                    !isSSNFormat(ext)
+                ) {
+                    extensionAttr = ext;
+                    //logger.info(&quot;Patient MRN (Epic): &quot; + extensionAttr);
+                    break;
+                }
+            }
+	   }
+	   else if (ehrVendor == &apos;CureMD&apos;) {
+		    // Step 3: If CureMD
+		    for each (var idNode in idNodes) {
+		
+		        var root = idNode.@root.toString().trim();
+		        var ext  = idNode.@extension.toString().trim();
+		
+		        if (
+		            ext !== &quot;&quot; &amp;&amp;
+		            (root == &quot;2.16.840.1.113883.3.669&quot; ||
+		             root.indexOf(&quot;2.16.840.1.113883.3.669.&quot;) === 0) &amp;&amp;
+		            !isSSNFormat(ext)
+		        ) {
+		            extensionAttr = ext;
+		            //logger.info(&quot;Patient MRN (CureMD): &quot; + extensionAttr);
+		            break;
+		        }
+		    }
+	   }
+	   else {
+	   	//fallback to id.extension
+	   	for each (var idNode in idNodes) {
+                var ext = idNode.@extension.toString().trim();
+                
+                if (ext !== &quot;&quot; &amp;&amp; !isSSNFormat(ext)) {
+                    extensionAttr = ext;
+                    //logger.info(&quot;Patient MRN (Epic): &quot; + extensionAttr);
+                    break;
+                }
+            }
+	   }        
+    } else {
+        logger.error(&quot;PatientRole not found in the XML.&quot;);
+    }
+
+    if (!extensionAttr || extensionAttr.trim() === &quot;&quot;) {
+       logger.warn(&quot;No matching MRN found.&quot;);
+    }
+
+    channelMap.put(&apos;Patient-MRN&apos;, extensionAttr);
+}
+
+function getEncounterEffectiveTime(encounterNodeList, returnFallBackTime) {
+    var currentTime = new java.text.SimpleDateFormat(&quot;yyyy-MM-dd&apos;T&apos;HH:mm:ss.SS&apos;Z&apos;&quot;).format(new java.util.Date());
+    var fallbackTime = &apos;&apos;;
+    if (returnFallBackTime != &apos;False&apos;) {
+    		fallbackTime = currentTime;
+    }
+
+    if (!encounterNodeList || encounterNodeList.length === 0) {	
+        return fallbackTime;
+    }
+
+    var encounterNode = encounterNodeList[0];
+
+    // Try to get low/@value
+    var lowValue = encounterNode.*::effectiveTime.*::low.@value.toString();
+    if (lowValue &amp;&amp; lowValue.length &gt; 0) {
+        return lowValue;
+    }
+
+    // Try to get effectiveTime/@value
+    var directValue = encounterNode.*::effectiveTime.@value.toString();
+    if (directValue &amp;&amp; directValue.length &gt; 0) {
+        return directValue;
+    }
+
+    return fallbackTime;
+}
+
+function getCategoryDisplay(code) {
+    switch (code) {
+        case &apos;71802-3&apos;:
+            return &apos;Housing Instability&apos;;
+        case &apos;96778-6&apos;:
+            return &apos;Inadequate Housing&apos;;
+        case &apos;96779-4&apos;:
+            return &apos;Utility Insecurity&apos;;
+        case &apos;88122-7&apos;:
+        case &apos;88123-5&apos;:
+            return &apos;Food Insecurity&apos;;
+        case &apos;93030-5&apos;:
+            return &apos;Transportation Insecurity&apos;;
+        case &apos;96780-2&apos;:
+            return &apos;Employment Status&apos;;
+        case &apos;96782-8&apos;:
+        case &apos;95618-5&apos;:
+        case &apos;95617-7&apos;:
+        case &apos;95616-9&apos;:
+        case &apos;95615-1&apos;:
+        case &apos;95614-4&apos;:
+            return &apos;SDOH Category Unspecified&apos;;
+        default:
+            return &apos;SDOH Category Unspecified&apos;;
+    }
+}
+
+function getCategoryCode(code) {
+    switch (code) {
+        case &apos;71802-3&apos;:
+            return &apos;housing-instability&apos;;
+        case &apos;96778-6&apos;:
+            return &apos;inadequate-housing&apos;;
+        case &apos;96779-4&apos;:
+            return &apos;utility-insecurity&apos;;
+        case &apos;88122-7&apos;:
+        case &apos;88123-5&apos;:
+            return &apos;food-insecurity&apos;;
+        case &apos;93030-5&apos;:
+            return &apos;transportation-insecurity&apos;;
+        case &apos;96780-2&apos;:
+            return &apos;employment-status&apos;;
+        case &apos;96782-8&apos;:
+        case &apos;95618-5&apos;:
+        case &apos;95617-7&apos;:
+        case &apos;95616-9&apos;:
+        case &apos;95615-1&apos;:
+        case &apos;95614-4&apos;:
+            return &apos;sdoh-category-unspecified&apos;;
+        default:
+            return null;
+    }
+}
+
+// Define Namespace Resolver
+function getObservationCategoryCodesForCategoryXML(transformer, observations) {    
+    var xml = new XML(observations); // Parse the source message as XML    
+    var ccda = new Namespace(&quot;urn:hl7-org:v3&quot;); // Define the CCDA namespace    
+    default xml namespace = ccda; // Set default namespace so ccda tags can be used without prefix
+    var ehrVendor = channelMap.get(&apos;ehrVendor&apos;);
+    var codes;
+
+    // Extract all observation code attributes
+    if (ehrVendor == &apos;Medent&apos; || ehrVendor == &apos;Athenahealth&apos; || ehrVendor == &apos;CureMD&apos;) {
+	    codes = xml..component
+	                   .structuredBody
+	                   .component
+	                   .section.(@ID == &apos;observations&apos;)
+	                   .entry
+	                   .observation
+	                   .entryRelationship
+	                   .observation
+	                   .code.@code;
+     } else if (ehrVendor == &apos;Epic&apos;) {
+     	codes = xml..component
+	                   .structuredBody
+	                   .component
+	                   .section.(@ID == &apos;observations&apos;)
+	                   .entry
+	                   .observation
+	                   .entryRelationship
+	                   .observation
+	                   .entryRelationship
+	                   .observation
+	                   .code.@code;
+     } else { 
+   		codes = xml..component	
+                  .structuredBody	
+                  .component	
+                  .section.(@ID == &apos;observations&apos;)	
+                  .entry	
+                  .observation	
+                  .code.@code; 
+   	}
+
+	// collect unique category codes
+	var categorySet = {};
+	for (var i = 0; i &lt; codes.length(); i++) {
+	    var code = getCategoryCode(codes[i].toString().trim());
+	    if (code &amp;&amp; !(code in categorySet)) {
+	        categorySet[code] = getCategoryDisplay(codes[i].toString().trim());  
+	    }
+	}
+	
+	var categoryJsonArray = [];
+	for (var code in categorySet) {
+	    categoryJsonArray.push({
+	        code: code,
+	        display: categorySet[code]
+	    });
+	}
+
+	//Build Category json from Category codes to pass to the xslt file as transformer parameter
+	var categoryXml = &apos;[&apos;;
+	for (var i = 0; i &lt; categoryJsonArray.length; i++) {
+	    categoryXml += &apos;{&apos; +
+	        &apos;&quot;system&quot;: &quot;http://hl7.org/fhir/us/sdoh-clinicalcare/CodeSystem/SDOHCC-CodeSystemTemporaryCodes&quot;,&apos; +
+	        &apos;&quot;code&quot;: &quot;&apos; + categoryJsonArray[i].code + &apos;&quot;,&apos; +
+	        &apos;&quot;display&quot;: &quot;&apos; + categoryJsonArray[i].display + &apos;&quot;}&apos;;
+	
+	    if (i !== categoryJsonArray.length - 1) {
+	        categoryXml += &apos;,&apos;;
+	    }
+	}	
+	categoryXml += &apos;]&apos;;              
+	
+	// set context variable
+	transformer.setParameter(&apos;categoryXml&apos;, categoryXml);
+	return transformer;
+}
+
+/*
+ * getObservationCategoryCodes  (latest-observation aware)
+ *
+ * Builds the category JSON (categoryXml) and the latest grouper effectiveTime
+ * (latestEffectiveTime) that are passed to the XSLT transformer, using ONLY the
+ * observations the XSLT will actually emit: for every question code, the VALID
+ * observation with the MOST RECENT effectiveTime. This mirrors isValidObs /
+ * obsSortKey / isLatestObs in the XSLT, so the channel and the XSLT always agree.
+ *
+ * EFFECTIVE TIME OF AN INNER (question/answer) OBSERVATION
+ *   its own effectiveTime/@value
+ *   -&gt; its own effectiveTime/low/@value
+ *   -&gt; the PARENT observation&apos;s effectiveTime/@value
+ *   -&gt; the PARENT observation&apos;s effectiveTime/low/@value
+ *   Example: answers without a date take the grouper&apos;s &quot;20251001&quot;; an answer with its own
+ *   low &quot;20221028000000&quot; keeps &quot;20221028000000&quot;.
+ *   &quot;Parent&quot; = the grouper (entry/observation) for Medent / Athenahealth / CureMD,
+ *              the assessment observation for Epic / Oracle.
+ *
+ * latestEffectiveTime (grouper effectiveDateTime)
+ *   the MOST RECENT effective date of the emitted observations (each one: its own date, else its
+ *   parent&apos;s date, as above). Example: grouper 20261011 with an answer dated 20261118000000
+ *   -&gt; the grouper&apos;s date is 20261118000000.
+ *
+ * Keep all functions below in the same Code Template library (or the same
+ * script) as getCategoryCode() and getCategoryDisplay(), which are unchanged.
+ */
+
+// Set to false to go back to &quot;every code that appears&quot;, without the validity filter.
+var REQUIRE_VALID_ANSWER = true;
+
+// Tie rule when two valid observations of the same code have the SAME effectiveTime (date + time):
+//   true  -&gt; the FIRST one in document order is kept   (same as the XSLT)
+//   false -&gt; the LATER one in document order is kept   (then also flip the tie-break in the XSLT)
+var TIE_KEEPS_FIRST = true;
+
+// ---- PURE-LOGIC-START (plain JavaScript, no E4X) ----------------------------------------------
+
+// Normalise a CCDA timestamp to a 14-digit sortable string (yyyyMMddHHmmss).
+// Only the leading digits are used, so a timezone offset (&quot;-0500&quot;) is ignored.
+// Missing or empty value =&gt; &apos;00000000000000&apos;.
+function ccdaTimeSortKey(raw) {
+    var s = String(raw === null || raw === undefined ? &apos;&apos; : raw).replace(/^\s+|\s+$/g, &apos;&apos;);
+    var m = /^[0-9]+/.exec(s);
+    var digits = m ? m[0].substring(0, 14) : &apos;&apos;;
+    return (digits + &apos;00000000000000&apos;).substring(0, 14);
+}
+
+// For every question code keep the record with the most recent key.
+// records are in document order. Returns { best: {code: record}, order: [codes in order of first appearance] }.
+function pickLatestPerCode(records) {
+    var best = {};
+    var order = [];
+    for (var i = 0; i &lt; records.length; i++) {
+        var r = records[i];
+        var cur = best[r.code];
+        if (!cur) {
+            order.push(r.code);
+            best[r.code] = r;
+        } else if (r.key &gt; cur.key || (!TIE_KEEPS_FIRST &amp;&amp; r.key === cur.key)) {
+            // newer wins; on a tie the FIRST one is kept (or the later one when TIE_KEEPS_FIRST is false)
+            best[r.code] = r;
+        }
+    }
+    return { best: best, order: order };
+}
+
+// Most recent effective date among the emitted observations (winners).
+// Each winner carries &quot;raw&quot; = its own date, else its parent&apos;s date. Returns the original CCDA string, or null.
+function latestWinnerDate(winners) {
+    var latest = null;
+    var latestKey = null;
+    for (var i = 0; i &lt; winners.length; i++) {
+        var raw = winners[i].raw;
+        if (raw === null || raw === undefined || String(raw) === &apos;&apos;) { continue; }
+        var k = ccdaTimeSortKey(raw);
+        if (latestKey === null || k &gt; latestKey) {
+            latestKey = k;
+            latest = raw;
+        }
+    }
+    return latest;
+}
+
+// ---- PURE-LOGIC-END ---------------------------------------------------------------------------
+
+// Same validity rules as isValidObs in the XSLT.
+function isValidAnswer(answer) {
+    var ccda = new Namespace(&quot;urn:hl7-org:v3&quot;);
+    default xml namespace = ccda;   // must be set inside every function that reads CCDA elements
+
+    var code = answer.code.@code.toString();
+    var codeSystemName = answer.code.@codeSystemName.toString();
+    var valueCode = answer.value.@code.toString();
+    var translationCode = answer.value.translation.@code.toString();
+
+    if (translationCode == &apos;X-SDOH-FLO-1570000066-Patient-unable-to-answer&apos; ||
+        translationCode == &apos;X-SDOH-FLO-1570000066-Patient-declined&apos;) {
+        return true;
+    }
+
+    if (valueCode != &apos;UNK&apos; &amp;&amp; valueCode.length &gt; 0 &amp;&amp;
+        code != &apos;UNK&apos; &amp;&amp; code.length &gt; 0 &amp;&amp;
+        answer.value.@nullFlavor.toString().length == 0 &amp;&amp;
+        answer.code.@nullFlavor.toString().length == 0 &amp;&amp;
+        (codeSystemName == &apos;LOINC&apos; || codeSystemName == &apos;SNOMED&apos; || codeSystemName == &apos;SNOMED CT&apos;)) {
+        return true;
+    }
+
+    // Total Safety Score carries a numeric value instead of a coded one
+    if (code == &apos;95614-4&apos; &amp;&amp; answer.value.@value.toString().length &gt; 0) {
+        return true;
+    }
+
+    return false;
+}
+
+// Same date source as the XSLT:
+// own effectiveTime/@value, then own effectiveTime/low/@value,
+// then the PARENT&apos;s effectiveTime/@value, then the PARENT&apos;s effectiveTime/low/@value.
+function getAnswerEffectiveRaw(answer, parent) {
+    var ccda = new Namespace(&quot;urn:hl7-org:v3&quot;);
+    default xml namespace = ccda;
+
+    var v = answer.effectiveTime.@value.toString().trim();
+    if (v !== &apos;&apos;) { return v; }
+
+    v = answer.effectiveTime.low.@value.toString().trim();
+    if (v !== &apos;&apos;) { return v; }
+
+    if (parent) {
+        v = parent.effectiveTime.@value.toString().trim();
+        if (v !== &apos;&apos;) { return v; }
+
+        v = parent.effectiveTime.low.@value.toString().trim();
+        if (v !== &apos;&apos;) { return v; }
+    }
+    return &apos;&apos;;
+}
+
+// The grouper of an answer for Medent / Athenahealth / CureMD:
+// answer = entry/observation/entryRelationship/observation  -&gt;  parent().parent() = entry/observation
+function getGrouperOf(answer) {
+    var er = answer.parent();
+    if (er === null || er === undefined) { return null; }
+    var grouper = er.parent();
+    if (grouper === null || grouper === undefined) { return null; }
+    return grouper;
+}
+
+function getObservationCategoryCodes(transformer, observations) {
+    var xml = new XML(observations);
+    var ccda = new Namespace(&quot;urn:hl7-org:v3&quot;);
+    default xml namespace = ccda;
+
+    var ehrVendor = channelMap.get(&apos;ehrVendor&apos;);
+    var units;               // observations the original code iterated over
+    var nested = false;      // true: answers are the child observations of each unit (the unit is the parent)
+
+    logger.info(&quot;ehrVendor: &quot; + ehrVendor);
+
+    // Select observations based on EHR vendor (unchanged)
+    if (ehrVendor == &apos;Medent&apos; ||
+        ehrVendor == &apos;Athenahealth&apos; ||
+        ehrVendor == &apos;CureMD&apos;) {
+
+        // answer = the selected observation itself; its parent is the grouper (found with getGrouperOf)
+        units = xml..component
+            .structuredBody
+            .component
+            .section.(@ID == &apos;observations&apos;)
+            .entry
+            .observation
+            .entryRelationship
+            .observation;
+
+    } else if (ehrVendor == &apos;Epic&apos; || ehrVendor == &apos;Oracle&apos;) {
+
+        // parent = selected observation (assessment), answers = its entryRelationship/observation
+        nested = true;
+        units = xml..component
+            .structuredBody
+            .component
+            .section.(@ID == &apos;observations&apos;)
+            .entry
+            .observation
+            .entryRelationship
+            .observation;
+
+    } else {
+
+        // answer = the selected observation itself
+        units = xml..component
+            .structuredBody
+            .component
+            .section.(@ID == &apos;observations&apos;)
+            .entry
+            .observation;
+    }
+
+    // --------------------------------------------------
+    // Collect every answer (valid ones only) in document order,
+    // with its effective date (own, else parent&apos;s) and sort key.
+    // --------------------------------------------------
+    var records = [];
+
+    for (var j = 0; j &lt; units.length(); j++) {
+        var unit = units[j];
+        var answers = [];
+
+        if (nested) {
+            var children = unit.entryRelationship.observation;
+            for (var a = 0; a &lt; children.length(); a++) {
+                answers.push(children[a]);
+            }
+        } else {
+            answers.push(unit);
+        }
+
+        for (var n = 0; n &lt; answers.length; n++) {
+            var answer = answers[n];
+            var qCode = answer.code.@code.toString().trim();
+
+            if (qCode === &apos;&apos;) { continue; }
+            if (REQUIRE_VALID_ANSWER &amp;&amp; !isValidAnswer(answer)) { continue; }
+
+            // parent observation that supplies the date when the answer has none
+            var parent = nested ? unit : getGrouperOf(answer);
+
+            var raw = getAnswerEffectiveRaw(answer, parent);
+
+            records.push({
+                code: qCode,
+                raw: raw,
+                key: ccdaTimeSortKey(raw)
+            });
+        }
+    }
+
+    // --------------------------------------------------
+    // For every question code: the valid observation with the most recent effectiveTime.
+    // --------------------------------------------------
+    var picked = pickLatestPerCode(records);
+    var bestByCode = picked.best;
+    var firstSeenCodes = picked.order;
+
+    // Collect unique category codes (from the winning observations only)
+    var categorySet = {};
+    var winners = [];         // emitted observations
+
+    for (var i = 0; i &lt; firstSeenCodes.length; i++) {
+        var originalCode = firstSeenCodes[i];
+        var code = getCategoryCode(originalCode);
+
+        if (code) {
+            winners.push(bestByCode[originalCode]);
+
+            if (!(code in categorySet)) {
+                categorySet[code] = getCategoryDisplay(originalCode);
+            }
+        }
+    }
+
+    var categoryJsonArray = [];
+
+    for (var cat in categorySet) {
+        categoryJsonArray.push({
+            code: cat,
+            display: categorySet[cat]
+        });
+    }
+
+    // Build category JSON for the XSLT transformer
+    var categoryXml = &apos;[&apos;;
+
+    for (var c = 0; c &lt; categoryJsonArray.length; c++) {
+        categoryXml += &apos;{&apos; +
+            &apos;&quot;system&quot;: &quot;http://hl7.org/fhir/us/sdoh-clinicalcare/CodeSystem/SDOHCC-CodeSystemTemporaryCodes&quot;,&apos; +
+            &apos;&quot;code&quot;: &quot;&apos; + categoryJsonArray[c].code + &apos;&quot;,&apos; +
+            &apos;&quot;display&quot;: &quot;&apos; + categoryJsonArray[c].display + &apos;&quot;}&apos;;
+
+        if (c !== categoryJsonArray.length - 1) {
+            categoryXml += &apos;,&apos;;
+        }
+    }
+
+    categoryXml += &apos;]&apos;;
+
+    transformer.setParameter(&apos;categoryXml&apos;, categoryXml);
+
+    // --------------------------------------------------
+    // Grouper effectiveDateTime = the most recent effective date of the emitted observations
+    // (own date, else the parent&apos;s date).
+    // --------------------------------------------------
+    var latestEffectiveTime = latestWinnerDate(winners);
+
+    // Pass latest effectiveTime to the XSLT transformer
+    transformer.setParameter(
+        &apos;latestEffectiveTime&apos;,
+        latestEffectiveTime === null ? &apos;&apos; : latestEffectiveTime
+    );
+
+    logger.info(&quot;latest observation per code: &quot; + firstSeenCodes.join(&apos;,&apos;));
+    logger.info(&quot;categoryXml: &quot; + categoryXml);
+    logger.info(&quot;latestEffectiveTime: &quot; + latestEffectiveTime);
+
+    return transformer;
+}
+
+function getMultipleAnswersForComponent(transformer, observations) {
+	if (observations == null) {
+        return transformer;
+    }
+    
+    var xml;
+    try {
+        xml = new XML(observations.toString()); // Safely parse the XML
+    } catch (e) {
+        logger.error(&quot;Error parsing observations XML: &quot; + e.toString());
+        return transformer;
+    }
+    var ccda = new Namespace(&quot;urn:hl7-org:v3&quot;); // Define the CCDA namespace    
+    default xml namespace = ccda; // Set default namespace so ccda tags can be used without prefix
+    var matchingObservations = [];
+    var ehrVendor = channelMap.get(&apos;ehrVendor&apos;);
+    var codes;
+
+    // Extract all observation code attributes
+    try {
+	    if (ehrVendor == &apos;Medent&apos; || ehrVendor  == &apos;Athenahealth&apos; || ehrVendor  == &apos;CureMD&apos;) {
+		    matchingObservations = xml..component
+		        .structuredBody
+		        .component
+		        .section.(@ID == &apos;observations&apos;)
+		        .entry
+		        .observation
+		        .entryRelationship
+		        .observation.(code.@code == &apos;96778-6&apos; &amp;&amp;
+					       String(value.@code) != &apos;UNK&apos; &amp;&amp;
+					       String(value.@code).length &gt; 0 &amp;&amp;
+					       !String(value.@nullFlavor)
+					     );
+	     } else if (ehrVendor == &apos;Epic&apos;) {
+	     	matchingObservations = xml..component
+		        .structuredBody
+		        .component
+		        .section.(@ID == &apos;observations&apos;)
+		        .entry
+		        .observation
+		        .entryRelationship
+		        .observation
+		        .entryRelationship
+		        .observation.(code.@code == &apos;96778-6&apos; &amp;&amp;
+					       String(value.@code) != &apos;UNK&apos; &amp;&amp;
+					       String(value.@code).length &gt; 0 &amp;&amp;
+					       !String(value.@nullFlavor)
+					     );
+	     } else {
+	     	matchingObservations = xml..component
+		        .structuredBody
+		        .component
+		        .section.(@ID == &apos;observations&apos;)
+		        .entry
+		        .observation.(code.@code == &apos;96778-6&apos; &amp;&amp;
+					       String(value.@code) != &apos;UNK&apos; &amp;&amp;
+					       String(value.@code).length &gt; 0 &amp;&amp;
+					       !String(value.@nullFlavor)
+					     );
+	     }
+     } catch (err) {
+        logger.error(&quot;XPath error while extracting observations: &quot; + err.toString());
+        return transformer;
+    }
+
+	var seenCodes = {};
+	var codingArray = [];
+	
+	for each (var obs in matchingObservations) {
+	    for each (var val in obs.value) {
+	        var code = val.@code.toString();
+	        var display = val.@displayName.toString();
+	
+	        if (code &amp;&amp; !seenCodes[code]) {
+	            codingArray.push({
+	                &quot;system&quot;: &quot;http://loinc.org&quot;,
+	                &quot;code&quot;: code,
+	                &quot;display&quot;: display
+	            });
+	            seenCodes[code] = true;
+	        }
+	    }
+	}
+
+	transformer.setParameter(&apos;componentAnswersXml&apos;, JSON.stringify(codingArray));
+	return transformer;
+}
+
+function setBooleanHeaderFlag(headerName, transformer) {
+    var value = channelMap.get(headerName);
+    transformer.setParameter(
+        headerName,
+        (value &amp;&amp; String(value).toLowerCase() === &quot;true&quot;) ? &quot;true&quot; : &quot;false&quot;
+    );
+    return transformer;
+}
+
+// Define Namespace Resolver
+function setResourceIdParameters(transformer) {
+    	// Parse XML
+	var sourceXml = channelMap.get(&apos;phi_filtered_ccd&apos;);
+	var xmlDoc = new XML(sourceXml);
+	default xml namespace = &quot;urn:hl7-org:v3&quot;;
+	var ehrVendor = channelMap.get(&apos;ehrVendor&apos;);
+	
+	// Generate Bundle resource Id
+	var ccda_fhir_bundle_id = channelMap.get(&apos;interactionId&apos;);
+	if (ccda_fhir_bundle_id) {
+		transformer.setParameter(&apos;bundleId&apos;, ccda_fhir_bundle_id);
+		logger.info(&apos;bundleId : &apos; + ccda_fhir_bundle_id);
+	}
+	else {
+		transformer = generateSHA256Id(xmlDoc, &quot;ClinicalDocument&quot;, &quot;bundleId&quot;, transformer);
+	}
+	
+	// Extract `patientRole`
+	var patientRoles = xmlDoc.*::recordTarget.*::patientRole[0];
+	transformer = generateSHA256Id(patientRoles, &quot;patientRole&quot;, &quot;patientResourceId&quot;, transformer);
+	
+	// Extract `consent`
+	var consent = xmlDoc.*::authorization.*::consent[0];
+	var currentTimestamp = new java.text.SimpleDateFormat(&quot;yyyy-MM-dd&apos;T&apos;HH:mm:ss.SS&apos;Z&apos;&quot;).format(new java.util.Date());
+	transformer = generateSHA256Id(consent, &quot;consent&quot;, &quot;consentResourceId&quot;, transformer, currentTimestamp);
+	
+	// Extract `author (organization)`
+	var author = xmlDoc.*::author[0];
+	var organizationName = &quot;&quot;;
+	
+	if (ehrVendor == &apos;Epic&apos; || ehrVendor == &apos;Medent&apos;) {	
+	    var encounterOrgName = &quot;&quot;;	
+	    var encounterEntries =
+	        xmlDoc.*::component
+	              .*::structuredBody
+	              .*::component
+	              .*::section.(@ID == &apos;encounters&apos;)
+	              .*::entry;
+	
+	    if (encounterEntries.length() &gt; 0) {	
+	        encounterOrgName =
+	            encounterEntries[0]
+	                .*::encounter
+	                .*::participant.(@typeCode == &apos;LOC&apos;)
+	                .*::participantRole.(@classCode == &apos;SDLOC&apos;)
+	                .*::playingEntity
+	                .*::name[0];
+	                	
+	        if (encounterOrgName != undefined &amp;&amp;
+	            encounterOrgName.toString().trim() != &quot;&quot;) {	
+	            organizationName = encounterOrgName.toString().trim();
+	        }
+	    }
+	
+	    // Fallback to author organization
+	    if (organizationName == &quot;&quot;) {	
+	        var authorOrgList =
+	            xmlDoc.*::author
+	                  .*::assignedAuthor
+	                  .*::representedOrganization
+	                  .*::name;
+	
+	        if (authorOrgList.length() &gt; 0 &amp;&amp;
+	            authorOrgList[0].toString().trim() != &quot;&quot;) {	
+	            organizationName = authorOrgList[0].toString().trim();
+	        }
+	    }
+	
+	} else {	
+	    var authorOrgList =
+	        xmlDoc.*::author
+	              .*::assignedAuthor
+	              .*::representedOrganization
+	              .*::name;
+	
+	    if (authorOrgList.length() &gt; 0 &amp;&amp;
+	        authorOrgList[0].toString().trim() != &quot;&quot;) {	
+	        organizationName = authorOrgList[0].toString().trim();
+	    }
+	}
+	
+	transformer.setParameter(&apos;organizationName&apos;, organizationName);
+	logger.info(&apos;organizationName : &apos; + organizationName);
+	
+	if (author != undefined &amp;&amp; author.toString().trim() != &quot;&quot;) {
+	    transformer = generateSHA256Id(author, &quot;Author&quot;, &quot;organizationResourceId&quot;, transformer, organizationName);
+	}
+	
+	// Extract `Questionnaire` - used only for Generic CCDA files
+	if (ehrVendor != &apos;Medent&apos; &amp;&amp; ehrVendor != &apos;Athenahealth&apos; &amp;&amp; ehrVendor != &apos;Epic&apos; &amp;&amp; ehrVendor != &apos;CureMD&apos;) {
+		var Questionnaire = xmlDoc.*::component
+	                              .*::structuredBody
+	                              .*::component
+	                              .*::section.(@ID != &apos;sexualOrientation&apos;)
+	                              .*::entry;
+		if (Questionnaire != null &amp;&amp; Questionnaire.length() &gt; 0) {
+			transformer = generateSHA256Id(Questionnaire, &quot;Questionnaire&quot;, &quot;questionnaireResourceId&quot;, transformer);
+		} else {
+	         logger.error(&quot;Questionnaire resource not found in the XML.&quot;);
+	     }
+	}
+	
+	transformer.setParameter(&apos;patient-MRN&apos;, channelMap.get(&apos;Patient-MRN&apos;));
+	
+	// Extract `sexualOrientation`
+	/*var sexualOrientation = xmlDoc.*::component
+                              .*::structuredBody
+                              .*::component
+                              .*::section.(@ID == &apos;sexualOrientation&apos;)
+                              .*::entry
+                              .*::observation.(code.@code == &apos;76690-7&apos;);
+	if (sexualOrientation != undefined &amp;&amp; sexualOrientation.length() &gt; 0) {
+		transformer = generateCompactSha256(sexualOrientation, &quot;sexualOrientation&quot;, &quot;sexualOrientationResourceId&quot;, transformer);	
+	} else {
+	    	logger.info(&quot;No sexualOrientation section found.&quot;);
+	}*/
+	try {
+	    var sexualOrientation = xmlDoc.*::component
+	                                  .*::structuredBody
+	                                  .*::component
+	                                  .*::section.(@ID == &quot;sexualOrientation&quot;)
+	                                  .*::entry
+	                                  .*::observation.(code.@code == &quot;76690-7&quot;);	
+	    if (sexualOrientation != undefined &amp;&amp; sexualOrientation.length() &gt; 0) {
+	        transformer = generateCompactSha256(
+	            sexualOrientation,
+	            &quot;sexualOrientation&quot;,
+	            &quot;sexualOrientationResourceId&quot;,
+	            transformer
+	        );
+	    } else {
+	        logger.info(&quot;No sexualOrientation section found.&quot;);
+	    }	
+	} catch (e) {
+	    logger.info(&quot;SexualOrientation section not found.&quot;);
+	}
+	
+	// Extract `encompassingEncounter`
+	/*try {
+		var encounter = xmlDoc.*::componentOf.*::encompassingEncounter;
+		if (encounter != undefined &amp;&amp; encounter.length() &gt; 0) {
+		    var encounterEffectiveTime = getEncounterEffectiveTime(encounter);	
+		    transformer = generateSHA256Id(encounter, &quot;encounter&quot;, &quot;encounterResourceId&quot;, transformer, encounterEffectiveTime);
+		} else {
+		    // Try fallback to `encounter`
+		    var encounters = xmlDoc.*::component
+	                     .*::structuredBody
+	                     .*::component
+	                     .*::section.(@ID == &apos;encounters&apos;)
+	                     .*::entry[0]
+	                     .*::encounter;
+		    if (encounters != undefined &amp;&amp; encounters.length() &gt; 0) {
+		        var encounterEffectiveTime = getEncounterEffectiveTime(encounters);
+		        transformer = generateSHA256Id(encounters, &quot;encounter&quot;, &quot;encounterResourceId&quot;, transformer, encounterEffectiveTime);
+		    } else {
+		        logger.error(&quot;Encounter resource not found in the XML.&quot;);
+		    }
+		}
+	} catch (e) {
+	    logger.error(&quot;Error accessing encounter: &quot; + e);
+	}*/
+
+	try {
+	    // Check for encompassingEncounter
+	    var encounter = xmlDoc.*::componentOf.*::encompassingEncounter;
+	    if (encounter != undefined &amp;&amp; encounter.length() &gt; 0) {        
+	        var encounterEffectiveTime = getEncounterEffectiveTime(encounter);
+	        transformer = generateSHA256Id(encounter, &quot;encounter&quot;, &quot;encounterResourceId&quot;, transformer, encounterEffectiveTime);
+	    } else {
+	        // Fallback: Check for encounters section first
+	        var encountersSection =
+	            xmlDoc.*::component
+	                  .*::structuredBody
+	                  .*::component
+	                  .*::section.(@ID == &apos;encounters&apos;);
+	        if (encountersSection != undefined &amp;&amp; encountersSection.length() &gt; 0) {
+	            // Get entries only after confirming the section exists
+	            var encounterEntries = encountersSection.*::entry;
+	            if (encounterEntries != undefined &amp;&amp; encounterEntries.length() &gt; 0) {
+	                // Safely select the first entry
+	                var encounters = encounterEntries[0].*::encounter;
+	                if (encounters != undefined &amp;&amp; encounters.length() &gt; 0) {
+	                    var encounterEffectiveTime = getEncounterEffectiveTime(encounters);
+					 transformer = generateSHA256Id(encounters, &quot;encounter&quot;, &quot;encounterResourceId&quot;, transformer, encounterEffectiveTime);                    
+	                } else {
+	                    logger.error(&quot;No encounter element found in the first encounters entry.&quot;);
+	                }	
+	            } else {
+	                logger.error(&quot;No encounter entries found in the encounters section.&quot;);
+	            }	
+	        } else {
+	            logger.error(&quot;Neither encompassingEncounter nor the encounters section was found in the XML.&quot;);
+	        }
+	    }	
+	} catch (e) {
+	    logger.error(&quot;Error accessing encounter: &quot; + e);
+	}
+
+	/// ** Grouper Observation Resource ** ///
+	// Get grouper Screening Code
+     // For Epic files, use the value of the header variable,&apos;X-TechBD-Screening-Code&apos;, as the Grouper Screening Code, otherwise use the LOINC code &apos;100698-0&apos;
+     // For Medent files, take the value from code.code
+     var grouperScreeningCode = channelMap.get(&apos;X-TechBD-Screening-Code&apos;);
+	var grouperScreeningEffectiveTime = &apos;&apos;;
+	
+	// Extract effectiveTime (COMMON for all vendors)
+	try {
+	    var observations = xmlDoc.*::component
+	        .*::structuredBody
+	        .*::component
+	        .*::section.(@ID == &apos;observations&apos;)
+	        .*::entry
+	        .*::observation;
+	
+	    if (observations != undefined &amp;&amp; observations.length() &gt; 0) {
+	        var obs = observations[0]; // first observation (same as [1] in XSLT)
+	
+	        if (obs.*::effectiveTime) {
+	            var effTime = obs.*::effectiveTime.@value.toString().trim();
+	
+	            // fallback to low/@value
+	            if (!effTime || effTime == &apos;&apos;) {
+	                effTime = obs.*::effectiveTime.*::low.@value.toString().trim();
+	            }
+	
+	            grouperScreeningEffectiveTime = effTime;
+	        }
+	    }
+	
+	} catch (e) {
+	    logger.error(&quot;Error extracting grouperScreeningEffectiveTime: &quot; + e);
+	}
+
+	if ((ehrVendor == &apos;Epic&apos; || ehrVendor == &apos;Athenahealth&apos;)
+	    &amp;&amp; (!grouperScreeningCode || grouperScreeningCode.trim() === &apos;&apos;)) {
+	
+	    grouperScreeningCode = &apos;100698-0&apos;;
+	
+	} else if ((ehrVendor == &apos;Medent&apos;)
+	    &amp;&amp; (!grouperScreeningCode || grouperScreeningCode.trim() === &apos;&apos;)) {
+	
+	    // Try to extract from CCDA observations
+	    try {
+	        var observations = xmlDoc.*::component
+	            .*::structuredBody
+	            .*::component
+	            .*::section.(@ID == &apos;observations&apos;)
+	            .*::entry
+	            .*::observation;
+	
+	        if (observations != undefined &amp;&amp; observations.length() &gt; 0) {
+	            for each (var obs in observations) {
+	                if (obs.*::code &amp;&amp; obs.*::code.@code.toString().trim() != &apos;&apos;) {
+	                    grouperScreeningCode = obs.*::code.@code.toString().trim();
+	                    break;
+	                }
+	            }
+	        }
+	
+	    } catch (e) {
+	        logger.error(&quot;Error extracting screening code/effectiveTime for Medent: &quot; + e);
+	    }
+	
+	    // Final fallback if still empty (matches XSLT)
+	    if (!grouperScreeningCode || grouperScreeningCode.trim() === &apos;&apos;) {
+	        grouperScreeningCode = &apos;96777-8&apos;;
+	    }
+	} else if ((ehrVendor == &apos;CureMD&apos;)
+	    &amp;&amp; (!grouperScreeningCode || grouperScreeningCode.trim() === &apos;&apos;)) {
+	
+	    // Try to extract from CCDA observations
+	    try {
+	        var observations = xmlDoc.*::component
+	            .*::structuredBody
+	            .*::component
+	            .*::section.(@ID == &apos;observations&apos;)
+	            .*::entry
+	            .*::observation;
+	
+	        // Valid Grouper Screening Codes
+		   var validScreeningCodes = {
+		        &quot;96777-8&quot;: true,
+		        &quot;97023-6&quot;: true,
+		        &quot;100698-0&quot;: true,
+		        &quot;93025-5&quot;: true,
+		        &quot;NYSAHCHRSN&quot;: true,
+		        &quot;NYS-AHC-HRSN&quot;: true
+		   };
+	
+	        if (observations != undefined &amp;&amp; observations.length() &gt; 0) {
+		        for each (var obs in observations) {
+		            if (obs.*::code) {
+		                var code = obs.*::code.@code.toString().trim();
+		
+		                if (validScreeningCodes[code]) {
+		                    grouperScreeningCode = code;
+		                    break;
+		                }
+		            }
+		        }
+		    }
+	
+	    } catch (e) {
+	        logger.error(&quot;Error extracting screening code/effectiveTime for Medent: &quot; + e);
+	    }
+	
+	    // Final fallback if still empty (matches XSLT)
+	    if (!grouperScreeningCode || grouperScreeningCode.trim() === &apos;&apos;) {
+	        grouperScreeningCode = &apos;96777-8&apos;;
+	    }
+	} else { // For general CCDA files
+		//grouperScreeningEffectiveTime = &apos;&apos;;
+	}
+	
+	grouperScreeningCode = (grouperScreeningCode || &apos;&apos;).trim();
+	
+	transformer.setParameter(&apos;grouperScreeningCode&apos;, String(grouperScreeningCode));
+
+	// Get encounter effective time
+	var encounterEffectiveTime = &apos;&apos;;
+	try {
+		var encounter = xmlDoc.*::componentOf.*::encompassingEncounter;
+		if (encounter != undefined &amp;&amp; encounter.length() &gt; 0) {
+		    encounterEffectiveTime = getEncounterEffectiveTime(encounter, &apos;False&apos;);	
+		} else {
+		    // Try fallback to `encounter`
+		    var encounters = xmlDoc.*::component
+	                     .*::structuredBody
+	                     .*::component
+	                     .*::section.(@ID == &apos;encounters&apos;)
+	                     .*::entry[0]
+	                     .*::encounter;
+		    if (encounters != undefined &amp;&amp; encounters.length() &gt; 0) {
+		        encounterEffectiveTime = getEncounterEffectiveTime(encounters, &apos;False&apos;);
+		    } else {
+		        logger.error(&quot;Encounter resource not found in the XML.&quot;);
+		    }
+		}
+	} catch (e) {
+	    logger.error(&quot;Error accessing encounter: &quot; + e);
+	}
+
+	// Generate the Grouper Observation Resource ID
+	var mrn = (channelMap.get(&apos;Patient-MRN&apos;) || &quot;&quot;).trim();
+	var cin = (channelMap.get(&apos;patientCIN&apos;) || &quot;&quot;).trim();
+     var finalEffectiveTime = grouperScreeningEffectiveTime;
+	
+	if (!finalEffectiveTime || finalEffectiveTime.trim() === &apos;&apos;) {
+	    finalEffectiveTime = encounterEffectiveTime || &apos;&apos;;
+	}
+           
+     var combinedText = mrn + cin + grouperScreeningCode + finalEffectiveTime;
+     transformer = generateCompactSha256(combinedText, &quot;grouperObservation&quot;, &quot;grouperObservationResourceSha256Id&quot;, transformer);   
+    
+     //transformer.setParameter(&apos;grouperObservationResourceSha256Id&apos;, encodedSha256Hash);
+     //logger.info(&apos;grouperObservationResourceSha256Id&apos; + &quot; : &quot; + encodedSha256Hash);
+     
+     // Set category xml
+     transformer = getObservationCategoryCodes(transformer, sourceXml); //observations
+     transformer = getMultipleAnswersForComponent(transformer, sourceXml); //observations
+    
+	// Set part2, OMH and OPWDD flags
+	transformer = setBooleanHeaderFlag(&apos;X-TechBD-Part2&apos;, transformer); // Set part2 flag
+	transformer = setBooleanHeaderFlag(&apos;X-TechBD-OMH&apos;, transformer);	  // Set OMH flag
+	transformer = setBooleanHeaderFlag(&apos;X-TechBD-OPWDD&apos;, transformer); // Set OPWDD flag
+
+	// Extract `location`
+	try {
+	    var location;
+	    var location_name;
+	    var location_address;
+	    var locationSuccess = false;
+	    var isValidLocation = function(name, address) {
+					        return (
+					            name != null &amp;&amp; name.toString().trim() !== &apos;&apos; &amp;&amp;
+					            address != null &amp;&amp; address.toString().trim() !== &apos;&apos;
+					        );
+					    };
+	    // Primary location path: componentOf → encompassingEncounter → location → healthCareFacility → location
+	    /*if (
+	        xmlDoc.componentOf &amp;&amp;
+	        xmlDoc.componentOf.encompassingEncounter &amp;&amp;
+	        xmlDoc.componentOf.encompassingEncounter.location &amp;&amp;
+	        xmlDoc.componentOf.encompassingEncounter.location.length() &gt; 0 &amp;&amp;
+	        xmlDoc.componentOf.encompassingEncounter.location[0].healthCareFacility &amp;&amp;
+	        xmlDoc.componentOf.encompassingEncounter.location[0].healthCareFacility.location
+	    ) {
+	    	   location = xmlDoc.componentOf.encompassingEncounter.location[0].healthCareFacility.location;
+	        location_name = location.name;
+	        location_address = location.addr;
+	        if (isValidLocation(location_name, location_address)) { locationSuccess = true; }
+	    }*/
+
+	    	var componentOf = new XMLList();
+		if (xmlDoc.*::componentOf.length() &gt; 0) {
+		    componentOf = xmlDoc.*::componentOf[0];
+		}
+		if (
+            componentOf.*::encompassingEncounter.length() &gt; 0 &amp;&amp;
+            componentOf.*::encompassingEncounter[0].*::location.length() &gt; 0 &amp;&amp;
+            componentOf.*::encompassingEncounter[0].*::location[0].*::healthCareFacility.length() &gt; 0
+          ) {
+	    		logger.info(&quot;Found healthCareFacility&quot;);
+	    		var healthCareFacility = componentOf.*::encompassingEncounter.*::location[0].*::healthCareFacility;
+			if (healthCareFacility.*::location.length() &gt; 0) {
+			    location = healthCareFacility.*::location[0];
+			} else if (healthCareFacility.*::serviceProviderOrganization.length() &gt; 0) {
+			    location = healthCareFacility.*::serviceProviderOrganization[0];//CureMD
+			}
+	    	   //location = xmlDoc.componentOf.encompassingEncounter.location[0].healthCareFacility.location;
+	        if (location) {
+		        location_name = location.name;
+		        location_address = location.addr;
+		        if (isValidLocation(location_name, location_address)) { locationSuccess = true; }
+	        }
+	    }
+	    
+	    // Fallback path: structuredBody → encounters section → encounter → participant → participantRole → playingEntity → name
+		if (!locationSuccess || ehrVendor == &apos;Medent&apos;) {
+	        var section = xmlDoc.component.structuredBody.component.section.(@ID == &apos;encounters&apos;);
+	        if (
+	            section &amp;&amp;
+	            section.entry &amp;&amp;
+	            section.entry.length() &gt; 0 &amp;&amp;
+	            section.entry[0].encounter &amp;&amp;
+	            section.entry[0].encounter.participant &amp;&amp;
+	            section.entry[0].encounter.participant.length() &gt; 0 &amp;&amp;
+	            section.entry[0].encounter.participant[0].participantRole &amp;&amp;
+	            section.entry[0].encounter.participant[0].participantRole.playingEntity
+	        ) {
+	            location = section.entry[0].encounter.participant[0].participantRole;
+	            location_name = location.playingEntity.name;
+	            location_address = location.addr;
+	        	 if (isValidLocation(location_name, location_address)) { locationSuccess = true; }
+	        }
+	    }
+	
+	    if (locationSuccess &amp;&amp; location) {
+	        transformer = generateSHA256Id(location, &quot;Location&quot;, &quot;locationResourceId&quot;, transformer);
+	    } else {
+	        logger.info(&quot;Location not found in the XML.&quot;);
+	    }
+	
+	} catch (e) {
+	    logger.info(&quot;Error accessing location: &quot; + e);
+	}
+     	
+	return transformer;
+}
+
+/**
+* Util function to get FHIR resource profile URLs and set as parameters to the transformer which converts the XML file to FHIR Bundle.
+*/
+function set_profile_url(transformer, profileUrl, urlEnv, metaProfileUrlName) {
+	if(profileUrl != null) {
+		transformer.setParameter(metaProfileUrlName, profileUrl);
+		channelMap.put(metaProfileUrlName, profileUrl);
+		//logger.info(metaProfileUrlName + &quot;: &quot; + profileUrl);
+	} else {
+		var errorMessage = urlEnv + &apos; variable is not set&apos;;
+		logger.error(errorMessage);
+		setErrorResponse(500, errorMessage); // Set the HTTP response status to 500 (Server error)
+		throw errorMessage; // Stop further processing by throwing an exception
+	}
+	return transformer;
+}
+
+function set_fhir_resource_profile_urls(transformer) {
+	var baseFhirUrl = java.lang.System.getenv(&quot;BASE_FHIR_URL&quot;);   
+	var bundleMetaProfileUrl = java.lang.System.getenv(&quot;PROFILE_URL_BUNDLE&quot;); 
+	var patientMetaProfileUrl = java.lang.System.getenv(&quot;PROFILE_URL_PATIENT&quot;); 
+	var encounterMetaProfileUrl = java.lang.System.getenv(&quot;PROFILE_URL_ENCOUNTER&quot;); 
+	var consentMetaProfileUrl = java.lang.System.getenv(&quot;PROFILE_URL_CONSENT&quot;); 
+	var organizationMetaProfileUrl = java.lang.System.getenv(&quot;PROFILE_URL_ORGANIZATION&quot;); 
+	var observationMetaProfileUrl = java.lang.System.getenv(&quot;PROFILE_URL_OBSERVATION&quot;); 
+	var observationSexualOrientationMetaProfileUrl = java.lang.System.getenv(&quot;PROFILE_URL_SEXUAL_ORIENTATION&quot;); 
+	var questionnaireMetaProfileUrl = java.lang.System.getenv(&quot;PROFILE_URL_QUESTIONNAIRE&quot;); 
+	var questionnaireResponseMetaProfileUrl = java.lang.System.getenv(&quot;PROFILE_URL_QUESTIONNAIRE_RESPONSE&quot;); 
+	var practitionerMetaProfileUrl = java.lang.System.getenv(&quot;PROFILE_URL_PRACTITIONER&quot;);
+	var procedureMetaProfileUrl = java.lang.System.getenv(&quot;PROFILE_URL_PROCEDURE&quot;);
+	var locationMetaProfileUrl = java.lang.System.getenv(&quot;PROFILE_URL_LOCATION&quot;);
+
+	transformer = set_profile_url(transformer, baseFhirUrl, &apos;BASE_FHIR_URL&apos;, &apos;baseFhirUrl&apos;);
+	transformer = set_profile_url(transformer, bundleMetaProfileUrl, &apos;PROFILE_URL_BUNDLE&apos;, &apos;bundleMetaProfileUrl&apos;);
+	transformer = set_profile_url(transformer, patientMetaProfileUrl, &apos;PROFILE_URL_PATIENT&apos;, &apos;patientMetaProfileUrl&apos;);
+	transformer = set_profile_url(transformer, encounterMetaProfileUrl, &apos;PROFILE_URL_ENCOUNTER&apos;, &apos;encounterMetaProfileUrl&apos;);
+	transformer = set_profile_url(transformer, consentMetaProfileUrl, &apos;PROFILE_URL_CONSENT&apos;, &apos;consentMetaProfileUrl&apos;);
+	transformer = set_profile_url(transformer, organizationMetaProfileUrl, &apos;PROFILE_URL_ORGANIZATION&apos;, &apos;organizationMetaProfileUrl&apos;);
+	transformer = set_profile_url(transformer, observationMetaProfileUrl, &apos;PROFILE_URL_OBSERVATION&apos;, &apos;observationMetaProfileUrl&apos;);
+	transformer = set_profile_url(transformer, observationSexualOrientationMetaProfileUrl, &apos;PROFILE_URL_SEXUAL_ORIENTATION&apos;, &apos;observationSexualOrientationMetaProfileUrl&apos;);
+	transformer = set_profile_url(transformer, questionnaireMetaProfileUrl, &apos;PROFILE_URL_QUESTIONNAIRE&apos;, &apos;questionnaireMetaProfileUrl&apos;);
+	transformer = set_profile_url(transformer, questionnaireResponseMetaProfileUrl, &apos;PROFILE_URL_QUESTIONNAIRE_RESPONSE&apos;, &apos;questionnaireResponseMetaProfileUrl&apos;);
+	transformer = set_profile_url(transformer, practitionerMetaProfileUrl, &apos;PROFILE_URL_PRACTITIONER&apos;, &apos;practitionerMetaProfileUrl&apos;);
+	transformer = set_profile_url(transformer, procedureMetaProfileUrl, &apos;PROFILE_URL_PROCEDURE&apos;, &apos;procedureMetaProfileUrl&apos;);
+	transformer = set_profile_url(transformer, locationMetaProfileUrl, &apos;PROFILE_URL_LOCATION&apos;, &apos;locationMetaProfileUrl&apos;);
+
+	transformer.setParameter(&quot;patientCIN&quot;, channelMap.get(&apos;patientCIN&apos;)); // Pass the parameter to XSLT
+	if (channelMap.get(&apos;organizationNPI&apos;)) {
+		transformer.setParameter(&quot;organizationNPI&quot;, channelMap.get(&apos;organizationNPI&apos;)); // Pass the parameter to XSLT
+	}		
+	if (channelMap.get(&apos;organizationTIN&apos;)) {
+		transformer.setParameter(&quot;organizationTIN&quot;, channelMap.get(&apos;organizationTIN&apos;)); // Pass the parameter to XSLT
+	}
+	if (channelMap.get(&apos;facilityID&apos;)) {
+		transformer.setParameter(&quot;facilityID&quot;, channelMap.get(&apos;facilityID&apos;)); // Pass the parameter to XSLT
+	}
+	if (channelMap.get(&apos;encounterType&apos;)) {
+		transformer.setParameter(&quot;encounterType&quot;, channelMap.get(&apos;encounterType&apos;)); // Pass the parameter to XSLT
+	}
+
+	//Generate resource ids and set as parameter to pass to xslt 
+	transformer = setResourceIdParameters(transformer);
+	
+	return transformer;
+}
+
+/**
+*	Function to Check the existance of Consent section in the CCDA xml file and set the header variable &apos;X-TechBD-Elaboration&apos;.
+*	This function is called while the /Bundle request
+*/
+function getConsentResourceStatus(sourceXml) {
+	try {
+		var consentInfo = {};
+	    	consentInfo.code = &apos;Consent-Status&apos;;
+	    	consentInfo.status = &quot;TechBD-Generated&quot;;
+	    	var ehrVendor = (channelMap.get(&apos;ehrVendor&apos;) || &apos;&apos;).toLowerCase();
+	    	var ccdaConsentCode = (ehrVendor == &apos;athenahealth&apos; || ehrVendor == &apos;curemd&apos;) ? &apos;29762-2&apos; : &apos;47519-4&apos;;
+		
+		var xmlDoc = new XML(sourceXml); // Convert XML string to XML object			
+		default xml namespace = &quot;urn:hl7-org:v3&quot;; // Default namespace for HL7 documents
+		var xsi = new Namespace(&quot;xsi&quot;, &quot;http://www.w3.org/2001/XMLSchema-instance&quot;);
+	
+		// If consent section is there, the consentInfo.status should be &quot;provided&quot;.
+		var consentSection = xmlDoc.*::authorization.*::consent;
+		if (consentSection != null &amp;&amp; consentSection.length() &gt; 0) {
+			consentInfo.status = &quot;provided&quot;;
+		}
+		else {
+			/* For Medent, if both the two cases fail (first authorization section, second observation with code &quot;105511-0&quot;), 
+			   check the observation that contains consent details without code.code but value.displayname as &quot;Permit&quot; or &quot;Deny&quot;*/
+			// Iterate through all &lt;section&gt; elements
+			for each (var section in xmlDoc..section) {
+			    var sectionCode = section.code.@code.toString();
+			
+			    if (sectionCode == ccdaConsentCode) {
+			        // Inside the correct section
+			        for each (var entry in section.entry) {
+			            for each (var observation in entry.observation) {
+			                for each (var entryRel in observation.entryRelationship) {
+			                    for each (var nestedObs in entryRel.observation) {
+			                        var obsCode = nestedObs.code.@code.toString();			                        
+			                        if (obsCode == &quot;105511-0&quot;) {
+			                            consentInfo.status = &quot;provided&quot;;
+			                            break;
+			                        } else if (ehrVendor == &apos;athenahealth&apos;) {
+			                        	    var obsRoot = nestedObs.templateId.@root.toString().trim();
+			                        	    var obsValueDisplayName = nestedObs.value.@displayName.toString().trim().toLowerCase();
+			                        	    var xsiType = nestedObs.value.@xsi::type.toString();
+				                        if (obsRoot == &apos;2.16.840.1.113883.10.20.22.4.86&apos; 
+				                        		&amp;&amp; (obsValueDisplayName == &quot;permit&quot; || obsValueDisplayName == &quot;deny&quot;) 
+				                        		&amp;&amp; xsiType == &quot;CD&quot;) {
+				                        	   consentInfo.status = &quot;provided&quot;;
+				                            break;
+				                        }
+			                        }
+			                    }
+			                }
+			            }
+			        }
+			    }
+			}
+		}
+		
+		// Convert to JSON string (optional, for sending/logging)
+		var consentJsonString = JSON.stringify(consentInfo);
+		channelMap.put(&apos;elaboration&apos;, consentJsonString);
+	} catch (e) {
+        var errorMsg;
+        if (e instanceof JavaException) {
+           errorMsg = &quot;Error parsing Consent Resource: &quot; + e.toString();
+        } else {
+           errorMsg = &quot;Unexpected error during getting Consent Resource: &quot; + e.message;
+        }
+        logger.error(errorMsg);
+
+        // Failure: Return an OperationOutcome JSON response with validation errors
+        responseMap.put(&apos;finalResponse&apos;, JSON.stringify(getJsonInvalidOperationOutcome(errorMsg, &quot;invalid&quot;)));
+
+        throw new Error(errorMsg);
+     }
+}</script>
+        </com.mirth.connect.plugins.javascriptstep.JavaScriptStep>
+        <com.mirth.connect.plugins.javascriptstep.JavaScriptStep version="4.5.0">
+          <name>Validate Mandatory Fields</name>
+          <sequenceNumber>4</sequenceNumber>
+          <enabled>true</enabled>
+          <script>/**
+ * Validate mandatory fields for CCDA → FHIR conversion
+ * @return null OR OperationOutcome JSON
+ */
+function validateMandatoryFields() {
+    	var sourceXml = channelMap.get(&apos;phi_filtered_ccd&apos;);
+	var ccdaXml = new XML(sourceXml);
+	default xml namespace = &quot;urn:hl7-org:v3&quot;;
+	var errors = [];
+
+	var patientRole = ccdaXml.*::recordTarget.*::patientRole[0];
+	getPatientMRN(patientRole);
+	
+    	// --------------------------------------------------------------------------------------------------------------------
+    	// I. Patient Resource
+    	// -----------------------------
+    	// 1. PatientRole existence
+    	try {	   
+    		if (!patientRole || patientRole.length() === 0) {
+	        errors.push(&quot;PatientRole is missing. FHIR Patient resource cannot be created.&quot;);
+	    	} else {
+	        var patient = patientRole.*::patient[0];
+	        // 2. Patient Name
+	        var name = patient ? patient.*::name[0] : null;
+	        var givenName = name ? name.*::given.toString() : &quot;&quot;;
+	        var familyName = name ? name.*::family.toString() : &quot;&quot;;
+	        if (!givenName) { errors.push(&quot;Patient name (given) -&gt; ClinicalDocument.recordTarget.patientRole.patient.name.given.&quot;); }
+		   if (!familyName) { errors.push(&quot;Patient name (family) -&gt; ClinicalDocument.recordTarget.patientRole.patient.name.family.&quot;); }
+
+	        // 3. Gender
+	        var genderValue = &quot;&quot;;
+	        var genderHasNullFlavor = false;
+		   if (patient) {
+			    var genderEl = patient.*::administrativeGenderCode[0];
+			
+			    if (genderEl &amp;&amp; genderEl.length() &gt; 0) {
+			    	   // Check for nullFlavor
+			        if (genderEl.@nullFlavor &amp;&amp; genderEl.@nullFlavor.toString().trim() !== &quot;&quot;) {			
+			            genderHasNullFlavor = true;
+			        }
+        
+			        // Prefer code
+			        if (genderEl.@code &amp;&amp; genderEl.@code.toString().trim() !== &quot;&quot;) {
+			            genderValue = genderEl.@code.toString().trim();
+			        }
+			        // Fallback to displayName
+			        else if (genderEl.@displayName &amp;&amp; genderEl.@displayName.toString().trim() !== &quot;&quot;) {
+			            genderValue = genderEl.@displayName.toString().trim();
+			        }
+			    }
+		   }
+
+		   // Error only if there is no value AND no nullFlavor
+		   if (genderValue === &quot;&quot; &amp;&amp; !genderHasNullFlavor) {
+			    errors.push(
+			        &quot;Patient gender -&gt; ClinicalDocument.recordTarget.patientRole.patient.administrativeGenderCode.&quot;
+			    );
+		   }	        
+			
+	        // 4. Birth Date
+	        var birthDate = &quot;&quot;;
+		   if (patient) {
+			    var birthEl = patient.*::birthTime[0];
+			    if (birthEl &amp;&amp; birthEl.@value) {
+			        birthDate = birthEl.@value.toString();
+			    }
+		   }			
+		   if (birthDate === &quot;&quot;) {
+			    errors.push(&quot;Patient birthDate -&gt; ClinicalDocument.recordTarget.patientRole.patient.birthTime.&quot;);
+		   }
+	
+		   // 5. Patient MRN
+		   var patientMrn = channelMap.get(&apos;Patient-MRN&apos;);
+		   if (patientMrn === null || String(patientMrn).trim() === &quot;&quot;) {
+		   		errors.push(&quot;Patient MRN -&gt; ClinicalDocument.recordTarget.patientRole.id.extension.&quot;);
+		   }
+	    	}
+    	} catch (e) {
+	    logger.error(&quot;Error accessing patientRole: &quot; + e);
+	}
+
+	// --------------------------------------------------------------------------------------------------------------------
+    	// III. Organization (Location / Author Organization)
+	// -----------------------------
+	var organizationName = &quot;&quot;;
+	var organizationNameXPath = &quot;&quot;;
+	
+	// 1.️ Try Encounter → Location → Organization name
+	try {
+	    var orgFromEncounter =
+	        ccdaXml.*::component
+	               .*::structuredBody
+	               .*::component
+	               .*::section.(@ID == &quot;encounters&quot;)
+	               .*::entry[0]
+	               .*::encounter
+	               .*::participant.(@typeCode == &quot;LOC&quot;)
+	               .*::participantRole.(@classCode == &quot;SDLOC&quot;)
+	               .*::playingEntity
+	               .*::name[0];
+	
+	    if (orgFromEncounter) {
+	        organizationName = orgFromEncounter.toString().trim();	      
+	    }
+	} catch (e) {
+	    logger.warn(&quot;Encounter organization name not found.&quot;);
+	}
+	
+	// 2.️ Fallback → assignedAuthor → representedOrganization → name
+	if (organizationName === &quot;&quot;) {
+	    try {
+	        var orgFromAuthor =
+	            ccdaXml.*::author[0]
+	                   .*::assignedAuthor
+	                   .*::representedOrganization
+	                   .*::name[0];
+	
+	        if (orgFromAuthor) {
+	            organizationName = orgFromAuthor.toString().trim();
+	        }
+	    } catch (e) {
+	        logger.warn(&quot;Author organization name not found.&quot;);
+	    }
+	}
+		
+	// 3.️ Mandatory validation
+	organizationNameXPath = &quot;ClinicalDocument.component.structuredBody.component.section[code.code=&apos;46240-8&apos;].entry[0].encounter.participant.participantRole.playingEntity.name. OR ClinicalDocument.author.assignedAuthor.representedOrganization.name.&quot;;
+	if (organizationName === &quot;&quot;) {
+	    errors.push(&quot;Organization name -&gt; &quot; + organizationNameXPath);
+	}
+	
+    // -----------------------------
+    // Return OperationOutcome if errors exist
+    // -----------------------------
+    if (errors.length &gt; 0) {
+    	   logger.info(errors.toString());			
+        return errors;
+    }
+
+    return null; // validation passed
+}</script>
+        </com.mirth.connect.plugins.javascriptstep.JavaScriptStep>
+        <com.mirth.connect.plugins.javascriptstep.JavaScriptStep version="4.5.0">
+          <name>API Endpoint Processing</name>
+          <sequenceNumber>5</sequenceNumber>
+          <enabled>true</enabled>
+          <script>var requestedPath = sourceMap.get(&apos;contextPath&apos;);
+
+if (requestedPath == &quot;/&quot;) {
+	return;
+}
+
+//Extract the name and extension of the file received before processing.
+msg = channelMap.get(&apos;fileContent&apos;);
+
+// Route based on the API call
+if (requestedPath == &quot;/ccda/Bundle/$validate/&quot; ||
+	requestedPath == &quot;/ccda/Bundle/$validate&quot;) {
+    // Forward to the channel or logic for $validate
+    channelMap.put(&quot;endpoint&quot;, &quot;validate&quot;);
+
+    var interactionId = channelMap.get(&apos;interactionId&apos;);
+    var tenantId = channelMap.get(&apos;tenantId&apos;);
+    logger.info(&quot;InteractionId: &quot; + interactionId);
+
+    // -----------------------------------
+    // 1. Parse XML safely
+    // -----------------------------------
+    var ccdaXml;
+    var sourceXml;
+
+    //try {
+	try {
+        ccdaXml = new XML(msg);
+        sourceXml = ccdaXml.toXMLString();
+        if (!sourceXml || sourceXml.length === 0) {
+            failAndExit(
+                &quot;No XML data received in the request.&quot;,
+                &quot;invalid&quot;, &quot;error&quot;,
+                interactionId, tenantId, requestedPath
+            );
+        }
+    	} catch (e) {
+        failAndExit(
+            &quot;XML structure validation failed. &quot; + e.message,
+            &quot;invalid&quot;, &quot;error&quot;,
+            interactionId, tenantId, requestedPath
+        );
+    	}
+
+	// -----------------------------------
+    	// 2. Pre-processing
+    	// -----------------------------------
+	//Replace the space in between &quot;X-SDOH-FLO-1570000066-Patient unable to answer&quot; with hiphen
+	sourceXml = sourceXml
+        .replace(/X-SDOH-FLO-1570000066-Patient unable to answer/g, &quot;X-SDOH-FLO-1570000066-Patient-unable-to-answer&quot;)
+        .replace(/X-SDOH-FLO-1570000066-Patient declined/g, &quot;X-SDOH-FLO-1570000066-Patient-declined&quot;);
+
+	validateLowHighDates(sourceXml); //Check the low and high dates in address
+	getManufacturerModelName(sourceXml); //Check Manufacturer Model Name and set Vender
+	
+	// -----------------------------------
+    	// 3. PHI Filter
+    	// -----------------------------------
+    	var phiFilteredXml;
+    	try {
+        phiFilteredXml = applyPhiFilter(sourceXml);
+        channelMap.put(&apos;phi_filtered_ccd&apos;, phiFilteredXml);
+    	} catch (e) {
+        failAndExit(
+            &quot;CCD XML PHI filtering failed. &quot; + e.message,
+            &quot;invalid&quot;, &quot;error&quot;,
+            interactionId, tenantId, requestedPath
+        );
+    	}
+
+    	// -----------------------------------
+    	// 4. XSD Validation
+    	// -----------------------------------
+    	try {
+        validateAgainstXsd(phiFilteredXml);
+        logger.info(&quot;CCD XML is valid according to the XSD.&quot;);
+    	} catch (e) {
+    	   var errorMessage = buildValidationErrorMessage(&quot;CCD XML validation failed.&quot;, e);
+        failAndExit(
+            errorMessage,
+            &quot;invalid&quot;, &quot;error&quot;,
+            interactionId, tenantId, requestedPath
+        );
+    	}
+
+    	// -----------------------------------
+    	// 5. Mandatory fields Validation
+    	// -----------------------------------
+    	var mandatoryErrors = validateMandatoryFields(phiFilteredXml);
+     if (mandatoryErrors &amp;&amp; mandatoryErrors.length &gt; 0) {
+        failAndExit(&quot;The following fields are mandatory as per FHIR. \n\n- &quot; + mandatoryErrors.join(&quot;\n- &quot;),
+            &quot;invalid&quot;, &quot;error&quot;,
+            interactionId, tenantId, requestedPath
+        );
+     }
+
+	// -----------------------------------
+    	// 6. SUCCESS
+    	// -----------------------------------
+    	var successResponse = getJsonInvalidOperationOutcome(
+        &quot;The CCDA XML passed structural (XSD) validation, and all mandatory field validations were successful.&quot;,
+        &quot;informational&quot;,
+        &quot;information&quot;
+    	);
+
+    	responseMap.put(&apos;finalResponse&apos;, JSON.stringify(successResponse));
+    	saveCcdaPayload(interactionId, tenantId, requestedPath, successResponse, &quot;saveValidationSuccess&quot;);
+
+    	return &apos;dest_bundle_validate&apos;;
+
+} else if (requestedPath == &quot;/ccda/Bundle&quot; || requestedPath == &quot;/ccda/Bundle/&quot;) {
+
+	channelMap.put(&quot;endpoint&quot;, &quot;bundle&quot;);
+
+    	var interactionId = channelMap.get(&apos;interactionId&apos;);
+    	var tenantId = channelMap.get(&apos;tenantId&apos;);
+    	logger.info(&quot;InteractionId: &quot; + interactionId);
+
+	//*********** DATA LEDGER ***************
+	    var randomSuffix = Math.floor(Math.random() * 10000);
+	    channelMap.put(&apos;uri&apos;, sourceMap.get(&apos;uri&apos;));
+	    // Generate current timestamp in ISO format with microsecond precision
+	    var currentTimestampBegin = new Date().toISOString().replace(/\.(\d{3})Z$/, function(match, millis) {
+		    // Add 3 more random digits to simulate microseconds
+		    var micros = millis + (Math.floor(Math.random() * 1000)).toString().padStart(3, &apos;0&apos;);
+		    return &apos;.&apos; + micros + &apos;Z&apos;;
+	    });	
+	
+	    var payload = JSON.stringify({
+	        executedAt: currentTimestampBegin,
+	        actor: &quot;TechBD&quot;,
+	        action: &quot;received&quot;, 
+	        destination: &quot;TechBD&quot;,
+	        dataId: interactionId,
+	        payloadType: &quot;hrsnBundle&quot;
+	    });
+		
+		// Check if tracking is enabled
+		var trackingEnabled = java.lang.System.getenv(&quot;DATA_LEDGER_TRACKING&quot;);
+		if (trackingEnabled != null &amp;&amp; trackingEnabled.toLowerCase() == &quot;true&quot;) {
+		    try {
+		        sendDataLedgerSync(payload);
+		    } catch (e) {
+		        logger.error(&quot;Error occurred while sending data to Data Ledger: &quot; + e.message);
+		    }
+		} else {
+		    logger.info(&quot;DATA_LEDGER_TRACKING is not true; skipping Data Ledger sync.&quot;);
+		}
+	//*********** DATA LEDGER ***************
+
+
+    /* -------------------------------------------------
+     * 1. Parse XML safely
+     * ------------------------------------------------- */
+    var ccdaXml, sourceXml;
+    try {
+        ccdaXml = new XML(msg);
+        sourceXml = ccdaXml.toXMLString();
+
+        if (!sourceXml || sourceXml.length === 0) {
+            failAndExit(
+                &quot;No XML data received in the request.&quot;,
+                &quot;invalid&quot;, &quot;error&quot;,
+                interactionId, tenantId, requestedPath
+            );
+        }
+    } catch (e) {
+        failAndExit(
+            &quot;XML structure validation failed. &quot; + e.message,
+            &quot;invalid&quot;, &quot;error&quot;,
+            interactionId, tenantId, requestedPath
+        );
+    }
+
+    /* -------------------------------------------------
+     * 2. Pre-processing
+     * ------------------------------------------------- */
+    sourceXml = sourceXml
+        .replace(/X-SDOH-FLO-1570000066-Patient unable to answer/g, &quot;X-SDOH-FLO-1570000066-Patient-unable-to-answer&quot;)
+        .replace(/X-SDOH-FLO-1570000066-Patient declined/g, &quot;X-SDOH-FLO-1570000066-Patient-declined&quot;);
+
+    validateLowHighDates(sourceXml);
+    getManufacturerModelName(sourceXml); // Get the ehrVendor from manufacturerModelName/softwareName
+    getConsentResourceStatus(sourceXml); // Check the existence of Consent section in the CCDA xml file and set the header variable &apos;X-TechBD-Elaboration&apos;
+
+    /* -------------------------------------------------
+     * 3. PHI Filter
+     * ------------------------------------------------- */
+    var phiFilteredXml;
+    try {
+        phiFilteredXml = applyPhiFilter(sourceXml);
+        channelMap.put(&apos;phi_filtered_ccd&apos;, phiFilteredXml);
+    } catch (e) {
+        failAndExit(
+            &quot;CCD XML PHI filtering failed. &quot; + e.message,
+            &quot;invalid&quot;, &quot;error&quot;,
+            interactionId, tenantId, requestedPath
+        );
+    }
+
+    /* -------------------------------------------------
+     * 4. XSD Validation
+     * ------------------------------------------------- */
+    try {
+        validateAgainstXsd(phiFilteredXml);
+        logger.info(&quot;CCD XML is valid according to the XSD.&quot;);
+    } catch (e) {
+    	   var errorMessage = buildValidationErrorMessage(&quot;CCD XML validation failed.&quot;, e);
+        failAndExit(
+            errorMessage,
+            &quot;invalid&quot;, &quot;error&quot;,
+            interactionId, tenantId, requestedPath
+        );
+
+        		//*********** DATA LEDGER ***************
+        		saveDataLedgerSync(interactionId);
+			//*********** DATA LEDGER ***************
+    }
+
+    /* -------------------------------------------------
+     * 5. Mandatory Field Validation (FHIR / SHIN-NY)
+     * ------------------------------------------------- */
+    var mandatoryErrors = validateMandatoryFields(phiFilteredXml);
+    if (mandatoryErrors &amp;&amp; mandatoryErrors.length &gt; 0) {
+        //failAndExit(mandatoryErrors.join(&quot;\n&quot;),
+        failAndExit(&quot;The following fields are mandatory as per FHIR. \n\n- &quot; + mandatoryErrors.join(&quot;\n- &quot;),
+            &quot;invalid&quot;, &quot;error&quot;,
+            interactionId, tenantId, requestedPath
+        );
+
+        //*********** DATA LEDGER ***************
+        saveDataLedgerSync(interactionId);
+        //*********** DATA LEDGER ***************
+    }
+
+    /* -------------------------------------------------
+     * 6. Save Validation Result
+     * ------------------------------------------------- */
+    var successResponse = getJsonInvalidOperationOutcome(
+        &quot;The CCDA XML passed structural (XSD) validation, and all mandatory field validations were successful.&quot;,
+        &quot;informational&quot;,
+        &quot;information&quot;
+    );
+    saveCcdaPayload(interactionId, tenantId, requestedPath, successResponse, &quot;saveValidationSuccess&quot;);
+
+    /* -------------------------------------------------
+     * 7. CCDA → FHIR Bundle Conversion
+     * ------------------------------------------------- */
+    var cleanedJsonString;
+    try {
+        cleanedJsonString = convertCcdaToFhirBundle(phiFilteredXml);
+    } catch (e) {
+        failAndExit(
+            &quot;CCD to FHIR conversion failed. &quot; + e.message,
+            &quot;exception&quot;, &quot;error&quot;,
+            interactionId, tenantId, requestedPath
+        );
+    }
+
+    /* -------------------------------------------------
+     * 8. Save Fhir bundle + Respond
+     * ------------------------------------------------- */
+    saveCcdaPayload(interactionId, tenantId, requestedPath,
+        cleanedJsonString, &quot;saveConversionSuccess&quot;);
+        
+	channelMap.put(&apos;jsonResult&apos;, cleanedJsonString);
+	responseMap.put(&apos;finalResponse&apos;, JSON.stringify(cleanedJsonString));
+     return &apos;dest_bundle&apos;;
+}
+else {
+    // Handle invalid paths  
+    var errorMsg = &quot;Error processing XML file upload: &quot; + e.message;
+    // Failure: Return an OperationOutcome JSON response for general errors
+    responseMap.put(&apos;finalResponse&apos;, JSON.stringify(getJsonInvalidOperationOutcome(errorMsg, &quot;exception&quot;)));
+    
+    logger.info(&quot;Invalid endpoint: &quot; + requestedPath);
+    throw new Error(&quot;Invalid endpoint: &quot; + requestedPath);
+}</script>
+        </com.mirth.connect.plugins.javascriptstep.JavaScriptStep>
+      </elements>
+      <inboundTemplate encoding="base64"></inboundTemplate>
+      <outboundTemplate encoding="base64"></outboundTemplate>
+      <inboundDataType>XML</inboundDataType>
+      <outboundDataType>RAW</outboundDataType>
+      <inboundProperties class="com.mirth.connect.plugins.datatypes.xml.XMLDataTypeProperties" version="4.5.0">
+        <serializationProperties class="com.mirth.connect.plugins.datatypes.xml.XMLSerializationProperties" version="4.5.0">
+          <stripNamespaces>false</stripNamespaces>
+        </serializationProperties>
+        <batchProperties class="com.mirth.connect.plugins.datatypes.xml.XMLBatchProperties" version="4.5.0">
+          <splitType>Element_Name</splitType>
+          <elementName></elementName>
+          <level>1</level>
+          <query></query>
+          <batchScript></batchScript>
+        </batchProperties>
+      </inboundProperties>
+      <outboundProperties class="com.mirth.connect.plugins.datatypes.raw.RawDataTypeProperties" version="4.5.0">
+        <batchProperties class="com.mirth.connect.plugins.datatypes.raw.RawBatchProperties" version="4.5.0">
+          <splitType>JavaScript</splitType>
+          <batchScript></batchScript>
+        </batchProperties>
+      </outboundProperties>
+    </transformer>
+    <filter version="4.5.0">
+      <elements>
+        <com.mirth.connect.plugins.rulebuilder.RuleBuilderRule version="4.5.0">
+          <name>Accept message if &quot;sourceMap.get(&apos;contextPath&apos;)&quot; equals &apos;/ccda/Bundle/$validate/&apos; or &apos;/ccda/Bundle/$validate&apos; or &apos;/ccda/Bundle/&apos; or &apos;/ccda/Bundle&apos;</name>
+          <sequenceNumber>0</sequenceNumber>
+          <enabled>true</enabled>
+          <field>sourceMap.get(&apos;contextPath&apos;)</field>
+          <condition>EQUALS</condition>
+          <values>
+            <string>&apos;/ccda/Bundle/$validate/&apos;</string>
+            <string>&apos;/ccda/Bundle/$validate&apos;</string>
+            <string>&apos;/ccda/Bundle/&apos;</string>
+            <string>&apos;/ccda/Bundle&apos;</string>
+          </values>
+        </com.mirth.connect.plugins.rulebuilder.RuleBuilderRule>
+        <com.mirth.connect.plugins.rulebuilder.RuleBuilderRule version="4.5.0">
+          <name>Accept message if &quot;sourceMap.get(&apos;method&apos;)&quot; equals &apos;POST&apos;</name>
+          <sequenceNumber>1</sequenceNumber>
+          <enabled>false</enabled>
+          <operator>AND</operator>
+          <field>sourceMap.get(&apos;method&apos;)</field>
+          <condition>EQUALS</condition>
+          <values>
+            <string>&apos;POST&apos;</string>
+          </values>
+        </com.mirth.connect.plugins.rulebuilder.RuleBuilderRule>
+      </elements>
+    </filter>
+    <transportName>HTTP Listener</transportName>
+    <mode>SOURCE</mode>
+    <enabled>true</enabled>
+    <waitForPrevious>true</waitForPrevious>
+  </sourceConnector>
+  <destinationConnectors>
+    <connector version="4.5.0">
+      <metaDataId>1</metaDataId>
+      <name>dest_bundle_validate</name>
+      <properties class="com.mirth.connect.connectors.vm.VmDispatcherProperties" version="4.5.0">
+        <pluginProperties/>
+        <destinationConnectorProperties version="4.5.0">
+          <queueEnabled>false</queueEnabled>
+          <sendFirst>false</sendFirst>
+          <retryIntervalMillis>10000</retryIntervalMillis>
+          <regenerateTemplate>false</regenerateTemplate>
+          <retryCount>0</retryCount>
+          <rotate>false</rotate>
+          <includeFilterTransformer>false</includeFilterTransformer>
+          <threadCount>1</threadCount>
+          <threadAssignmentVariable></threadAssignmentVariable>
+          <validateResponse>false</validateResponse>
+          <resourceIds class="linked-hash-map">
+            <entry>
+              <string>Default Resource</string>
+              <string>[Default Resource]</string>
+            </entry>
+          </resourceIds>
+          <queueBufferSize>1000</queueBufferSize>
+          <reattachAttachments>true</reattachAttachments>
+        </destinationConnectorProperties>
+        <channelId>none</channelId>
+        <channelTemplate>${message.encodedData}</channelTemplate>
+        <mapVariables/>
+      </properties>
+      <transformer version="4.5.0">
+        <elements/>
+        <inboundTemplate encoding="base64"></inboundTemplate>
+        <outboundTemplate encoding="base64"></outboundTemplate>
+        <inboundDataType>RAW</inboundDataType>
+        <outboundDataType>RAW</outboundDataType>
+        <inboundProperties class="com.mirth.connect.plugins.datatypes.raw.RawDataTypeProperties" version="4.5.0">
+          <batchProperties class="com.mirth.connect.plugins.datatypes.raw.RawBatchProperties" version="4.5.0">
+            <splitType>JavaScript</splitType>
+            <batchScript></batchScript>
+          </batchProperties>
+        </inboundProperties>
+        <outboundProperties class="com.mirth.connect.plugins.datatypes.raw.RawDataTypeProperties" version="4.5.0">
+          <batchProperties class="com.mirth.connect.plugins.datatypes.raw.RawBatchProperties" version="4.5.0">
+            <splitType>JavaScript</splitType>
+            <batchScript></batchScript>
+          </batchProperties>
+        </outboundProperties>
+      </transformer>
+      <responseTransformer version="4.5.0">
+        <elements/>
+        <inboundDataType>RAW</inboundDataType>
+        <outboundDataType>RAW</outboundDataType>
+        <inboundProperties class="com.mirth.connect.plugins.datatypes.raw.RawDataTypeProperties" version="4.5.0">
+          <batchProperties class="com.mirth.connect.plugins.datatypes.raw.RawBatchProperties" version="4.5.0">
+            <splitType>JavaScript</splitType>
+            <batchScript></batchScript>
+          </batchProperties>
+        </inboundProperties>
+        <outboundProperties class="com.mirth.connect.plugins.datatypes.raw.RawDataTypeProperties" version="4.5.0">
+          <batchProperties class="com.mirth.connect.plugins.datatypes.raw.RawBatchProperties" version="4.5.0">
+            <splitType>JavaScript</splitType>
+            <batchScript></batchScript>
+          </batchProperties>
+        </outboundProperties>
+      </responseTransformer>
+      <filter version="4.5.0">
+        <elements>
+          <com.mirth.connect.plugins.rulebuilder.RuleBuilderRule version="4.5.0">
+            <name>Accept message if &quot;$(&apos;endpoint&apos;)&quot; equals &apos;validate&apos;</name>
+            <sequenceNumber>0</sequenceNumber>
+            <enabled>true</enabled>
+            <field>$(&apos;endpoint&apos;)</field>
+            <condition>EQUALS</condition>
+            <values>
+              <string>&apos;validate&apos;</string>
+            </values>
+          </com.mirth.connect.plugins.rulebuilder.RuleBuilderRule>
+        </elements>
+      </filter>
+      <transportName>Channel Writer</transportName>
+      <mode>DESTINATION</mode>
+      <enabled>true</enabled>
+      <waitForPrevious>true</waitForPrevious>
+    </connector>
+    <connector version="4.5.0">
+      <metaDataId>2</metaDataId>
+      <name>dest_bundle</name>
+      <properties class="com.mirth.connect.connectors.http.HttpDispatcherProperties" version="4.5.0">
+        <pluginProperties/>
+        <destinationConnectorProperties version="4.5.0">
+          <queueEnabled>false</queueEnabled>
+          <sendFirst>false</sendFirst>
+          <retryIntervalMillis>10000</retryIntervalMillis>
+          <regenerateTemplate>false</regenerateTemplate>
+          <retryCount>0</retryCount>
+          <rotate>false</rotate>
+          <includeFilterTransformer>false</includeFilterTransformer>
+          <threadCount>1</threadCount>
+          <threadAssignmentVariable></threadAssignmentVariable>
+          <validateResponse>false</validateResponse>
+          <resourceIds class="linked-hash-map">
+            <entry>
+              <string>Default Resource</string>
+              <string>[Default Resource]</string>
+            </entry>
+          </resourceIds>
+          <queueBufferSize>1000</queueBufferSize>
+          <reattachAttachments>true</reattachAttachments>
+        </destinationConnectorProperties>
+        <host>${fhirBundleSubmissionApiUrl}</host>
+        <useProxyServer>false</useProxyServer>
+        <proxyAddress></proxyAddress>
+        <proxyPort></proxyPort>
+        <method>post</method>
+        <headers class="linked-hash-map">
+          <entry>
+            <string>X-TechBD-Tenant-ID</string>
+            <list>
+              <string>${tenantId}</string>
+            </list>
+          </entry>
+          <entry>
+            <string>Content-Type</string>
+            <list>
+              <string>application/fhir+json</string>
+            </list>
+          </entry>
+          <entry>
+            <string>User-Agent</string>
+            <list>
+              <string>${userAgent}</string>
+            </list>
+          </entry>
+          <entry>
+            <string>X-TechBD-Override-Request-URI</string>
+            <list>
+              <string>${uri}</string>
+            </list>
+          </entry>
+          <entry>
+            <string>Access-Control-Allow-Origin</string>
+            <list>
+              <string>*</string>
+            </list>
+          </entry>
+          <entry>
+            <string>Access-Control-Allow-Methods</string>
+            <list>
+              <string>GET, POST, OPTIONS</string>
+            </list>
+          </entry>
+          <entry>
+            <string>Access-Control-Allow-Headers</string>
+            <list>
+              <string>Content-Type,Authorization,X-TechBD-Tenant-ID,User-Agent,X-TechBD-REMOTE-IP,X-TechBD-Override-Request-URI,accept,X-TechBD-CIN,X-TechBD-OrgNPI,X-TechBD-OrgTIN,X-TechBD-Base-FHIR-URL,X-TechBD-Validation-Severity-Level,X-TechBD-Facility-ID,X-TechBD-Encounter-Type,X-TechBD-Screening-Code</string>
+            </list>
+          </entry>
+          <entry>
+            <string>Access-Control-Allow-Credentials</string>
+            <list>
+              <string>true</string>
+            </list>
+          </entry>
+          <entry>
+            <string>X-TechBD-REMOTE-IP</string>
+            <list>
+              <string>${uri}</string>
+            </list>
+          </entry>
+          <entry>
+            <string>X-TechBD-Elaboration</string>
+            <list>
+              <string>${elaboration}</string>
+            </list>
+          </entry>
+          <entry>
+            <string>X-TechBD-Validation-Severity-Level</string>
+            <list>
+              <string>${SeverityLevel}</string>
+            </list>
+          </entry>
+          <entry>
+            <string>X-Correlation-ID</string>
+            <list>
+              <string>${interactionId}</string>
+            </list>
+          </entry>
+        </headers>
+        <parameters class="linked-hash-map">
+          <entry>
+            <string>source</string>
+            <list>
+              <string>CCDA</string>
+            </list>
+          </entry>
+        </parameters>
+        <useHeadersVariable>false</useHeadersVariable>
+        <headersVariable></headersVariable>
+        <useParametersVariable>false</useParametersVariable>
+        <parametersVariable></parametersVariable>
+        <responseXmlBody>false</responseXmlBody>
+        <responseParseMultipart>true</responseParseMultipart>
+        <responseIncludeMetadata>false</responseIncludeMetadata>
+        <responseBinaryMimeTypes>application/fhir+json</responseBinaryMimeTypes>
+        <responseBinaryMimeTypesRegex>true</responseBinaryMimeTypesRegex>
+        <multipart>false</multipart>
+        <useAuthentication>false</useAuthentication>
+        <authenticationType>Basic</authenticationType>
+        <usePreemptiveAuthentication>false</usePreemptiveAuthentication>
+        <username></username>
+        <password></password>
+        <content>${jsonResult}</content>
+        <contentType>application/fhir+json</contentType>
+        <dataTypeBinary>false</dataTypeBinary>
+        <charset>UTF-8</charset>
+        <socketTimeout>300000</socketTimeout>
+      </properties>
+      <transformer version="4.5.0">
+        <elements/>
+        <inboundTemplate encoding="base64"></inboundTemplate>
+        <outboundTemplate encoding="base64"></outboundTemplate>
+        <inboundDataType>RAW</inboundDataType>
+        <outboundDataType>RAW</outboundDataType>
+        <inboundProperties class="com.mirth.connect.plugins.datatypes.raw.RawDataTypeProperties" version="4.5.0">
+          <batchProperties class="com.mirth.connect.plugins.datatypes.raw.RawBatchProperties" version="4.5.0">
+            <splitType>JavaScript</splitType>
+            <batchScript></batchScript>
+          </batchProperties>
+        </inboundProperties>
+        <outboundProperties class="com.mirth.connect.plugins.datatypes.raw.RawDataTypeProperties" version="4.5.0">
+          <batchProperties class="com.mirth.connect.plugins.datatypes.raw.RawBatchProperties" version="4.5.0">
+            <splitType>JavaScript</splitType>
+            <batchScript></batchScript>
+          </batchProperties>
+        </outboundProperties>
+      </transformer>
+      <responseTransformer version="4.5.0">
+        <elements/>
+        <inboundDataType>RAW</inboundDataType>
+        <outboundDataType>RAW</outboundDataType>
+        <inboundProperties class="com.mirth.connect.plugins.datatypes.raw.RawDataTypeProperties" version="4.5.0">
+          <batchProperties class="com.mirth.connect.plugins.datatypes.raw.RawBatchProperties" version="4.5.0">
+            <splitType>JavaScript</splitType>
+            <batchScript></batchScript>
+          </batchProperties>
+        </inboundProperties>
+        <outboundProperties class="com.mirth.connect.plugins.datatypes.raw.RawDataTypeProperties" version="4.5.0">
+          <batchProperties class="com.mirth.connect.plugins.datatypes.raw.RawBatchProperties" version="4.5.0">
+            <splitType>JavaScript</splitType>
+            <batchScript></batchScript>
+          </batchProperties>
+        </outboundProperties>
+      </responseTransformer>
+      <filter version="4.5.0">
+        <elements>
+          <com.mirth.connect.plugins.rulebuilder.RuleBuilderRule version="4.5.0">
+            <name>Accept message if &quot;$(&apos;endpoint&apos;)&quot; equals &apos;bundle&apos;</name>
+            <sequenceNumber>0</sequenceNumber>
+            <enabled>true</enabled>
+            <field>$(&apos;endpoint&apos;)</field>
+            <condition>EQUALS</condition>
+            <values>
+              <string>&apos;bundle&apos;</string>
+            </values>
+          </com.mirth.connect.plugins.rulebuilder.RuleBuilderRule>
+          <com.mirth.connect.plugins.rulebuilder.RuleBuilderRule version="4.5.0">
+            <name>Accept message if &quot;sourceMap.get(&apos;contextPath&apos;)&quot; equals &apos;/ccda/Bundle/&apos; or &apos;/ccda/Bundle&apos;</name>
+            <sequenceNumber>1</sequenceNumber>
+            <enabled>true</enabled>
+            <operator>AND</operator>
+            <field>sourceMap.get(&apos;contextPath&apos;)</field>
+            <condition>EQUALS</condition>
+            <values>
+              <string>&apos;/ccda/Bundle/&apos;</string>
+              <string>&apos;/ccda/Bundle&apos;</string>
+            </values>
+          </com.mirth.connect.plugins.rulebuilder.RuleBuilderRule>
+        </elements>
+      </filter>
+      <transportName>HTTP Sender</transportName>
+      <mode>DESTINATION</mode>
+      <enabled>true</enabled>
+      <waitForPrevious>true</waitForPrevious>
+    </connector>
+  </destinationConnectors>
+  <preprocessingScript>// Modify the message variable below to pre process data
+return message;</preprocessingScript>
+  <postprocessingScript>// This script executes once after a message has been processed
+// Responses returned from here will be stored as &quot;Postprocessor&quot; in the response map
+
+// Version: 0.4.3 - Added support for X-TechBD-Base-FHIR-URL
+// Version: 0.4.15 - Added filters to source and bundle destination and changed the globalMap usage to channelMap
+
+var endpoint = channelMap.get(&quot;endpoint&quot;);
+if(endpoint == &apos;bundle&apos;) {
+	// Get the response from the HTTP Writer destination
+	var destinationName = &quot;dest_bundle&quot;;
+	var destinationResponse = responseMap.get(destinationName);
+	
+	// Check if the response exists
+	if (destinationResponse) {
+	    var responseStatus = destinationResponse.getStatus();  // HTTP status code
+	    var responseData = destinationResponse.getMessage();   // Response message body
+		responseMap.put(&apos;finalResponse&apos;, responseData);
+		
+	    // Log the response details
+	    logger.info(&quot;Response from &quot; + destinationName + &quot;:&quot;);
+	    logger.info(&quot;Status Code: &quot; + responseStatus);
+	    //logger.info(&quot;Response Data: &quot; + responseData);
+	} else {
+	    logger.info(&quot;No response found for destination: &quot; + destinationName);
+	}
+}
+
+return;</postprocessingScript>
+  <deployScript>
+return;
+</deployScript>
+  <undeployScript>// This script executes once when the channel is undeployed
+// You only have access to the globalMap and globalChannelMap here to persist data
+return;</undeployScript>
+  <properties version="4.5.0">
+    <clearGlobalChannelMap>true</clearGlobalChannelMap>
+    <messageStorageMode>DEVELOPMENT</messageStorageMode>
+    <encryptData>false</encryptData>
+    <encryptAttachments>false</encryptAttachments>
+    <encryptCustomMetaData>false</encryptCustomMetaData>
+    <removeContentOnCompletion>false</removeContentOnCompletion>
+    <removeOnlyFilteredOnCompletion>false</removeOnlyFilteredOnCompletion>
+    <removeAttachmentsOnCompletion>false</removeAttachmentsOnCompletion>
+    <initialState>STARTED</initialState>
+    <storeAttachments>false</storeAttachments>
+    <metaDataColumns>
+      <metaDataColumn>
+        <name>SOURCE</name>
+        <type>STRING</type>
+        <mappingName>mirth_source</mappingName>
+      </metaDataColumn>
+      <metaDataColumn>
+        <name>TYPE</name>
+        <type>STRING</type>
+        <mappingName>mirth_type</mappingName>
+      </metaDataColumn>
+    </metaDataColumns>
+    <attachmentProperties version="4.5.0">
+      <type>None</type>
+      <properties/>
+    </attachmentProperties>
+    <resourceIds class="linked-hash-map">
+      <entry>
+        <string>Default Resource</string>
+        <string>[Default Resource]</string>
+      </entry>
+    </resourceIds>
+  </properties>
+  <exportData>
+    <metadata>
+      <enabled>true</enabled>
+      <lastModified>
+        <time>1793599215454</time>
+        <timezone>Asia/Calcutta</timezone>
+      </lastModified>
+      <pruningSettings>
+        <pruneContentDays>7</pruneContentDays>
+        <archiveEnabled>true</archiveEnabled>
+        <pruneErroredMessages>false</pruneErroredMessages>
+      </pruningSettings>
+      <userId>1</userId>
+    </metadata>
+  </exportData>
+</channel>
