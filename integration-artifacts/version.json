@@ -82,7 +82,7 @@
       "channel": "lookup_group_schemafiles_export.json",
       "version": "",
       "editedby": "jewelbonnie",
-      "date": "2026-10-01"
+      "date": "2026-11-04"
     },
     {
       "type": "Lookup Manager",
@@ -122,7 +122,7 @@
     {
       "type": "Router",
       "channel": "RouterChannel.xml",
-      "version": "0.2.27",
+      "version": "0.2.28",
       "editedby": "jewelbonnie",
       "date": "2026-10-16"
     },
@@ -157,7 +157,7 @@
     {
       "type": "MCO",
       "channel": "Molina.xml",
-      "version": "0.1.19",
+      "version": "0.1.18",
       "editedby": "abhiramisanthosh90",
       "date": "2026-11-03"
     },
@@ -185,7 +185,7 @@
     {
       "type": "MCO",
       "channel": "Anthem.xml",
-      "version": "0.1.17",
+      "version": "0.1.18",
       "editedby": "abhiramisanthosh90",
       "date": "2026-11-03"
     },
@@ -241,46 +241,46 @@
      {
       "type": "MCO",
       "channel": "CDPHP.xml",
-      "version": "0.1.17",
-      "editedby": "jewelbonnie",
-      "date": "2026-10-01"
+      "version": "0.1.18",
+      "editedby": "abhiramisanthosh90",
+      "date": "2026-11-03"
     }, {
       "type": "MCO",
       "channel": "Emblem.xml",
-      "version": "0.1.17",
-      "editedby": "jewelbonnie",
-      "date": "2026-10-01"
+      "version": "0.1.18",
+      "editedby": "abhiramisanthosh90",
+      "date": "2026-11-03"
     }, {
       "type": "MCO",
       "channel": "Nascentia.xml",
-      "version": "0.1.17",
-      "editedby": "jewelbonnie",
-      "date": "2026-10-01"
+      "version": "0.1.18",
+      "editedby": "abhiramisanthosh90",
+      "date": "2026-11-03"
     }, {
       "type": "MCO",
       "channel": "Riverspring.xml",
-      "version": "0.1.17",
-      "editedby": "jewelbonnie",
-      "date": "2026-10-01"
+      "version": "0.1.18",
+      "editedby": "abhiramisanthosh90",
+      "date": "2026-11-03"
     }, {
       "type": "MCO",
       "channel": "VNS.xml",
-      "version": "0.1.17",
-      "editedby": "jewelbonnie",
-      "date": "2026-10-01"
+      "version": "0.1.18",
+      "editedby": "abhiramisanthosh90",
+      "date": "2026-11-03"
     }, {
       "type": "MCO",
       "channel": "Wellpoint.xml",
-      "version": "0.1.17",
-      "editedby": "jewelbonnie",
-      "date": "2026-10-01"
+      "version": "0.1.18",
+      "editedby": "abhiramisanthosh90",
+      "date": "2026-11-03"
     },
     {
       "type": "MCO",
       "channel": "TxD.xml",
-      "version": "0.1.17",
-      "editedby": "jewelbonnie",
-      "date": "2026-10-01"
+      "version": "0.1.18",
+      "editedby": "abhiramisanthosh90",
+      "date": "2026-11-03"
     },
     {
       "type": "Channel Group",
