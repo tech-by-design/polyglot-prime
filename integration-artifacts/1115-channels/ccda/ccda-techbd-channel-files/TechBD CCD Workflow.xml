@@ -2,8 +2,9 @@
   <id>0cefb37a-ca0a-48cc-85a1-aa0b727d26a2</id>
   <nextMetaDataId>12</nextMetaDataId>
   <name>TechBD CCD Workflow</name>
-  <description>Version: 0.4.53</description>
-  <revision>72</revision>
+  <description>Version: 0.4.54
+Grouper effectiveDateTime updates.</description>
+  <revision>7</revision>
   <sourceConnector version="4.5.0">
     <metaDataId>0</metaDataId>
     <name>sourceConnector</name>
@@ -1325,81 +1326,313 @@ function getCategoryCode(code) {
     }
 }
 
-// Define Namespace Resolver
-function getObservationCategoryCodes(transformer, observations) {    
-    var xml = new XML(observations); // Parse the source message as XML    
-    var ccda = new Namespace(&quot;urn:hl7-org:v3&quot;); // Define the CCDA namespace    
-    default xml namespace = ccda; // Set default namespace so ccda tags can be used without prefix
+/*
+ * getObservationCategoryCodes  (latest-observation aware)
+ *
+ * Builds the category JSON (categoryXml) and the latest grouper effectiveTime
+ * (latestEffectiveTime) that are passed to the XSLT transformer, using ONLY the
+ * observations the XSLT will actually emit: for every question code, the VALID
+ * observation with the MOST RECENT effectiveTime. This mirrors isValidObs /
+ * obsSortKey / isLatestObs in the XSLT, so the channel and the XSLT always agree.
+ *
+ * EFFECTIVE TIME OF AN INNER (question/answer) OBSERVATION
+ *   its own effectiveTime/@value
+ *   -&gt; its own effectiveTime/low/@value
+ *   -&gt; the PARENT observation&apos;s effectiveTime/@value
+ *   -&gt; the PARENT observation&apos;s effectiveTime/low/@value
+ *   Example: answers without a date take the grouper&apos;s &quot;20251001&quot;; an answer with its own
+ *   low &quot;20221028000000&quot; keeps &quot;20221028000000&quot;.
+ *   &quot;Parent&quot; = the grouper (entry/observation) for Medent / Athenahealth / CureMD,
+ *              the assessment observation for Epic / Oracle.
+ *
+ * latestEffectiveTime (grouper effectiveDateTime)
+ *   the MOST RECENT effective date of the emitted observations (each one: its own date, else its
+ *   parent&apos;s date, as above). Example: grouper 20261011 with an answer dated 20261118000000
+ *   -&gt; the grouper&apos;s date is 20261118000000.
+ *
+ * Keep all functions below in the same Code Template library (or the same
+ * script) as getCategoryCode() and getCategoryDisplay(), which are unchanged.
+ */
+
+// Set to false to go back to &quot;every code that appears&quot;, without the validity filter.
+var REQUIRE_VALID_ANSWER = true;
+
+// Tie rule when two valid observations of the same code have the SAME effectiveTime (date + time):
+//   true  -&gt; the FIRST one in document order is kept   (same as the XSLT)
+//   false -&gt; the LATER one in document order is kept   (then also flip the tie-break in the XSLT)
+var TIE_KEEPS_FIRST = true;
+
+// ---- PURE-LOGIC-START (plain JavaScript, no E4X) ----------------------------------------------
+
+// Normalise a CCDA timestamp to a 14-digit sortable string (yyyyMMddHHmmss).
+// Only the leading digits are used, so a timezone offset (&quot;-0500&quot;) is ignored.
+// Missing or empty value =&gt; &apos;00000000000000&apos;.
+function ccdaTimeSortKey(raw) {
+    var s = String(raw === null || raw === undefined ? &apos;&apos; : raw).replace(/^\s+|\s+$/g, &apos;&apos;);
+    var m = /^[0-9]+/.exec(s);
+    var digits = m ? m[0].substring(0, 14) : &apos;&apos;;
+    return (digits + &apos;00000000000000&apos;).substring(0, 14);
+}
+
+// For every question code keep the record with the most recent key.
+// records are in document order. Returns { best: {code: record}, order: [codes in order of first appearance] }.
+function pickLatestPerCode(records) {
+    var best = {};
+    var order = [];
+    for (var i = 0; i &lt; records.length; i++) {
+        var r = records[i];
+        var cur = best[r.code];
+        if (!cur) {
+            order.push(r.code);
+            best[r.code] = r;
+        } else if (r.key &gt; cur.key || (!TIE_KEEPS_FIRST &amp;&amp; r.key === cur.key)) {
+            // newer wins; on a tie the FIRST one is kept (or the later one when TIE_KEEPS_FIRST is false)
+            best[r.code] = r;
+        }
+    }
+    return { best: best, order: order };
+}
+
+// Most recent effective date among the emitted observations (winners).
+// Each winner carries &quot;raw&quot; = its own date, else its parent&apos;s date. Returns the original CCDA string, or null.
+function latestWinnerDate(winners) {
+    var latest = null;
+    var latestKey = null;
+    for (var i = 0; i &lt; winners.length; i++) {
+        var raw = winners[i].raw;
+        if (raw === null || raw === undefined || String(raw) === &apos;&apos;) { continue; }
+        var k = ccdaTimeSortKey(raw);
+        if (latestKey === null || k &gt; latestKey) {
+            latestKey = k;
+            latest = raw;
+        }
+    }
+    return latest;
+}
+
+// ---- PURE-LOGIC-END ---------------------------------------------------------------------------
+
+// Same validity rules as isValidObs in the XSLT.
+function isValidAnswer(answer) {
+    var ccda = new Namespace(&quot;urn:hl7-org:v3&quot;);
+    default xml namespace = ccda;   // must be set inside every function that reads CCDA elements
+
+    var code = answer.code.@code.toString();
+    var codeSystemName = answer.code.@codeSystemName.toString();
+    var valueCode = answer.value.@code.toString();
+    var translationCode = answer.value.translation.@code.toString();
+
+    if (translationCode == &apos;X-SDOH-FLO-1570000066-Patient-unable-to-answer&apos; ||
+        translationCode == &apos;X-SDOH-FLO-1570000066-Patient-declined&apos;) {
+        return true;
+    }
+
+    if (valueCode != &apos;UNK&apos; &amp;&amp; valueCode.length &gt; 0 &amp;&amp;
+        code != &apos;UNK&apos; &amp;&amp; code.length &gt; 0 &amp;&amp;
+        answer.value.@nullFlavor.toString().length == 0 &amp;&amp;
+        answer.code.@nullFlavor.toString().length == 0 &amp;&amp;
+        (codeSystemName == &apos;LOINC&apos; || codeSystemName == &apos;SNOMED&apos; || codeSystemName == &apos;SNOMED CT&apos;)) {
+        return true;
+    }
+
+    // Total Safety Score carries a numeric value instead of a coded one
+    if (code == &apos;95614-4&apos; &amp;&amp; answer.value.@value.toString().length &gt; 0) {
+        return true;
+    }
+
+    return false;
+}
+
+// Same date source as the XSLT:
+// own effectiveTime/@value, then own effectiveTime/low/@value,
+// then the PARENT&apos;s effectiveTime/@value, then the PARENT&apos;s effectiveTime/low/@value.
+function getAnswerEffectiveRaw(answer, parent) {
+    var ccda = new Namespace(&quot;urn:hl7-org:v3&quot;);
+    default xml namespace = ccda;
+
+    var v = answer.effectiveTime.@value.toString().trim();
+    if (v !== &apos;&apos;) { return v; }
+
+    v = answer.effectiveTime.low.@value.toString().trim();
+    if (v !== &apos;&apos;) { return v; }
+
+    if (parent) {
+        v = parent.effectiveTime.@value.toString().trim();
+        if (v !== &apos;&apos;) { return v; }
+
+        v = parent.effectiveTime.low.@value.toString().trim();
+        if (v !== &apos;&apos;) { return v; }
+    }
+    return &apos;&apos;;
+}
+
+// The grouper of an answer for Medent / Athenahealth / CureMD:
+// answer = entry/observation/entryRelationship/observation  -&gt;  parent().parent() = entry/observation
+function getGrouperOf(answer) {
+    var er = answer.parent();
+    if (er === null || er === undefined) { return null; }
+    var grouper = er.parent();
+    if (grouper === null || grouper === undefined) { return null; }
+    return grouper;
+}
+
+function getObservationCategoryCodes(transformer, observations) {
+    var xml = new XML(observations);
+    var ccda = new Namespace(&quot;urn:hl7-org:v3&quot;);
+    default xml namespace = ccda;
+
     var ehrVendor = channelMap.get(&apos;ehrVendor&apos;);
-    var codes;
+    var units;               // observations the original code iterated over
+    var nested = false;      // true: answers are the child observations of each unit (the unit is the parent)
 
-    // Extract all observation code attributes
-    if (ehrVendor == &apos;Medent&apos; || ehrVendor == &apos;Athenahealth&apos; || ehrVendor == &apos;CureMD&apos;) {
-	    codes = xml..component
-	                   .structuredBody
-	                   .component
-	                   .section.(@ID == &apos;observations&apos;)
-	                   .entry
-	                   .observation
-	                   .entryRelationship
-	                   .observation
-	                   .code.@code;
-     } else if (ehrVendor == &apos;Epic&apos;) {
-     	codes = xml..component
-	                   .structuredBody
-	                   .component
-	                   .section.(@ID == &apos;observations&apos;)
-	                   .entry
-	                   .observation
-	                   .entryRelationship
-	                   .observation
-	                   .entryRelationship
-	                   .observation
-	                   .code.@code;
-     } else { 
-   		codes = xml..component	
-                  .structuredBody	
-                  .component	
-                  .section.(@ID == &apos;observations&apos;)	
-                  .entry	
-                  .observation	
-                  .code.@code; 
-   	}
+    logger.info(&quot;ehrVendor: &quot; + ehrVendor);
 
-	// collect unique category codes
-	var categorySet = {};
-	for (var i = 0; i &lt; codes.length(); i++) {
-	    var code = getCategoryCode(codes[i].toString().trim());
-	    if (code &amp;&amp; !(code in categorySet)) {
-	        categorySet[code] = getCategoryDisplay(codes[i].toString().trim());  
-	    }
-	}
-	
-	var categoryJsonArray = [];
-	for (var code in categorySet) {
-	    categoryJsonArray.push({
-	        code: code,
-	        display: categorySet[code]
-	    });
-	}
+    // Select observations based on EHR vendor (unchanged)
+    if (ehrVendor == &apos;Medent&apos; ||
+        ehrVendor == &apos;Athenahealth&apos; ||
+        ehrVendor == &apos;CureMD&apos;) {
 
-	//Build Category json from Category codes to pass to the xslt file as transformer parameter
-	var categoryXml = &apos;[&apos;;
-	for (var i = 0; i &lt; categoryJsonArray.length; i++) {
-	    categoryXml += &apos;{&apos; +
-	        &apos;&quot;system&quot;: &quot;http://hl7.org/fhir/us/sdoh-clinicalcare/CodeSystem/SDOHCC-CodeSystemTemporaryCodes&quot;,&apos; +
-	        &apos;&quot;code&quot;: &quot;&apos; + categoryJsonArray[i].code + &apos;&quot;,&apos; +
-	        &apos;&quot;display&quot;: &quot;&apos; + categoryJsonArray[i].display + &apos;&quot;}&apos;;
-	
-	    if (i !== categoryJsonArray.length - 1) {
-	        categoryXml += &apos;,&apos;;
-	    }
-	}	
-	categoryXml += &apos;]&apos;;              
-	
-	// set context variable
-	transformer.setParameter(&apos;categoryXml&apos;, categoryXml);
-	return transformer;
+        // answer = the selected observation itself; its parent is the grouper (found with getGrouperOf)
+        units = xml..component
+            .structuredBody
+            .component
+            .section.(@ID == &apos;observations&apos;)
+            .entry
+            .observation
+            .entryRelationship
+            .observation;
+
+    } else if (ehrVendor == &apos;Epic&apos; || ehrVendor == &apos;Oracle&apos;) {
+
+        // parent = selected observation (assessment), answers = its entryRelationship/observation
+        nested = true;
+        units = xml..component
+            .structuredBody
+            .component
+            .section.(@ID == &apos;observations&apos;)
+            .entry
+            .observation
+            .entryRelationship
+            .observation;
+
+    } else {
+
+        // answer = the selected observation itself
+        units = xml..component
+            .structuredBody
+            .component
+            .section.(@ID == &apos;observations&apos;)
+            .entry
+            .observation;
+    }
+
+    // --------------------------------------------------
+    // Collect every answer (valid ones only) in document order,
+    // with its effective date (own, else parent&apos;s) and sort key.
+    // --------------------------------------------------
+    var records = [];
+
+    for (var j = 0; j &lt; units.length(); j++) {
+        var unit = units[j];
+        var answers = [];
+
+        if (nested) {
+            var children = unit.entryRelationship.observation;
+            for (var a = 0; a &lt; children.length(); a++) {
+                answers.push(children[a]);
+            }
+        } else {
+            answers.push(unit);
+        }
+
+        for (var n = 0; n &lt; answers.length; n++) {
+            var answer = answers[n];
+            var qCode = answer.code.@code.toString().trim();
+
+            if (qCode === &apos;&apos;) { continue; }
+            if (REQUIRE_VALID_ANSWER &amp;&amp; !isValidAnswer(answer)) { continue; }
+
+            // parent observation that supplies the date when the answer has none
+            var parent = nested ? unit : getGrouperOf(answer);
+
+            var raw = getAnswerEffectiveRaw(answer, parent);
+
+            records.push({
+                code: qCode,
+                raw: raw,
+                key: ccdaTimeSortKey(raw)
+            });
+        }
+    }
+
+    // --------------------------------------------------
+    // For every question code: the valid observation with the most recent effectiveTime.
+    // --------------------------------------------------
+    var picked = pickLatestPerCode(records);
+    var bestByCode = picked.best;
+    var firstSeenCodes = picked.order;
+
+    // Collect unique category codes (from the winning observations only)
+    var categorySet = {};
+    var winners = [];         // emitted observations
+
+    for (var i = 0; i &lt; firstSeenCodes.length; i++) {
+        var originalCode = firstSeenCodes[i];
+        var code = getCategoryCode(originalCode);
+
+        if (code) {
+            winners.push(bestByCode[originalCode]);
+
+            if (!(code in categorySet)) {
+                categorySet[code] = getCategoryDisplay(originalCode);
+            }
+        }
+    }
+
+    var categoryJsonArray = [];
+
+    for (var cat in categorySet) {
+        categoryJsonArray.push({
+            code: cat,
+            display: categorySet[cat]
+        });
+    }
+
+    // Build category JSON for the XSLT transformer
+    var categoryXml = &apos;[&apos;;
+
+    for (var c = 0; c &lt; categoryJsonArray.length; c++) {
+        categoryXml += &apos;{&apos; +
+            &apos;&quot;system&quot;: &quot;http://hl7.org/fhir/us/sdoh-clinicalcare/CodeSystem/SDOHCC-CodeSystemTemporaryCodes&quot;,&apos; +
+            &apos;&quot;code&quot;: &quot;&apos; + categoryJsonArray[c].code + &apos;&quot;,&apos; +
+            &apos;&quot;display&quot;: &quot;&apos; + categoryJsonArray[c].display + &apos;&quot;}&apos;;
+
+        if (c !== categoryJsonArray.length - 1) {
+            categoryXml += &apos;,&apos;;
+        }
+    }
+
+    categoryXml += &apos;]&apos;;
+
+    transformer.setParameter(&apos;categoryXml&apos;, categoryXml);
+
+    // --------------------------------------------------
+    // Grouper effectiveDateTime = the most recent effective date of the emitted observations
+    // (own date, else the parent&apos;s date).
+    // --------------------------------------------------
+    var latestEffectiveTime = latestWinnerDate(winners);
+
+    // Pass latest effectiveTime to the XSLT transformer
+    transformer.setParameter(
+        &apos;latestEffectiveTime&apos;,
+        latestEffectiveTime === null ? &apos;&apos; : latestEffectiveTime
+    );
+
+    logger.info(&quot;latest observation per code: &quot; + firstSeenCodes.join(&apos;,&apos;));
+    logger.info(&quot;categoryXml: &quot; + categoryXml);
+    logger.info(&quot;latestEffectiveTime: &quot; + latestEffectiveTime);
+
+    return transformer;
 }
 
 function getMultipleAnswersForComponent(transformer, observations) {
@@ -2938,7 +3171,7 @@ return;</undeployScript>
     <metadata>
       <enabled>true</enabled>
       <lastModified>
-        <time>1788931601218</time>
+        <time>1793945645089</time>
         <timezone>Asia/Calcutta</timezone>
       </lastModified>
       <pruningSettings>
