@@ -1297,6 +1297,11 @@
                                               <xsl:with-param name="dateTime" select="ccda:effectiveTime/@value"/>
                                           </xsl:call-template>
                                       </xsl:when>
+                                      <xsl:when test="ccda:effectiveTime/ccda:low/@value">
+                                          <xsl:call-template name="formatDateTime">
+                                              <xsl:with-param name="dateTime" select="ccda:effectiveTime/ccda:low/@value"/>
+                                          </xsl:call-template>
+                                      </xsl:when>
                                       <xsl:when test="$encounterEffectiveTimeValue">
                                           <xsl:value-of select="$encounterEffectiveTimeValue"/>
                                       </xsl:when>
