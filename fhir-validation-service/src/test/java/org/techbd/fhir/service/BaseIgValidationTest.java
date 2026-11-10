@@ -66,9 +66,10 @@ public abstract class BaseIgValidationTest {
         FhirV4Config fhirV4Config = new FhirV4Config();
         // Shared latest base packages
         Map<String, String> basePackages = new HashMap<>();
-        basePackages.put("us-core", "ig-packages/fhir-v4/us-core/stu-7.0.0-updated");
+        basePackages.put("us-core", "ig-packages/fhir-v4/us-core/stu-7.0.0");
         basePackages.put("sdoh", "ig-packages/fhir-v4/sdoh-clinicalcare/stu-2.3.0");
         basePackages.put("uv-sdc", "ig-packages/fhir-v4/uv-sdc/stu-3.0.0");
+        basePackages.put("uv-sdc", "ig-packages/fhir-v4/uv-extensions/5.2.0");
         // SHIN-NY Packages
         Map<String, ShinnyPackageConfig> shinnyPackages = new HashMap<>();
         // SHIN-NY version 1.9.4
