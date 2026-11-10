@@ -374,37 +374,37 @@
       {
         "name": "cda-fhir-bundle.xslt",
         "type": "CCDA",
-        "version": "0.1.17",
+        "version": "0.1.18",
         "editedby": "cibijacob",
-        "date": "2026-06-25"
+        "date": "2026-11-09"
       },
       {
         "name": "cda-fhir-bundle-epic.xslt",
         "type": "CCDA",
-        "version": "0.1.17",
+        "version": "0.1.19",
         "editedby": "cibijacob",
-        "date": "2026-06-25"
+        "date": "2026-11-09"
       },
       {
         "name": "cda-fhir-bundle-medent.xslt",
         "type": "CCDA",
-        "version": "0.1.17",
+        "version": "0.1.19",
         "editedby": "cibijacob",
-        "date": "2026-06-25"
+        "date": "2026-11-09"
       },
       {
         "name": "cda-fhir-bundle-athenahealth.xslt",
         "type": "CCDA",
-        "version": "0.1.17",
+        "version": "0.1.19",
         "editedby": "cibijacob",
-        "date": "2026-06-25"
+        "date": "2026-11-09"
       },      
       {
         "name": "cda-fhir-bundle-curemd.xslt",
         "type": "CCDA",
-        "version": "0.1.1",
+        "version": "0.1.3",
         "editedby": "cibijacob",
-        "date": "2026-08-05"
+        "date": "2026-11-09"
       },
       {
         "name": "cda-phi-filter-curemd.xslt",
@@ -486,18 +486,18 @@
       {
       "type": "CCDA-MirthConnect",
       "channel": "TechBD CCD Workflow.xml",
-      "version": "0.4.49",
+      "version": "0.4.54",
       "editedby": "cibijacob",
-      "date": "2026-06-04"
+      "date": "2026-11-09"
     }
     ],
     "HL7v2": [
       {
         "name": "hl7v2-fhir-bundle.xslt",
         "type": "HL7v2",
-        "version": "0.2.12",
+        "version": "0.2.13",
         "editedby": "cibijacob",
-        "date": "2026-06-25"
+        "date": "2026-11-09"
       },
       {
         "name": "hl7v2-validation-schema.xml",
