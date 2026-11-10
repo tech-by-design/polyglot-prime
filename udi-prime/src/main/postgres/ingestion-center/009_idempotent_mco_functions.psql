@@ -273,9 +273,11 @@ CREATE OR REPLACE FUNCTION mco_data.get_mco_historical_details(
 RETURNS TABLE (
     mco_name text,
     total_files_received bigint,
-    files_processed bigint,
+    files_inprogress bigint,
     files_partially_processed bigint,
-    files_errored bigint
+    files_processed bigint,
+    files_errored bigint,
+    file_rejected bigint
 )
 LANGUAGE plpgsql
 AS $function$
@@ -318,14 +320,20 @@ BEGIN
         m.tenant_displayname AS mco_name,
         COUNT(*) AS total_files_received,
         COUNT(*) FILTER (
-            WHERE mr.status = 'FULLY_PROCESSED'
-        ) AS files_processed,
+            WHERE mr.status = 'INPROGRESS'
+        ) AS files_inprogress,
         COUNT(*) FILTER (
             WHERE mr.status = 'PARTIALLY_PROCESSED'
         ) AS files_partially_processed,
         COUNT(*) FILTER (
-            WHERE mr.status = 'ERRORED'
-        ) AS files_errored
+            WHERE mr.status = 'FULLY_PROCESSED'
+        ) AS files_processed,
+        COUNT(*) FILTER (
+            WHERE mr.status =  'ERRORED'
+        ) AS files_errored,
+        COUNT(*) FILTER (
+            WHERE mr.status =   'FILE_REJECTED'
+        ) AS file_rejected
     FROM mco_data.mco_records mr
     INNER JOIN techbd_udi_ingress.tenants m
         ON mr.tenant_id = m.tenant_id

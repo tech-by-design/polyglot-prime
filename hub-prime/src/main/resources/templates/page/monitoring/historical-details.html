@@ -898,9 +898,11 @@
                     .withColumnDefs([
                         { headerName: "MCO Name", field: "mco_name", sortable: true, filter: "agTextColumnFilter", cellRenderer: 'agGroupCellRenderer' },
                         { headerName: "Total Files Received", field: "total_files_received", sortable: true, filter: "agNumberColumnFilter" },
-                        { headerName: "Files Processed", field: "files_processed", sortable: true, filter: "agNumberColumnFilter" },
+                        { headerName: "Files In Progress", field: "files_inprogress", sortable: true, filter: "agNumberColumnFilter" },
                         { headerName: "Files Partially Processed", field: "files_partially_processed", sortable: true, filter: "agNumberColumnFilter" },
-                        { headerName: "Files Errored", field: "files_errored", sortable: true, filter: "agNumberColumnFilter" }
+                        { headerName: "Files Processed", field: "files_processed", sortable: true, filter: "agNumberColumnFilter" },                        
+                        { headerName: "Files Errored", field: "files_errored", sortable: true, filter: "agNumberColumnFilter" },
+                        { headerName: "Files Rejected", field: "file_rejected", sortable: true, filter: "agNumberColumnFilter" }
                     ])
                     .withGridOptions({
                         serverSideDatasource: createHistoricalDetailsDatasource()
@@ -1269,7 +1271,7 @@
 
                 <ul>
                     <li><strong>Summary View:</strong> Displays top-level metrics per MCO, including total files
-                        received, processed, partially processed, and errored.</li>
+                        received, files in progress, partially processed, processed, errored and rejected files.</li>
                     <li><strong>First-Level Drill-Down:</strong> Expand any MCO row to view its associated files along
                         with received month, record counts, and overall status etc.</li>
                     <li><strong>More Information Popup:</strong> Click the <strong>ⓘ</strong> icon on any file row to
