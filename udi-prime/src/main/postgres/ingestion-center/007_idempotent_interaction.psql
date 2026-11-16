@@ -689,3 +689,316 @@ LIMIT 1;
 RETURN v_result;
 END;
 $function$;
+
+/*
+    * Functions created for CCDA Replay for which the Observation resources changed due to effectiveDateTime logic update, 'update_interaction_ccda_request' and 'update_interaction_fhir_request'.
+    * Newly generated CCDA FHIR bundle should be updated in the sat_interaction_ccda_request table with nature = 'Converted to FHIR'
+    * and sat_interaction_fhir_request table with nature = 'Original FHIR Payload'.
+    * The operation outcome after the FHIR validation should be updated to sat_interaction_fhir_request table with nature = 'techByDesignDisposition'.
+    * The 'replay_status' and 'replay_on' of sat_interaction_fhir_request table should also be updated.
+*/
+DROP FUNCTION IF EXISTS techbd_udi_ingress.update_interaction_ccda_request(text, jsonb);
+CREATE OR REPLACE FUNCTION techbd_udi_ingress.update_interaction_ccda_request(p_interaction_id text, p_payload jsonb DEFAULT NULL::jsonb)
+ RETURNS text
+ LANGUAGE plpgsql
+AS $function$
+DECLARE
+    v_error_msg       TEXT;
+    v_error_type      TEXT;
+    v_sqlstate        TEXT;
+    v_pg_detail       TEXT;
+    v_pg_hint         TEXT;
+    v_pg_context      TEXT;
+	v_created_at      TIMESTAMPTZ 	:= CURRENT_TIMESTAMP;
+    v_created_by      TEXT        	:= CURRENT_USER;
+	v_exception_id    TEXT        	:= gen_random_uuid()::text;
+
+	v_elaboration     JSONB 	  	:= NULL;
+    v_elaboration_steps_text TEXT[] := ARRAY[]::text[]; 
+    v_elaboration_steps_jsonb JSONB := '[]'::jsonb;
+    
+    v_return          JSONB 	  	:= NULL;
+    v_return_status   BOOLEAN 	  	:= false;
+    v_is_exception    BOOLEAN 	  	:= false;
+
+BEGIN
+    /*
+	 This function updates the newly generated payload json in the sat_interaction_http_request and sat_interaction_ccda_request tables
+	 with nature "Converted to FHIR" for the given interaction_id (same as bundle_id)
+	*/
+
+    IF p_interaction_id IS NULL OR trim(p_interaction_id) = '' THEN
+	    v_return_status := true;
+	    v_elaboration := jsonb_build_object(
+	        'interaction_id', p_interaction_id,
+			'nature', 'Converted to FHIR',
+			'error', 'p_interaction_id cannot be NULL or empty'
+	    );
+	END IF;
+
+    IF NOT v_return_status THEN
+		BEGIN
+	        UPDATE techbd_udi_ingress.sat_interaction_http_request 
+			SET payload = p_payload
+	        WHERE hub_interaction_id = p_interaction_id
+	        AND nature->>'nature' = 'Converted to FHIR';
+	        v_elaboration_steps_text := array_append(v_elaboration_steps_text, '1: Updated sat_interaction_http_request payload for bundle_id - ' || p_interaction_id);
+	
+			UPDATE techbd_udi_ingress.sat_interaction_ccda_request 
+			SET payload = p_payload
+	        WHERE hub_interaction_id = p_interaction_id
+	        AND nature = 'Converted to FHIR';
+			v_elaboration_steps_text := array_append(v_elaboration_steps_text, '2: Updated sat_interaction_ccda_request payload for bundle_id - ' || p_interaction_id);
+	
+			v_elaboration := jsonb_build_object(
+		        'interaction_id', p_interaction_id,
+				'nature', 'Converted to FHIR',
+				'payload', p_payload
+		    );
+		EXCEPTION
+		   WHEN OTHERS THEN
+			    -- Capture exception details
+			    GET STACKED DIAGNOSTICS
+			        v_error_msg = MESSAGE_TEXT,
+			        v_sqlstate = RETURNED_SQLSTATE,
+			        v_pg_detail = PG_EXCEPTION_DETAIL,
+			        v_pg_hint = PG_EXCEPTION_HINT,
+			        v_pg_context = PG_EXCEPTION_CONTEXT;
+			        v_error_type = 'SQL';
+	
+				v_is_exception := true;				
+				v_return_status := true;
+				v_return := NULL;
+		END;
+    END IF;
+
+    -- Convert steps array to JSONB and attach
+    IF array_length(v_elaboration_steps_text, 1) IS NOT NULL THEN
+        v_elaboration_steps_jsonb := to_jsonb(v_elaboration_steps_text);
+        v_elaboration := v_elaboration || jsonb_build_object('steps', v_elaboration_steps_jsonb);
+    END IF;
+
+    -- Attach error message if present
+    IF v_error_msg IS NOT NULL THEN
+        v_elaboration := v_elaboration || jsonb_build_object('error_message', v_error_msg);
+    END IF;
+
+    -- Register diagnostic log
+    CALL techbd_udi_ingress.register_diagnostic_log(
+        v_exception_id,
+        '/ccda/replay',
+        v_created_by,
+        'CCDA Replay',
+        'info'::text,
+        'register_interaction_ccda_request Logs'::text,
+        v_created_by,
+        (CASE WHEN v_is_exception THEN 'failure' ELSE 'success' END),
+        NULL::text,
+        0,
+        v_elaboration,
+        null, -- v_tenant_id_denorm,
+        null, -- v_tenant_id,
+        p_interaction_id
+    );
+
+    -- If exception occurred, register issue
+    IF v_is_exception THEN
+        v_exception_id := techbd_udi_ingress.register_issue(
+            v_exception_id,
+            '/ccda/replay',
+            v_error_msg,
+            v_error_type,
+            v_sqlstate,
+            v_pg_detail,
+            v_pg_hint,
+            v_pg_context,
+            v_created_by,
+            'CCDA Replay',
+            v_elaboration,
+            null, -- v_tenant_id_denorm,
+            null, -- v_tenant_id,
+            p_interaction_id
+        );
+    END IF;
+
+    RETURN p_interaction_id;
+END;
+$function$
+;
+
+DROP FUNCTION IF EXISTS techbd_udi_ingress.update_interaction_fhir_request(text, text, jsonb, text, timestamptz);
+CREATE OR REPLACE FUNCTION techbd_udi_ingress.update_interaction_fhir_request(
+    p_interaction_id text,
+    p_nature 		 text,
+    p_payload        jsonb,
+    p_replay_status  text        DEFAULT 'True'::text,
+    p_replay_on      timestamptz DEFAULT now()
+)
+ RETURNS text
+ LANGUAGE plpgsql
+AS $function$
+DECLARE
+    v_error_msg       TEXT;
+    v_error_type      TEXT;
+    v_sqlstate        TEXT;
+    v_pg_detail       TEXT;
+    v_pg_hint         TEXT;
+    v_pg_context      TEXT;
+	v_created_at      TIMESTAMPTZ 	:= CURRENT_TIMESTAMP;
+    v_created_by      TEXT        	:= CURRENT_USER;
+	v_exception_id    TEXT        	:= gen_random_uuid()::text;
+
+	v_elaboration     JSONB 	  	:= NULL;
+    v_elaboration_steps_text TEXT[] := ARRAY[]::text[]; 
+    v_elaboration_steps_jsonb JSONB := '[]'::jsonb;
+    
+    v_return          JSONB 	  	:= NULL;
+    v_return_status   BOOLEAN 	  	:= false;
+    v_is_exception    BOOLEAN 	  	:= false;
+
+	v_payload          JSONB;
+    v_rule_namespace   TEXT;
+    v_interaction_key  TEXT;
+    v_disposition_json JSONB;
+    v_row_count        INTEGER;
+
+BEGIN
+    /*
+     This function updates the payload of the given interaction_id (same as bundle_id)
+     with nature 'Original_FHIR_PAYLOAD' in:
+       1. sat_interaction_fhir_request  -> payload, replay_status, replay_on
+       2. sat_interaction_http_request  -> payload
+    */
+
+    IF p_interaction_id IS NULL OR trim(p_interaction_id) = '' THEN
+	    v_return_status := true;
+	    v_elaboration := jsonb_build_object(
+	        'interaction_id', p_interaction_id,
+			'nature', p_nature,
+			'error', 'p_interaction_id cannot be NULL or empty'
+	    );
+	END IF;
+
+	IF NOT v_return_status AND p_nature NOT IN(
+			'Original FHIR Payload', 
+			'techByDesignDisposition',
+            'Forward HTTP Request',
+        	'Forwarded HTTP Response',
+        	'Forwarded HTTP Response Error'
+	) THEN
+		v_return_status := true;
+		v_return := jsonb_build_object('error', 'Not a valid FHIR nature',
+								  'payload', p_payload,
+								  'nature', p_nature,
+								  'interaction_id', p_interaction_id);
+	END IF;
+
+    IF NOT v_return_status THEN
+		BEGIN
+	        UPDATE techbd_udi_ingress.sat_interaction_http_request 
+			SET payload = p_payload
+	        WHERE hub_interaction_id = p_interaction_id
+	        AND nature->>'nature' = p_nature;
+	        v_elaboration_steps_text := array_append(v_elaboration_steps_text, '1: Updated sat_interaction_http_request payload for bundle_id - ' || p_interaction_id);
+	
+			v_payload := p_payload;
+			IF (p_nature = 'techByDesignDisposition') THEN
+				SELECT uri 
+					INTO v_interaction_key
+					FROM techbd_udi_ingress.sat_interaction_fhir_request 
+					WHERE hub_interaction_id = p_interaction_id
+					AND nature = 'Original FHIR Payload';
+
+					v_disposition_json := techbd_udi_ingress.process_json_action_rules(
+						p_payload,
+						'NYeC Rule',
+						v_interaction_key
+					);
+				
+					v_elaboration_steps_text := array_append(v_elaboration_steps_text, '2: Get the techByDesignDisposition json after process_json_action_rules');
+					v_payload := v_disposition_json;
+			END IF;
+
+			UPDATE techbd_udi_ingress.sat_interaction_fhir_request 
+			SET payload = v_payload,
+				replay_status = p_replay_status,
+				replay_on = p_replay_on
+	        WHERE hub_interaction_id = p_interaction_id
+	        AND nature = p_nature;
+			v_elaboration_steps_text := array_append(v_elaboration_steps_text, '3: Updated sat_interaction_fhir_request payload for bundle_id - ' || p_interaction_id);
+	
+			v_elaboration := jsonb_build_object(
+		        'interaction_id', p_interaction_id,
+				'nature', p_nature,
+				'payload', v_payload
+		    );
+		EXCEPTION
+		   WHEN OTHERS THEN
+			    -- Capture exception details
+			    GET STACKED DIAGNOSTICS
+			        v_error_msg = MESSAGE_TEXT,
+			        v_sqlstate = RETURNED_SQLSTATE,
+			        v_pg_detail = PG_EXCEPTION_DETAIL,
+			        v_pg_hint = PG_EXCEPTION_HINT,
+			        v_pg_context = PG_EXCEPTION_CONTEXT;
+			        v_error_type = 'SQL';
+	
+				v_is_exception := true;				
+				v_return_status := true;
+				v_return := NULL;
+		END;
+    END IF;
+
+    -- Convert steps array to JSONB and attach
+    IF array_length(v_elaboration_steps_text, 1) IS NOT NULL THEN
+        v_elaboration_steps_jsonb := to_jsonb(v_elaboration_steps_text);
+        v_elaboration := v_elaboration || jsonb_build_object('steps', v_elaboration_steps_jsonb);
+    END IF;
+
+    -- Attach error message if present
+    IF v_error_msg IS NOT NULL THEN
+        v_elaboration := v_elaboration || jsonb_build_object('error_message', v_error_msg);
+    END IF;
+
+    -- Register diagnostic log
+    CALL techbd_udi_ingress.register_diagnostic_log(
+        v_exception_id,
+        '/ccda/replay',
+        v_created_by,
+        'CCDA Replay',
+        'info'::text,
+        'register_interaction_fhir_request Logs'::text,
+        v_created_by,
+        (CASE WHEN v_is_exception THEN 'failure' ELSE 'success' END),
+        NULL::text,
+        0,
+        v_elaboration,
+        null, -- v_tenant_id_denorm,
+        null, -- v_tenant_id,
+        p_interaction_id
+    );
+
+    -- If exception occurred, register issue
+    IF v_is_exception THEN
+        v_exception_id := techbd_udi_ingress.register_issue(
+            v_exception_id,
+            '/ccda/replay',
+            v_error_msg,
+            v_error_type,
+            v_sqlstate,
+            v_pg_detail,
+            v_pg_hint,
+            v_pg_context,
+            v_created_by,
+            'CCDA Replay',
+            v_elaboration,
+            null, -- v_tenant_id_denorm,
+            null, -- v_tenant_id,
+            p_interaction_id
+        );
+    END IF;
+
+    RETURN p_interaction_id;
+END;
+$function$
+;
