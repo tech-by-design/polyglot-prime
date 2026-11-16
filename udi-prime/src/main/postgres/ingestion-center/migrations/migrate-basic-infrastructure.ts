@@ -1133,12 +1133,14 @@ const dependencies = [
   "../009_idempotent_mco_functions.psql",
  /* "../010_idempotent_create_indexes.psql",*/
   ...(includeIndexes ? ["../010_idempotent_create_indexes.psql"] : []),
+  "../011_idempotent_mco_monthly_volume.psql",
 ] as const;
 
 const testMigrateDependencies = [
   "../../../../test/postgres/ingestion-center/001-idempotent-interaction-unit-test.psql",
   "../../../../test/postgres/ingestion-center/003-idempotent-interaction-view-explain-plan.psql",
   "../../../../test/postgres/ingestion-center/004-idempotent-migrate-unit-test.psql",
+  "../../../../test/postgres/ingestion-center/005-idempotent-mco-monthly-volume-unit-test.psql",
   "../../../../test/postgres/ingestion-center/fixtures.sql",
 ] as const;
 

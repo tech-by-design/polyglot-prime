@@ -34,3 +34,8 @@ build/
 
 ### VS Code ###
 .vscode/
+
+### Local run logs ###
+# Written by logback when ORG_TECHBD_HUB_PRIME_LOG_FILE is empty or unset
+.log
+*_IS_UNDEFINED.log

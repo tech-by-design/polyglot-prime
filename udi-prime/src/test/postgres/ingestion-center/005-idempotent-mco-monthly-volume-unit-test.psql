@@ -1,0 +1,122 @@
+/*pgTap function to test mco_data.get_mco_monthly_volume (Monthly Volume Comparison report)*/
+
+DROP FUNCTION IF EXISTS techbd_udi_assurance.test_mco_monthly_volume();
+CREATE OR REPLACE FUNCTION techbd_udi_assurance.test_mco_monthly_volume()
+ RETURNS SETOF text
+ LANGUAGE plpgsql
+AS $function$
+DECLARE
+    v_is_superuser      boolean;
+    v_a_mar_total       integer;
+    v_a_mar_batches     bigint;
+    v_a_mar_status      text;
+    v_a_feb_rows        bigint;
+    v_a_jan_total       integer;
+    v_b_mar_rows        bigint;
+    v_b_feb_total       integer;
+    v_dec_rows          bigint;
+    v_a_name            text;
+    v_rls_other_rows    bigint;
+    v_default_month     date;
+    v_default_rows      bigint;
+BEGIN
+    -- Shape: runs everywhere
+    RETURN NEXT has_function('mco_data', 'get_mco_monthly_volume', ARRAY['text', 'integer'],
+        'Function mco_data.get_mco_monthly_volume(text, integer) exists');
+
+    RETURN NEXT is((SELECT prosecdef FROM pg_proc
+                     WHERE oid = 'mco_data.get_mco_monthly_volume(text, integer)'::regprocedure),
+        false, 'get_mco_monthly_volume is not SECURITY DEFINER, so RLS applies to the caller');
+
+    -- Data and RLS checks insert fixtures (mco_records forces RLS with only a SELECT policy) and
+    -- create a temporary non-superuser role, so they need a superuser on a throwaway database.
+    SELECT rolsuper INTO v_is_superuser FROM pg_roles WHERE rolname = current_user;
+    IF NOT COALESCE(v_is_superuser, false) THEN
+        RETURN NEXT skip('get_mco_monthly_volume data checks need a superuser (fixtures + temporary role)', 15);
+        RETURN;
+    END IF;
+
+    -- Fixtures (rolled back by runtests). Months in 1989-1990 cannot overlap real data.
+    INSERT INTO techbd_udi_ingress.tenants (tenant_id, tenant_name, tenant_displayname, tenant_short_code, created_by, provenance)
+    VALUES ('pgtap_mv_a', 'pgtap_mv_a', 'PgTap Alpha', 'PGA', 'pgtap', 'pgtap'),
+           ('pgtap_mv_b', 'pgtap_mv_b', 'PgTap Bravo', 'PGB', 'pgtap', 'pgtap');
+
+    INSERT INTO mco_data.mco_records (tenant_id, root_file_name, reporting_month, status, is_active,
+                                      total_records, processed_count, errored_count, resubmitted_count, created_on_utc)
+    VALUES
+        -- Alpha, March 1990: two qualifying batches (latest wins) plus a newer rejected one (excluded)
+        ('pgtap_mv_a', 'a-mar-1', '03-1990', 'FULLY_PROCESSED',       true, 100, 100,  0, 0, '1990-04-01 10:00+00'),
+        ('pgtap_mv_a', 'a-mar-2', '03-1990', 'PARTIALLY_PROCESSED',   true, 120, 110, 10, 1, '1990-04-02 10:00+00'),
+        ('pgtap_mv_a', 'a-mar-3', '03-1990', 'FILE_REJECTED',         true, 999,   0,  0, 0, '1990-04-03 10:00+00'),
+        -- Alpha, February 1990: nothing qualifies (inactive; Mirth error)
+        ('pgtap_mv_a', 'a-feb-1', '02-1990', 'FULLY_PROCESSED',       false, 500, 500, 0, 0, '1990-03-01 10:00+00'),
+        ('pgtap_mv_a', 'a-feb-2', '02-1990', 'MIRTH_INTERNAL_ERROR',  true, 400,   0,  0, 0, '1990-03-02 10:00+00'),
+        -- Alpha, January 1990
+        ('pgtap_mv_a', 'a-jan-1', '01-1990', 'FULLY_PROCESSED',       true,  80,  80,  0, 0, '1990-02-01 10:00+00'),
+        -- Bravo: March is a Lambda error (excluded); February counts; December 1989 is outside a 2-month window
+        ('pgtap_mv_b', 'b-mar-1', '03-1990', 'LAMBDA_INTERNAL_ERROR', true,  50,   0,  0, 0, '1990-04-01 10:00+00'),
+        ('pgtap_mv_b', 'b-feb-1', '02-1990', 'FULLY_PROCESSED',       true,  60,  60,  0, 0, '1990-03-01 10:00+00'),
+        ('pgtap_mv_b', 'b-dec-1', '12-1989', 'FULLY_PROCESSED',       true,  10,  10,  0, 0, '1990-01-01 10:00+00');
+
+    -- Temporary non-superuser reader, so row-level security really applies to the queries below.
+    CREATE ROLE pgtap_mv_reader NOLOGIN;
+    GRANT USAGE ON SCHEMA mco_data, techbd_udi_ingress TO pgtap_mv_reader;
+    GRANT SELECT ON mco_data.mco_records, techbd_udi_ingress.tenants TO pgtap_mv_reader;
+    GRANT EXECUTE ON FUNCTION mco_data.get_mco_monthly_volume(text, integer) TO pgtap_mv_reader;
+
+    SET LOCAL ROLE pgtap_mv_reader;
+
+    -- Admin claims: every tenant is visible
+    PERFORM set_config('jwt.claims.is_admin', 'true', true);
+    PERFORM set_config('jwt.claims.tenants', '', true);
+
+    SELECT total_records, qualifying_batch_count, status
+      INTO v_a_mar_total, v_a_mar_batches, v_a_mar_status
+      FROM mco_data.get_mco_monthly_volume('03-1990', 2)
+     WHERE tenant_id = 'pgtap_mv_a' AND reporting_month_date = DATE '1990-03-01';
+    SELECT count(*) INTO v_a_feb_rows FROM mco_data.get_mco_monthly_volume('03-1990', 2)
+     WHERE tenant_id = 'pgtap_mv_a' AND reporting_month_date = DATE '1990-02-01';
+    SELECT total_records INTO v_a_jan_total FROM mco_data.get_mco_monthly_volume('03-1990', 2)
+     WHERE tenant_id = 'pgtap_mv_a' AND reporting_month_date = DATE '1990-01-01';
+    SELECT count(*) INTO v_b_mar_rows FROM mco_data.get_mco_monthly_volume('03-1990', 2)
+     WHERE tenant_id = 'pgtap_mv_b' AND reporting_month_date = DATE '1990-03-01';
+    SELECT total_records INTO v_b_feb_total FROM mco_data.get_mco_monthly_volume('03-1990', 2)
+     WHERE tenant_id = 'pgtap_mv_b' AND reporting_month_date = DATE '1990-02-01';
+    SELECT count(*) INTO v_dec_rows FROM mco_data.get_mco_monthly_volume('03-1990', 2)
+     WHERE tenant_id IN ('pgtap_mv_a', 'pgtap_mv_b') AND reporting_month_date = DATE '1989-12-01';
+    SELECT mco_name INTO v_a_name FROM mco_data.get_mco_monthly_volume('03-1990', 2)
+     WHERE tenant_id = 'pgtap_mv_a' LIMIT 1;
+
+    -- Non-admin claims: only tenant B is visible
+    PERFORM set_config('jwt.claims.is_admin', 'false', true);
+    PERFORM set_config('jwt.claims.tenants', 'pgtap_mv_b', true);
+
+    SELECT count(*) INTO v_rls_other_rows FROM mco_data.get_mco_monthly_volume('03-1990', 2)
+     WHERE tenant_id = 'pgtap_mv_a';
+    SELECT max(reporting_month_date), count(*) INTO v_default_month, v_default_rows
+      FROM mco_data.get_mco_monthly_volume(NULL, 4);
+
+    RESET ROLE;
+
+    RETURN NEXT is(v_a_mar_total, 120, 'Latest qualifying batch wins; newer FILE_REJECTED batch is ignored');
+    RETURN NEXT is(v_a_mar_batches, 2::bigint, 'qualifying_batch_count counts only qualifying batches');
+    RETURN NEXT is(v_a_mar_status, 'PARTIALLY_PROCESSED', 'Status comes from the counted batch');
+    RETURN NEXT is(v_a_feb_rows, 0::bigint, 'Inactive and MIRTH_INTERNAL_ERROR batches do not count, so the month is missing');
+    RETURN NEXT is(v_a_jan_total, 80, 'Earliest month in the window is included');
+    RETURN NEXT is(v_b_mar_rows, 0::bigint, 'LAMBDA_INTERNAL_ERROR batch does not count');
+    RETURN NEXT is(v_b_feb_total, 60, 'Other tenant month is returned for an admin');
+    RETURN NEXT is(v_dec_rows, 0::bigint, 'Months before the window are excluded');
+    RETURN NEXT is(v_a_name, 'PgTap Alpha', 'MCO display name comes from tenants');
+    RETURN NEXT is(v_rls_other_rows, 0::bigint, 'Non-admin cannot see another tenant (RLS)');
+    RETURN NEXT is(v_default_month, DATE '1990-02-01', 'Default month is the latest qualifying month this caller can see');
+    RETURN NEXT is(v_default_rows, 2::bigint, 'Default window covers the latest visible month and the months back');
+
+    -- Input validation
+    RETURN NEXT throws_ok($$ SELECT * FROM mco_data.get_mco_monthly_volume('1990-03', 2) $$,
+        '22023', NULL, 'Reporting month must be MM-YYYY');
+    RETURN NEXT throws_ok($$ SELECT * FROM mco_data.get_mco_monthly_volume('03-1990', 0) $$,
+        '22023', NULL, 'Months back below 1 is rejected');
+    RETURN NEXT throws_ok($$ SELECT * FROM mco_data.get_mco_monthly_volume('03-1990', 13) $$,
+        '22023', NULL, 'Months back above 12 is rejected');
+END;
+$function$;

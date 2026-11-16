@@ -1,0 +1,110 @@
+/*******************************************************************************************
+* Monthly ESMF volume per MCO for the Monthly Volume Comparison report (hub-prime).
+* One row per MCO per reporting month: the selected month and p_months_back months before it.
+* Counted batch per MCO/month: is_active and status not FILE_REJECTED, MIRTH_INTERNAL_ERROR or
+* LAMBDA_INTERNAL_ERROR; if several qualify the latest (created_on_utc) wins and
+* qualifying_batch_count says how many there were.
+******************************************************************************************/
+DROP FUNCTION IF EXISTS mco_data.get_mco_monthly_volume(text, integer);
+
+CREATE OR REPLACE FUNCTION mco_data.get_mco_monthly_volume(
+    p_reporting_month text DEFAULT NULL,
+    p_months_back integer DEFAULT 2
+)
+RETURNS TABLE (
+    tenant_id text,
+    mco_code text,
+    mco_name text,
+    reporting_month_date date,
+    status text,
+    total_records integer,
+    processed_count integer,
+    errored_count integer,
+    resubmitted_count integer,
+    qualifying_batch_count bigint
+)
+LANGUAGE plpgsql
+STABLE
+AS $function$
+DECLARE
+    v_end_month   date;
+    v_start_month date;
+BEGIN
+    IF p_months_back IS NULL OR p_months_back < 1 OR p_months_back > 12 THEN
+        RAISE EXCEPTION 'p_months_back must be between 1 and 12 (got %)', p_months_back
+            USING ERRCODE = 'invalid_parameter_value';
+    END IF;
+
+    IF p_reporting_month IS NULL OR TRIM(p_reporting_month) = '' THEN
+        -- Default: the latest month with a counted batch that this caller can see (RLS applies).
+        SELECT MAX(mr.reporting_month_date)
+          INTO v_end_month
+          FROM mco_data.mco_records mr
+         WHERE mr.is_active
+           AND COALESCE(mr.status, '') NOT IN ('FILE_REJECTED', 'MIRTH_INTERNAL_ERROR', 'LAMBDA_INTERNAL_ERROR');
+
+        IF v_end_month IS NULL THEN
+            RETURN;
+        END IF;
+    ELSE
+        IF TRIM(p_reporting_month) !~ '^(0[1-9]|1[0-2])-[0-9]{4}$' THEN
+            RAISE EXCEPTION 'p_reporting_month must be MM-YYYY (got %)', p_reporting_month
+                USING ERRCODE = 'invalid_parameter_value';
+        END IF;
+        v_end_month := TO_DATE(TRIM(p_reporting_month), 'MM-YYYY');
+    END IF;
+
+    v_start_month := (v_end_month - make_interval(months => p_months_back))::date;
+
+    RETURN QUERY
+    WITH qualifying AS (
+        SELECT
+            mr.tenant_id,
+            mr.reporting_month_date,
+            mr.status,
+            mr.total_records,
+            mr.processed_count,
+            mr.errored_count,
+            mr.resubmitted_count,
+            COUNT(*) OVER (PARTITION BY mr.tenant_id, mr.reporting_month_date) AS batch_count,
+            ROW_NUMBER() OVER (
+                PARTITION BY mr.tenant_id, mr.reporting_month_date
+                ORDER BY mr.created_on_utc DESC, mr.batch_id DESC
+            ) AS rn
+        FROM mco_data.mco_records mr
+        WHERE mr.is_active
+          AND COALESCE(mr.status, '') NOT IN ('FILE_REJECTED', 'MIRTH_INTERNAL_ERROR', 'LAMBDA_INTERNAL_ERROR')
+          AND mr.reporting_month_date BETWEEN v_start_month AND v_end_month
+    )
+    SELECT
+        q.tenant_id,
+        t.tenant_short_code,
+        COALESCE(t.tenant_displayname, q.tenant_id),
+        q.reporting_month_date,
+        q.status,
+        q.total_records,
+        q.processed_count,
+        q.errored_count,
+        q.resubmitted_count,
+        q.batch_count
+    FROM qualifying q
+    LEFT JOIN techbd_udi_ingress.tenants t
+           ON t.tenant_id = q.tenant_id
+    WHERE q.rn = 1
+    ORDER BY LOWER(COALESCE(t.tenant_displayname, q.tenant_id)), q.reporting_month_date;
+END;
+$function$;
+
+
+/*******************************************************************************************
+* Register the Monthly Volume Comparison screen under the Monitoring menu.
+* scr_name must match the @RouteMapping label in MonitoringController. Admin roles (is_admin)
+* get every screen automatically; other roles are granted it in Role Access Management.
+* Runs after load_idp_master_data.psql (which truncates and reloads idp_screens), so it is
+* re-added on every migration run.
+******************************************************************************************/
+INSERT INTO techbd_udi_ingress.idp_screens
+(scr_id, scr_code, scr_name, description, scr_type, mnu_id, order_no, is_active, created_at, created_by, provenance, scr_group, parent_scr_id)
+VALUES
+(46, 'scr_Monthly_Volume_Comparison', 'Monthly Volume Comparison', 'Monthly Volume Comparison screen', 'page', 8, 3, true, CURRENT_TIMESTAMP, CURRENT_USER, 'Hub UI', 'data', NULL)
+ON CONFLICT (scr_code) DO NOTHING;
