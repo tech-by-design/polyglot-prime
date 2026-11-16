@@ -1,0 +1,397 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org" xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+    layout:decorate="~{layout/prime}">
+
+<head>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Monthly Volume Comparison</title>
+    <th:block th:insert="./fragments/common-head-aggrid :: common-head-aggrid"></th:block>
+    <style>
+        .grid-description {
+            font-size: 14px;
+            margin: 8px 0 10px 15px;
+        }
+
+        .mv-controls {
+            display: flex;
+            flex-wrap: wrap;
+            align-items: flex-end;
+            gap: 16px;
+            margin: 0 0 12px 15px;
+            font-size: 14px;
+        }
+
+        .mv-controls label {
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+            font-weight: 600;
+            color: #374151;
+        }
+
+        .mv-controls input,
+        .mv-controls select {
+            border: 1px solid #d1d5db;
+            border-radius: 6px;
+            padding: 6px 8px;
+            font-weight: 400;
+        }
+
+        /* TechBD orange (logo #FE6D18) */
+        .mv-button {
+            border: 1px solid #fe6d18;
+            background: #fe6d18;
+            color: #ffffff;
+            font-weight: 600;
+            border-radius: 6px;
+            padding: 7px 14px;
+            cursor: pointer;
+        }
+
+        .mv-button:hover:not(:disabled) {
+            background: #e55a0b;
+            border-color: #e55a0b;
+        }
+
+        .mv-button:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        .mv-message {
+            margin: 0 0 10px 15px;
+            font-size: 14px;
+            color: #b91c1c;
+        }
+
+        .mv-message:empty {
+            display: none;
+        }
+
+        /* Alternating tints: "Total Records" columns vs "Compared to" columns */
+        .ag-theme-alpine .mv-total {
+            background-color: #eef6fc;
+        }
+
+        .ag-theme-alpine .mv-compare {
+            background-color: #fdf6e7;
+        }
+
+        .ag-theme-alpine .ag-header-cell.mv-total,
+        .ag-theme-alpine .ag-header-group-cell.mv-total {
+            background-color: #dcecf8;
+        }
+
+        .ag-theme-alpine .ag-header-cell.mv-compare,
+        .ag-theme-alpine .ag-header-group-cell.mv-compare {
+            background-color: #f8eccc;
+        }
+
+        /* Subtle corner mark: more than one qualifying file that month (details in the tooltip).
+           Do not set `position` on the cell: AG Grid positions cells absolutely, and overriding it
+           moves the cell out of its column. The ::after below anchors to the cell as-is. */
+        .ag-theme-alpine .mv-multi-batch-cell::after {
+            content: "";
+            position: absolute;
+            top: 0;
+            right: 0;
+            border-style: solid;
+            border-width: 0 8px 8px 0;
+            border-color: transparent #d97706 transparent transparent;
+        }
+
+        .mv-legend-mark {
+            display: inline-block;
+            width: 0;
+            height: 0;
+            border-style: solid;
+            border-width: 0 8px 8px 0;
+            border-color: transparent #d97706 transparent transparent;
+            margin: 0 2px;
+        }
+
+        /* Column descriptions: same ▶/▼ toggle as the other pages (accordionToggle/accordionContent),
+           shown as a compact two-column list, one line per term. */
+        .mv-help {
+            font-size: 14px;
+            margin: 0 0 12px 15px;
+        }
+
+        .mv-help dl {
+            display: grid;
+            grid-template-columns: max-content 1fr;
+            gap: 2px 16px;
+            margin: 0 0 4px 0;
+            line-height: 1.5;
+        }
+
+        .mv-help dt {
+            font-weight: 600;
+            white-space: nowrap;
+        }
+
+        .mv-help dd {
+            margin: 0;
+        }
+
+        .ag-theme-alpine .ag-header-cell-label,
+        .ag-theme-alpine .ag-header-group-cell-label {
+            font-weight: 600;
+        }
+    </style>
+
+    <script type="module" th:inline="javascript">
+
+        import { AGGridAideBuilder } from '@presentation/shell/aggrid-aide.js';
+
+        const apiPath = "/api/monitoring/mco/monthly-volume";
+        const defaultMonthsBack = /*[[${defaultMonthsBack}]]*/ 2;
+
+        let gridApi = null;
+        let currentReport = null;
+
+        // "10-2026" <-> "2026-10" (value format of <input type="month">)
+        const toInputMonth = (mmYyyy) => mmYyyy ? `${mmYyyy.slice(3)}-${mmYyyy.slice(0, 2)}` : "";
+        const fromInputMonth = (yyyyMm) => yyyyMm ? `${yyyyMm.slice(5)}-${yyyyMm.slice(0, 4)}` : "";
+
+        // Server sends raw numbers for sorting/filtering and "<field>_display" strings for showing/exporting.
+        const displayFormatter = (params) => {
+            const field = params.colDef.field;
+            return params.data ? (params.data[`${field}_display`] ?? "") : "";
+        };
+
+        // Corner mark + tooltip when more than one qualifying file existed for that MCO and month (unlikely in prd but here to cover bases).
+        const MULTI_BATCH_TIP = "More than one qualifying file this month; the latest file is shown.";
+        const hasMultipleFiles = (params, month) =>
+            !!month && (params.data?.multi_batch_months ?? []).includes(month);
+        const multiBatchMarker = (month) => ({
+            cellClassRules: { "mv-multi-batch-cell": (params) => hasMultipleFiles(params, month) },
+            tooltipValueGetter: (params) => hasMultipleFiles(params, month) ? MULTI_BATCH_TIP : null
+        });
+
+        // Columns grow to fill the grid width (flex) but never shrink below minWidth; past that the grid scrolls.
+        const countColumn = (headerName, field, minWidth, extra = {}) => ({
+            headerName,
+            field,
+            minWidth,
+            flex: 1,
+            type: "rightAligned",
+            valueFormatter: displayFormatter,
+            ...extra
+        });
+
+        // Column groups wrap their header text instead of truncating it.
+        const group = (headerName, headerClass, children) => ({
+            headerName,
+            headerClass,
+            wrapHeaderText: true,
+            autoHeaderHeight: true,
+            children
+        });
+
+        function buildColumnDefs(report) {
+            const selected = report.reportingMonth;
+            // Same label style as the comparison groups (year only when the range crosses a year).
+            const selectedLabel = report.comparisons[0]?.currentMonthLabel ?? report.reportingMonthLabel ?? "Selected month";
+            const columns = [
+                {
+                    headerName: "MCO",
+                    field: "mco_name",
+                    pinned: "left",
+                    width: 170,
+                    sort: "asc",
+                    filter: "agTextColumnFilter",
+                    suppressHeaderMenuButton: false
+                },
+                group(selectedLabel, undefined, [
+                    { headerName: "Status", field: "status", minWidth: 160, flex: 1.3 },
+                    countColumn("Total Records", "total_records", 105, multiBatchMarker(selected)),
+                    countColumn("# Processed", "processed_count", 105),
+                    countColumn("No of Errors", "errors", 95)
+                ])
+            ];
+
+            for (const pair of report.comparisons) {
+                columns.push(group(pair.previousMonthLabel, "mv-total", [
+                    countColumn("Total Records", pair.totalKey, 105, {
+                        headerClass: "mv-total",
+                        cellClass: "mv-total",
+                        ...multiBatchMarker(pair.previousMonth)
+                    })
+                ]));
+                columns.push(group(`${pair.currentMonthLabel} compared to ${pair.previousMonthLabel}`, "mv-compare", [
+                    countColumn("Difference", pair.differenceKey, 125, { headerClass: "mv-compare", cellClass: "mv-compare" }),
+                    countColumn("%", pair.percentKey, 115, { headerClass: "mv-compare", cellClass: "mv-compare" })
+                ]));
+            }
+            return columns;
+        }
+
+        function setMessage(text) {
+            document.getElementById("mvMessage").textContent = text ?? "";
+        }
+
+        async function loadReport({ useDefaultMonth = false } = {}) {
+            const monthInput = document.getElementById("mvReportingMonth");
+            const monthsBack = document.getElementById("mvMonthsBack").value || defaultMonthsBack;
+            const params = new URLSearchParams({ months_back: monthsBack });
+            if (!useDefaultMonth && monthInput.value) {
+                params.set("reporting_month", fromInputMonth(monthInput.value));
+            }
+
+            setMessage("");
+            document.getElementById("mvExport").disabled = true;
+            gridApi.setGridOption("loading", true);
+            try {
+                const response = await fetch(window.shell.serverSideUrl(`${apiPath}?${params.toString()}`), {
+                    headers: { "Accept": "application/json" }
+                });
+                const body = await response.json().catch(() => ({}));
+                if (!response.ok) {
+                    throw new Error(body.error || `Request failed (HTTP ${response.status})`);
+                }
+
+                currentReport = body;
+                if (body.reportingMonth) {
+                    monthInput.value = toInputMonth(body.reportingMonth);
+                }
+                gridApi.setGridOption("columnDefs", buildColumnDefs(body));
+                gridApi.setGridOption("rowData", body.rows ?? []);
+                document.getElementById("mvExport").disabled = !(body.rows && body.rows.length);
+                if (!body.reportingMonth) {
+                    setMessage("No MCO files are available yet.");
+                }
+            } catch (error) {
+                console.error("Error loading monthly volume report", error);
+                currentReport = null;
+                gridApi.setGridOption("rowData", []);
+                setMessage(error.message || "Unable to load the monthly volume report.");
+            } finally {
+                gridApi.setGridOption("loading", false);
+            }
+        }
+
+        function exportCsv() {
+            if (!gridApi || !currentReport) {
+                return;
+            }
+            const quote = (text) => `"${String(text ?? "").replace(/"/g, '""')}"`;
+            gridApi.exportDataAsCsv({
+                fileName: `mco-monthly-volume-${currentReport.reportingMonth || "latest"}.csv`,
+                // First line: which month this export is for.
+                prependContent: `${quote("Monthly Volume Comparison - " + (currentReport.reportingMonthLabel || ""))}\n`
+            });
+        }
+
+        document.addEventListener("DOMContentLoaded", function () {
+            const monthsBackSelect = document.getElementById("mvMonthsBack");
+            monthsBackSelect.value = String(defaultMonthsBack);
+
+            const agGridInstance = new AGGridAideBuilder()
+                .withColumnDefs([])
+                // Sortable, resizable, columns fill the width down to a minimum (then the grid scrolls); no per-column filter/menu
+                // icons except on MCO, so header labels have room; header text wraps.
+                .withDefaultColDef({
+                    resizable: true,
+                    sortable: true,
+                    filter: false,
+                    suppressHeaderMenuButton: true,
+                    wrapHeaderText: true,
+                    autoHeaderHeight: true
+                })
+                .withGridOptions({
+                    rowModelType: "clientSide",
+                    serverSideDatasource: undefined,
+                    rowData: [],
+                    autoSizeStrategy: undefined,
+                    suppressFieldDotNotation: true,
+                    tooltipShowDelay: 200,
+                    overlayNoRowsTemplate: "<span>No MCO files for the selected months.</span>"
+                })
+                .withGridDivStyles({ height: "750px", width: "100%" })
+                .build();
+
+            gridApi = agGridInstance.init("monthlyVolumeGrid");
+
+            document.getElementById("mvReportingMonth").addEventListener("change", () => loadReport());
+            monthsBackSelect.addEventListener("change", () => loadReport());
+            document.getElementById("mvExport").addEventListener("click", exportCsv);
+
+            // Column descriptions toggle (same wording and behavior as the other Monitoring pages)
+            const toggleButton = document.getElementById("accordionToggle");
+            const accordionContent = document.getElementById("accordionContent");
+            if (toggleButton && accordionContent) {
+                toggleButton.addEventListener("click", function () {
+                    accordionContent.classList.toggle("hidden");
+                    const isHidden = accordionContent.classList.contains("hidden");
+                    toggleButton.textContent = isHidden
+                        ? "▶ Click here to view the column descriptions"
+                        : "▼ Hide column descriptions";
+                    toggleButton.setAttribute("aria-expanded", String(!isHidden));
+                });
+            }
+
+            loadReport({ useDefaultMonth: true });
+        });
+
+    </script>
+
+</head>
+
+<body>
+
+    <div layout:fragment="content">
+
+        <div class="grid-description">
+            <p>Monthly ESMF volume by MCO for the selected reporting month, compared with each earlier month.</p>
+        </div>
+
+        <div class="mv-help">
+            <button id="accordionToggle" type="button" aria-expanded="false" aria-controls="accordionContent"
+                class="mb-2 text-blue-700 font-semibold hover:underline focus:outline-none">
+                ▶ Click here to view the column descriptions
+            </button>
+            <div id="accordionContent" class="hidden pl-4 border-l-2 border-blue-200">
+                <dl>
+                    <dt>Total Records</dt>
+                    <dd>Records in the MCO's file that month. Rejected files are not counted; resubmissions update the same file.</dd>
+
+                    <dt>No of Errors</dt>
+                    <dd>0 once the file is fully processed; otherwise the current error count.</dd>
+
+                    <dt>Difference</dt>
+                    <dd>Later month minus earlier month. Decreases are in parentheses, e.g. (300).</dd>
+
+                    <dt>%</dt>
+                    <dd>Change from the earlier month, as a whole number. Blank when the earlier month had 0 records.</dd>
+
+                    <dt>Blank cell</dt>
+                    <dd>The MCO had no counted file that month.</dd>
+
+                    <dt><span class="mv-legend-mark" aria-hidden="true"></span> Corner mark</dt>
+                    <dd>More than one file qualified that month; the most recent is shown. Hover the cell for details.</dd>
+                </dl>
+            </div>
+        </div>
+
+        <div class="mv-controls">
+            <label for="mvReportingMonth">Reporting month
+                <input type="month" id="mvReportingMonth" />
+            </label>
+            <label for="mvMonthsBack">Months to compare
+                <select id="mvMonthsBack">
+                    <option th:each="n : ${#numbers.sequence(1, maxMonthsBack)}" th:value="${n}" th:text="${n}">4</option>
+                </select>
+            </label>
+            <button type="button" id="mvExport" class="mv-button" disabled>Export CSV</button>
+        </div>
+
+        <div id="mvMessage" class="mv-message" role="status"></div>
+
+        <div id="monthlyVolumeGrid" class="ag-theme-alpine"></div>
+
+    </div>
+
+</body>
+
+</html>
