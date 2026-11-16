@@ -1,0 +1,125 @@
+/* Queries to identify all the incomplete submissions.
+ -- Please update the <start_date> and <end_date> as per the preference in the lines 16, 91 as below before executing the query.
+ -- AND created_at >= DATE '2026-10-01'
+    AND created_at <  DATE '2026-10-07' + INTERVAL '1 day'
+*/
+
+-------------------------------Incomplete FHIR Submissions-------------------------------------
+-- Queries to identify all the incomplete FHIR submissions.
+-- Q1. Query to get all the incomplete FHIR submissions with full details including which nature is missing.
+
+WITH bundles_in_range AS (
+    -- bundles that have at least one row in the date range
+    SELECT DISTINCT bundle_id, hub_interaction_id
+    FROM techbd_udi_ingress.sat_interaction_fhir_request
+    WHERE bundle_id IS NOT NULL
+      AND created_at >= DATE '<start_date>'
+      AND created_at <  DATE '<end_date>' + INTERVAL '1 day'
+),
+bundle_summary AS (
+    SELECT
+        fhir.bundle_id,
+        fhir.hub_interaction_id,
+        MIN(fhir.uri)         FILTER (WHERE fhir.nature = 'Original FHIR Payload') AS uri,
+        MIN(fhir.source_type) FILTER (WHERE fhir.nature = 'Original FHIR Payload') AS source_type,
+        COUNT(*)                                                        AS total_records,
+        COUNT(DISTINCT fhir.nature)                                     AS distinct_natures,
+        ARRAY_AGG(DISTINCT fhir.nature ORDER BY fhir.nature)            AS natures_present,
+        MIN(fhir.created_at)                                            AS first_created_at,
+        MAX(fhir.created_at)                                            AS last_created_at,
+
+        BOOL_OR(fhir.nature = 'Original FHIR Payload'
+                AND fhir.to_state = 'ACCEPT_FHIR_BUNDLE')               AS has_original_payload,
+        BOOL_OR(fhir.nature = 'techByDesignDisposition'
+                AND fhir.to_state = 'DISPOSITION')                      AS has_disposition,
+        BOOL_OR(fhir.nature = 'Forward HTTP Request'
+                AND fhir.to_state = 'FORWARD')                          AS has_forward_request,
+        -- Forward outcome: success OR error
+        BOOL_OR(fhir.nature = 'Forwarded HTTP Response'
+                AND fhir.to_state = 'COMPLETE')                         AS has_response_success,
+        BOOL_OR(fhir.nature = 'Forwarded HTTP Response Error'
+                AND fhir.to_state = 'FAIL')                             AS has_response_error
+    FROM techbd_udi_ingress.sat_interaction_fhir_request fhir
+    JOIN bundles_in_range r
+      ON  r.bundle_id          = fhir.bundle_id
+      AND r.hub_interaction_id = fhir.hub_interaction_id
+    GROUP BY fhir.bundle_id, fhir.hub_interaction_id
+    HAVING
+          -- exclude $validate calls
+          NOT BOOL_OR(COALESCE(fhir.uri, '') LIKE '%$validate%')
+          -- exclude replayed FHIR bundles
+      AND NOT BOOL_OR(fhir.nature IN ('Forwarded HTTP Request Replay',
+                                      'Forwarded HTTP Response Replay',
+                                      'Forwarded HTTP Response Replay Error'))
+),
+flagged AS (
+    SELECT
+        bs.*,
+        ARRAY_REMOVE(ARRAY[
+            CASE WHEN NOT has_original_payload THEN 'Original FHIR Payload'   END,
+            CASE WHEN NOT has_disposition      THEN 'techByDesignDisposition' END,
+            CASE WHEN NOT has_forward_request  THEN 'Forward HTTP Request'    END,
+            CASE WHEN NOT (has_response_success OR has_response_error)
+                 THEN 'Forwarded HTTP Response / Forwarded HTTP Response Error' END
+        ], NULL) AS missing_natures
+    FROM bundle_summary bs
+)
+SELECT
+    bundle_id,
+    hub_interaction_id,
+    uri,
+    source_type,
+    total_records,
+    distinct_natures,
+    natures_present,
+    first_created_at,
+    last_created_at,
+    missing_natures
+FROM flagged
+WHERE CARDINALITY(missing_natures) > 0
+ORDER BY last_created_at DESC;
+
+
+------------------------------------------------------------------------------------------------
+-- Q2. Short query to list only the hub_interaction_id, bundle_id and created_at fields for the incomplete FHIR submissions.
+
+WITH bundles_in_range AS (
+    -- bundles that have at least one row in the date range
+    SELECT DISTINCT bundle_id, hub_interaction_id
+    FROM techbd_udi_ingress.sat_interaction_fhir_request
+    WHERE bundle_id IS NOT NULL
+      AND created_at >= DATE '<start_date>'
+      AND created_at <  DATE '<end_date>' + INTERVAL '1 day'
+)
+SELECT
+    fhir.bundle_id,
+    fhir.hub_interaction_id,
+    MIN(fhir.created_at) AS created_at
+FROM techbd_udi_ingress.sat_interaction_fhir_request fhir
+JOIN bundles_in_range r
+  ON  r.bundle_id          = fhir.bundle_id
+  AND r.hub_interaction_id = fhir.hub_interaction_id
+GROUP BY fhir.bundle_id, fhir.hub_interaction_id
+HAVING
+      -- exclude $validate calls
+      NOT BOOL_OR(COALESCE(fhir.uri, '') LIKE '%$validate%')
+
+      -- exclude replayed FHIR bundles
+  AND NOT BOOL_OR(fhir.nature IN ('Forwarded HTTP Request Replay',
+                                  'Forwarded HTTP Response Replay',
+                                  'Forwarded HTTP Response Replay Error'))
+
+  AND (
+        -- one of the 3 mandatory steps is missing
+        NOT (
+                BOOL_OR(fhir.nature = 'Original FHIR Payload'   AND fhir.to_state = 'ACCEPT_FHIR_BUNDLE')
+            AND BOOL_OR(fhir.nature = 'techByDesignDisposition' AND fhir.to_state = 'DISPOSITION')
+            AND BOOL_OR(fhir.nature = 'Forward HTTP Request'    AND fhir.to_state = 'FORWARD')
+        )
+        -- neither a success nor an error response was recorded
+        OR NOT (
+               BOOL_OR(fhir.nature = 'Forwarded HTTP Response'       AND fhir.to_state = 'COMPLETE')
+            OR BOOL_OR(fhir.nature = 'Forwarded HTTP Response Error' AND fhir.to_state = 'FAIL')
+        )
+      )
+ORDER BY created_at DESC;
