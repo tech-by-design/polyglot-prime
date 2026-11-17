@@ -55,10 +55,10 @@ To generate SQL and ERD for the UDI model, run the following command:
 ```bash
 cd udi-prime
 
-# "freshen" a development database and generate everything all at once
+# "freshen" a development database and generate everything all at once (the UDI_INCLUDE_INDEXES is true by default here and thus all the indexes will be generated)
 ./udictl.ts ic omnibus-fresh
 
-# "freshen" a development database and generate everything all at once and deploy the JAR file to the target lib directories
+# "freshen" a development database and generate everything all at once (with all the indexes) and deploy the JAR file to the target lib directories
 ./udictl.ts ic omnibus-fresh --deploy-jar
 
 # when you want to run specific commands individually
@@ -126,11 +126,14 @@ $ sudo upt install -y postgresql-client
 
 Once generated SQL is loaded in the database, you can execute the migration in your PostgreSQL
 database using one of the following `udictl.ts ic migrate` commands:
+Please note that the '010_idempotent_create_indexes.psql' file contains the SQL statements for creating indexes on all tables. 
+To include these statements during migration, add 'UDI_INCLUDE_INDEXES=true' before the './udictl.ts' command.
 
 ```bash
 cd udi-prime
-./udictl.ts ic migrate --help           # review SQL migration options
-./udictl.ts ic migrate                  # use generated SQL to perform migrations without destroying existing objects
+./udictl.ts ic migrate --help                      # review SQL migration options
+./udictl.ts ic migrate                             # use generated SQL to perform migrations without destroying existing objects
+UDI_INCLUDE_INDEXES=true ./udictl.ts ic migrate    # use generated SQL to perform migrations without destroying existing objects, including all the indexes to tables
 
 ```
 
