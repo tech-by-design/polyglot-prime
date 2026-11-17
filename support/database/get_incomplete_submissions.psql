@@ -47,6 +47,7 @@ bundle_summary AS (
     HAVING
           -- exclude $validate calls
           NOT BOOL_OR(COALESCE(fhir.uri, '') LIKE '%$validate%')
+      AND NOT BOOL_OR(LOWER(COALESCE(fhir.techbd_disposition_action, '')) = 'discard')
           -- exclude replayed FHIR bundles
       AND NOT BOOL_OR(fhir.nature IN ('Forwarded HTTP Request Replay',
                                       'Forwarded HTTP Response Replay',
@@ -104,6 +105,9 @@ HAVING
       -- exclude $validate calls
       NOT BOOL_OR(COALESCE(fhir.uri, '') LIKE '%$validate%')
 
+      -- exclude discarded bundles (processing stops here by design)
+  AND NOT BOOL_OR(LOWER(COALESCE(fhir.techbd_disposition_action, '')) = 'discard')
+
       -- exclude replayed FHIR bundles
   AND NOT BOOL_OR(fhir.nature IN ('Forwarded HTTP Request Replay',
                                   'Forwarded HTTP Response Replay',
@@ -123,3 +127,535 @@ HAVING
         )
       )
 ORDER BY created_at DESC;
+
+
+
+-------------------------------Incomplete CCDA Submissions-------------------------------------
+-- Queries to identify all the incomplete CCDA submissions.
+-- Q3. Query to get all the incomplete CCDA submissions with full details including which nature is missing.
+
+WITH ccda_in_range AS (
+    SELECT DISTINCT hub_interaction_id
+    FROM techbd_udi_ingress.sat_interaction_ccda_request
+    WHERE hub_interaction_id IS NOT NULL
+      AND created_at >= DATE '<start_date>'
+      AND created_at <  DATE '<end_date>' + INTERVAL '1 day'
+),
+ccda_summary AS (
+    SELECT
+        c.hub_interaction_id,
+        -- uri from the original payload row; falls back to any row if the original is missing
+        COALESCE(MIN(c.uri) FILTER (WHERE c.nature = 'Original CCDA Payload'),
+                 MIN(c.uri))                                          AS uri,
+        COUNT(*)                                                      AS total_records,
+        COUNT(DISTINCT c.nature)                                      AS distinct_natures,
+        ARRAY_AGG(DISTINCT c.nature ORDER BY c.nature)                AS natures_present,
+        MIN(c.created_at)                                             AS first_created_at,
+        MAX(c.created_at)                                             AS last_created_at,
+
+        BOOL_OR(c.nature = 'Original CCDA Payload'
+                AND c.to_state = 'CCDA_ACCEPT')                       AS has_original_payload,
+        BOOL_OR(c.nature = 'CCDA Validation Result'
+                AND c.to_state IN ('VALIDATION_SUCCESS',
+                                   'VALIDATION_FAILED'))              AS has_validation_result,
+        BOOL_OR(c.nature = 'Converted to FHIR'
+                AND c.to_state IN ('CONVERTED_TO_FHIR',
+                                   'FHIR_CONVERTION_FAILED'))         AS has_converted_to_fhir
+    FROM techbd_udi_ingress.sat_interaction_ccda_request c
+    JOIN ccda_in_range r ON r.hub_interaction_id = c.hub_interaction_id
+    GROUP BY c.hub_interaction_id
+    HAVING NOT BOOL_OR(COALESCE(c.uri, '') LIKE '%$validate%')
+       AND NOT BOOL_OR(c.nature = 'CCDA Validation Result'
+                       AND c.to_state = 'VALIDATION_FAILED')
+),
+flagged AS (
+    SELECT
+        s.*,
+        ARRAY_REMOVE(ARRAY[
+            CASE WHEN NOT has_original_payload  THEN 'Original CCDA Payload'  END,
+            CASE WHEN NOT has_validation_result THEN 'CCDA Validation Result' END,
+            CASE WHEN NOT has_converted_to_fhir THEN 'Converted to FHIR'      END
+        ], NULL) AS missing_natures
+    FROM ccda_summary s
+)
+SELECT
+    hub_interaction_id,
+    uri,
+    total_records,
+    distinct_natures,
+    natures_present,
+    first_created_at,
+    last_created_at,
+    missing_natures
+FROM flagged
+WHERE CARDINALITY(missing_natures) > 0
+ORDER BY last_created_at DESC;
+
+
+------------------------------------------------------------------------------------------------
+-- Q4. Short query to list only the hub_interaction_id and created_at fields for the incomplete CCDA submissions.
+
+WITH ccda_in_range AS (
+    SELECT DISTINCT hub_interaction_id
+    FROM techbd_udi_ingress.sat_interaction_ccda_request
+    WHERE hub_interaction_id IS NOT NULL
+      AND created_at >= DATE '<start_date>'
+      AND created_at <  DATE '<end_date>' + INTERVAL '1 day'
+)
+SELECT
+    c.hub_interaction_id,
+    MIN(c.created_at) AS created_at
+FROM techbd_udi_ingress.sat_interaction_ccda_request c
+JOIN ccda_in_range r ON r.hub_interaction_id = c.hub_interaction_id
+GROUP BY c.hub_interaction_id
+HAVING
+      -- exclude $validate calls
+      NOT BOOL_OR(COALESCE(c.uri, '') LIKE '%$validate%')
+
+      -- exclude submissions that failed validation (processing stops here)
+  AND NOT BOOL_OR(c.nature = 'CCDA Validation Result'
+                  AND c.to_state = 'VALIDATION_FAILED')
+
+      -- at least one of the 3 mandatory records is missing
+  AND NOT (
+            BOOL_OR(c.nature = 'Original CCDA Payload'
+                    AND c.to_state = 'CCDA_ACCEPT')
+        AND BOOL_OR(c.nature = 'CCDA Validation Result'
+                    AND c.to_state IN ('VALIDATION_SUCCESS', 'VALIDATION_FAILED'))
+        AND BOOL_OR(c.nature = 'Converted to FHIR'
+                    AND c.to_state IN ('CONVERTED_TO_FHIR', 'FHIR_CONVERTION_FAILED'))
+      )
+ORDER BY created_at DESC;
+
+-------------------------------Incomplete HL7 Submissions-------------------------------------
+-- Queries to identify all the incomplete HL7 submissions.
+-- Q5. Query to get all the incomplete HL7 submissions with full details including which nature is missing.
+
+WITH hl7_in_range AS (
+    SELECT DISTINCT hub_interaction_id
+    FROM techbd_udi_ingress.sat_interaction_hl7_request
+    WHERE hub_interaction_id IS NOT NULL
+      AND created_at >= DATE '<start_date>'
+      AND created_at <  DATE '<end_date>' + INTERVAL '1 day'
+),
+hl7_summary AS (
+    SELECT
+        h.hub_interaction_id,
+        -- uri from the original payload row; falls back to any row if the original is missing
+        COALESCE(MIN(h.uri) FILTER (WHERE h.nature = 'Original HL7 Payload'),
+                 MIN(h.uri))                                          AS uri,
+        COUNT(*)                                                      AS total_records,
+        COUNT(DISTINCT h.nature)                                      AS distinct_natures,
+        ARRAY_AGG(DISTINCT h.nature ORDER BY h.nature)                AS natures_present,
+        MIN(h.created_at)                                             AS first_created_at,
+        MAX(h.created_at)                                             AS last_created_at,
+
+        BOOL_OR(h.nature = 'Original HL7 Payload'
+                AND h.to_state = 'HL7_ACCEPT')                        AS has_original_payload,
+        BOOL_OR(h.nature = 'HL7 Validation Result'
+                AND h.to_state IN ('VALIDATION_SUCCESS',
+                                   'VALIDATION_FAILED'))              AS has_validation_result,
+        BOOL_OR(h.nature = 'Converted to FHIR'
+                AND h.to_state IN ('CONVERTED_TO_FHIR',
+                                   'FHIR_CONVERTION_FAILED'))         AS has_converted_to_fhir
+    FROM techbd_udi_ingress.sat_interaction_hl7_request h
+    JOIN hl7_in_range r ON r.hub_interaction_id = h.hub_interaction_id
+    GROUP BY h.hub_interaction_id
+    HAVING NOT BOOL_OR(COALESCE(h.uri, '') LIKE '%$validate%')
+       AND NOT BOOL_OR(h.nature = 'HL7 Validation Result'
+                       AND h.to_state = 'VALIDATION_FAILED')
+),
+flagged AS (
+    SELECT
+        s.*,
+        ARRAY_REMOVE(ARRAY[
+            CASE WHEN NOT has_original_payload  THEN 'Original HL7 Payload'  END,
+            CASE WHEN NOT has_validation_result THEN 'HL7 Validation Result' END,
+            CASE WHEN NOT has_converted_to_fhir THEN 'Converted to FHIR'     END
+        ], NULL) AS missing_natures
+    FROM hl7_summary s
+)
+SELECT
+    hub_interaction_id,
+    uri,
+    total_records,
+    distinct_natures,
+    natures_present,
+    first_created_at,
+    last_created_at,
+    missing_natures
+FROM flagged
+WHERE CARDINALITY(missing_natures) > 0
+ORDER BY last_created_at DESC;
+
+
+------------------------------------------------------------------------------------------------
+-- Q6. Short query to list only the hub_interaction_id and created_at fields for the incomplete HL7 submissions.
+
+WITH hl7_in_range AS (
+    SELECT DISTINCT hub_interaction_id
+    FROM techbd_udi_ingress.sat_interaction_hl7_request
+    WHERE hub_interaction_id IS NOT NULL
+      AND created_at >= DATE '<start_date>'
+      AND created_at <  DATE '<end_date>' + INTERVAL '1 day'
+)
+SELECT
+    h.hub_interaction_id,
+    MIN(h.created_at) AS created_at
+FROM techbd_udi_ingress.sat_interaction_hl7_request h
+JOIN hl7_in_range r ON r.hub_interaction_id = h.hub_interaction_id
+GROUP BY h.hub_interaction_id
+HAVING
+      -- exclude $validate calls
+      NOT BOOL_OR(COALESCE(h.uri, '') LIKE '%$validate%')
+
+      -- exclude submissions that failed validation (processing stops here)
+  AND NOT BOOL_OR(h.nature = 'HL7 Validation Result'
+                  AND h.to_state = 'VALIDATION_FAILED')
+
+      -- at least one of the 3 mandatory records is missing
+  AND NOT (
+            BOOL_OR(h.nature = 'Original HL7 Payload'
+                    AND h.to_state = 'HL7_ACCEPT')
+        AND BOOL_OR(h.nature = 'HL7 Validation Result'
+                    AND h.to_state IN ('VALIDATION_SUCCESS', 'VALIDATION_FAILED'))
+        AND BOOL_OR(h.nature = 'Converted to FHIR'
+                    AND h.to_state IN ('CONVERTED_TO_FHIR', 'FHIR_CONVERTION_FAILED'))
+      )
+ORDER BY created_at DESC;
+
+
+
+
+-------------------------------Incomplete CSV Submissions-------------------------------------
+-- Queries to identify all the incomplete CSV submissions.
+-- Q7. Query to get all the incomplete CSV submissions with full details including which nature is missing.
+
+WITH zips_in_range AS (
+    SELECT hub_interaction_id AS zip_id
+    FROM techbd_udi_ingress.sat_interaction_zip_file_request
+    WHERE hub_interaction_id IS NOT NULL
+      AND created_at >= DATE '<start_date>'
+      AND created_at <  DATE '<end_date>' + INTERVAL '1 day'
+    UNION
+    SELECT zip_file_hub_interaction_id
+    FROM techbd_udi_ingress.sat_interaction_flat_file_csv_request
+    WHERE zip_file_hub_interaction_id IS NOT NULL
+      AND created_at >= DATE '<start_date>'
+      AND created_at <  DATE '<end_date>' + INTERVAL '1 day'
+),
+csv_ids AS (
+    -- every CSV group that belongs to a zip in range
+    SELECT DISTINCT hub_interaction_id AS csv_id
+    FROM techbd_udi_ingress.sat_interaction_flat_file_csv_request
+    WHERE zip_file_hub_interaction_id IN (SELECT zip_id FROM zips_in_range)
+),
+zip_summary AS (
+    SELECT
+        z.hub_interaction_id                                            AS zip_id,
+        MIN(z.uri)                                                      AS uri,
+        MIN(z.created_at)                                               AS created_at,
+        MAX(z.total_number_of_files_in_zip_file)                        AS total_files_in_zip,
+        MAX(z.number_of_fhir_bundles_generated_from_zip_file)           AS fhir_bundles_generated,
+        ARRAY_AGG(DISTINCT z.nature)                                    AS zip_natures,
+        BOOL_OR(z.nature = 'Original CSV Zip Archive')                  AS has_zip,
+        BOOL_OR(COALESCE(z.uri, '') LIKE '%$validate%')                 AS is_validate_call
+    FROM techbd_udi_ingress.sat_interaction_zip_file_request z
+    JOIN zips_in_range r ON r.zip_id = z.hub_interaction_id
+    GROUP BY z.hub_interaction_id
+),
+csv_summary AS (
+    SELECT
+        c.hub_interaction_id                                            AS csv_id,
+        MAX(c.zip_file_hub_interaction_id)                              AS zip_id,
+        MIN(c.uri)                                                      AS uri,
+        COUNT(*)                                                        AS total_records,
+        ARRAY_AGG(DISTINCT c.nature)                                    AS csv_natures,
+        MIN(c.created_at)                                               AS first_created_at,
+        MAX(c.created_at)                                               AS last_created_at,
+        BOOL_OR(c.nature = 'Original Flat File CSV'
+                AND c.to_state = 'CSV_ACCEPT')                          AS has_original_csv,
+        BOOL_OR(c.nature = 'CSV Validation Result'
+                AND c.to_state = 'VALIDATION_SUCCESS')                  AS has_validation_success,
+        BOOL_OR(c.to_state = 'VALIDATION_FAILED')                       AS has_validation_failed,
+        BOOL_OR(c.nature = 'Converted to FHIR'
+                AND c.to_state = 'CONVERTED_TO_FHIR')                   AS has_conversion_success,
+        BOOL_OR(c.to_state = 'FHIR_CONVERTION_FAILED')                  AS has_conversion_failed,
+        BOOL_OR(COALESCE(c.uri, '') LIKE '%$validate%')                 AS is_validate_call
+    FROM techbd_udi_ingress.sat_interaction_flat_file_csv_request c
+    JOIN csv_ids i ON i.csv_id = c.hub_interaction_id
+    GROUP BY c.hub_interaction_id
+),
+fhir_summary AS (
+    SELECT
+        f.group_hub_interaction_id                                      AS csv_id,
+        MIN(f.bundle_id::text)                                          AS bundle_id,
+        COUNT(*)                                                        AS fhir_records,
+        ARRAY_AGG(DISTINCT f.nature)                                    AS fhir_natures,
+        MIN(f.created_at)                                               AS fhir_first_created_at,
+        MAX(f.created_at)                                               AS fhir_last_created_at,
+        BOOL_OR(f.nature = 'Original FHIR Payload'
+                AND f.to_state = 'ACCEPT_FHIR_BUNDLE')                  AS has_original_payload,
+        BOOL_OR(f.nature = 'techByDesignDisposition'
+                AND f.to_state = 'DISPOSITION')                         AS has_disposition,
+        BOOL_OR(f.nature = 'Forward HTTP Request'
+                AND f.to_state = 'FORWARD')                             AS has_forward_request,
+        BOOL_OR(f.nature = 'Forwarded HTTP Response'
+                AND f.to_state = 'COMPLETE')                            AS has_response_success,
+        BOOL_OR(f.nature = 'Forwarded HTTP Response Error'
+                AND f.to_state = 'FAIL')                                AS has_response_error,
+        BOOL_OR(LOWER(COALESCE(f.techbd_disposition_action, '')) = 'discard') AS is_discarded,
+        BOOL_OR(f.nature IN ('Forwarded HTTP Request Replay',
+                             'Forwarded HTTP Response Replay',
+                             'Forwarded HTTP Response Replay Error'))   AS is_replayed,
+        BOOL_OR(COALESCE(f.uri, '') LIKE '%$validate%')                 AS is_validate_call
+    FROM techbd_udi_ingress.sat_interaction_fhir_request f
+    JOIN csv_ids i ON i.csv_id = f.group_hub_interaction_id
+    GROUP BY f.group_hub_interaction_id
+),
+flagged AS (
+    -- Part 1: CSV groups
+    SELECT
+        c.zip_id                                                        AS zip_hub_interaction_id,
+        c.csv_id                                                        AS csv_hub_interaction_id,
+        f.bundle_id,
+        COALESCE(z.uri, c.uri)                                          AS uri,
+        z.total_files_in_zip,
+        z.fhir_bundles_generated,
+        c.total_records + COALESCE(f.fhir_records, 0)                   AS total_records,
+        (
+            SELECT ARRAY_AGG(DISTINCT n ORDER BY n)
+            FROM UNNEST(
+                COALESCE(z.zip_natures,  ARRAY[]::text[]) ||
+                COALESCE(c.csv_natures,  ARRAY[]::text[]) ||
+                COALESCE(f.fhir_natures, ARRAY[]::text[])
+            ) AS n
+        )                                                               AS natures_present,
+        COALESCE(z.created_at, c.first_created_at)                      AS first_created_at,
+        GREATEST(c.last_created_at, f.fhir_last_created_at)             AS last_created_at,
+        ARRAY_REMOVE(ARRAY[
+            CASE WHEN NOT COALESCE(z.has_zip, FALSE)
+                 THEN 'Original CSV Zip Archive' END,
+            CASE WHEN NOT c.has_original_csv
+                 THEN 'Original Flat File CSV' END,
+            CASE WHEN NOT c.has_validation_success
+                 THEN 'CSV Validation Result' END,
+            CASE WHEN NOT c.has_conversion_success
+                 THEN 'Converted to FHIR' END,
+            -- FHIR steps are expected only after a successful conversion
+            CASE WHEN c.has_conversion_success AND NOT COALESCE(f.has_original_payload, FALSE)
+                 THEN 'Original FHIR Payload' END,
+            CASE WHEN c.has_conversion_success AND NOT COALESCE(f.has_disposition, FALSE)
+                 THEN 'techByDesignDisposition' END,
+            CASE WHEN c.has_conversion_success AND NOT COALESCE(f.has_forward_request, FALSE)
+                 THEN 'Forward HTTP Request' END,
+            CASE WHEN c.has_conversion_success
+                  AND NOT (COALESCE(f.has_response_success, FALSE) OR COALESCE(f.has_response_error, FALSE))
+                 THEN 'Forwarded HTTP Response / Forwarded HTTP Response Error' END
+        ], NULL)                                                        AS missing_natures
+    FROM csv_summary c
+    LEFT JOIN zip_summary  z ON z.zip_id = c.zip_id
+    LEFT JOIN fhir_summary f ON f.csv_id = c.csv_id
+    WHERE NOT c.is_validate_call
+      AND NOT COALESCE(z.is_validate_call, FALSE)
+      AND NOT COALESCE(f.is_validate_call, FALSE)
+      AND NOT c.has_validation_failed          -- stops here
+      AND NOT c.has_conversion_failed          -- stops here
+      AND NOT COALESCE(f.is_discarded, FALSE)  -- stops here
+      AND NOT COALESCE(f.is_replayed, FALSE)
+
+    UNION ALL
+
+    -- Part 2: zips that produced no CSV group at all
+    SELECT
+        z.zip_id,
+        NULL::text,
+        NULL::text,
+        z.uri,
+        z.total_files_in_zip,
+        z.fhir_bundles_generated,
+        0,
+        z.zip_natures,
+        z.created_at,
+        z.created_at,
+        ARRAY['Original Flat File CSV (no groups extracted from zip)']
+    FROM zip_summary z
+    WHERE NOT z.is_validate_call
+      AND NOT EXISTS (
+            SELECT 1
+            FROM techbd_udi_ingress.sat_interaction_flat_file_csv_request c2
+            WHERE c2.zip_file_hub_interaction_id = z.zip_id
+      )
+)
+SELECT *
+FROM flagged
+WHERE CARDINALITY(missing_natures) > 0
+ORDER BY last_created_at DESC;
+
+
+------------------------------------------------------------------------------------------------
+-- Q8. Short query to list only the hub_interaction_id and created_at fields for the incomplete CSV submissions.
+
+WITH zips_in_range AS (
+    SELECT hub_interaction_id AS zip_id
+    FROM techbd_udi_ingress.sat_interaction_zip_file_request
+    WHERE hub_interaction_id IS NOT NULL
+      AND created_at >= DATE '<start_date>'
+      AND created_at <  DATE '<end_date>' + INTERVAL '1 day'
+    UNION
+    SELECT zip_file_hub_interaction_id
+    FROM techbd_udi_ingress.sat_interaction_flat_file_csv_request
+    WHERE zip_file_hub_interaction_id IS NOT NULL
+      AND created_at >= DATE '<start_date>'
+      AND created_at <  DATE '<end_date>' + INTERVAL '1 day'
+),
+csv_ids AS (
+    -- every CSV group that belongs to a zip in range
+    SELECT DISTINCT hub_interaction_id AS csv_id
+    FROM techbd_udi_ingress.sat_interaction_flat_file_csv_request
+    WHERE zip_file_hub_interaction_id IN (SELECT zip_id FROM zips_in_range)
+),
+zip_summary AS (
+    SELECT
+        z.hub_interaction_id                                            AS zip_id,
+        MIN(z.uri)                                                      AS uri,
+        MIN(z.created_at)                                               AS created_at,
+        MAX(z.total_number_of_files_in_zip_file)                        AS total_files_in_zip,
+        MAX(z.number_of_fhir_bundles_generated_from_zip_file)           AS fhir_bundles_generated,
+        ARRAY_AGG(DISTINCT z.nature)                                    AS zip_natures,
+        BOOL_OR(z.nature = 'Original CSV Zip Archive')                  AS has_zip,
+        BOOL_OR(COALESCE(z.uri, '') LIKE '%$validate%')                 AS is_validate_call
+    FROM techbd_udi_ingress.sat_interaction_zip_file_request z
+    JOIN zips_in_range r ON r.zip_id = z.hub_interaction_id
+    GROUP BY z.hub_interaction_id
+),
+csv_summary AS (
+    SELECT
+        c.hub_interaction_id                                            AS csv_id,
+        MAX(c.zip_file_hub_interaction_id)                              AS zip_id,
+        MIN(c.uri)                                                      AS uri,
+        COUNT(*)                                                        AS total_records,
+        ARRAY_AGG(DISTINCT c.nature)                                    AS csv_natures,
+        MIN(c.created_at)                                               AS first_created_at,
+        MAX(c.created_at)                                               AS last_created_at,
+        BOOL_OR(c.nature = 'Original Flat File CSV'
+                AND c.to_state = 'CSV_ACCEPT')                          AS has_original_csv,
+        BOOL_OR(c.nature = 'CSV Validation Result'
+                AND c.to_state = 'VALIDATION_SUCCESS')                  AS has_validation_success,
+        BOOL_OR(c.to_state = 'VALIDATION_FAILED')                       AS has_validation_failed,
+        BOOL_OR(c.nature = 'Converted to FHIR'
+                AND c.to_state = 'CONVERTED_TO_FHIR')                   AS has_conversion_success,
+        BOOL_OR(c.to_state = 'FHIR_CONVERTION_FAILED')                  AS has_conversion_failed,
+        BOOL_OR(COALESCE(c.uri, '') LIKE '%$validate%')                 AS is_validate_call
+    FROM techbd_udi_ingress.sat_interaction_flat_file_csv_request c
+    JOIN csv_ids i ON i.csv_id = c.hub_interaction_id
+    GROUP BY c.hub_interaction_id
+),
+fhir_summary AS (
+    SELECT
+        f.group_hub_interaction_id                                      AS csv_id,
+        MIN(f.bundle_id::text)                                          AS bundle_id,
+        COUNT(*)                                                        AS fhir_records,
+        ARRAY_AGG(DISTINCT f.nature)                                    AS fhir_natures,
+        MIN(f.created_at)                                               AS fhir_first_created_at,
+        MAX(f.created_at)                                               AS fhir_last_created_at,
+        BOOL_OR(f.nature = 'Original FHIR Payload'
+                AND f.to_state = 'ACCEPT_FHIR_BUNDLE')                  AS has_original_payload,
+        BOOL_OR(f.nature = 'techByDesignDisposition'
+                AND f.to_state = 'DISPOSITION')                         AS has_disposition,
+        BOOL_OR(f.nature = 'Forward HTTP Request'
+                AND f.to_state = 'FORWARD')                             AS has_forward_request,
+        BOOL_OR(f.nature = 'Forwarded HTTP Response'
+                AND f.to_state = 'COMPLETE')                            AS has_response_success,
+        BOOL_OR(f.nature = 'Forwarded HTTP Response Error'
+                AND f.to_state = 'FAIL')                                AS has_response_error,
+        BOOL_OR(LOWER(COALESCE(f.techbd_disposition_action, '')) = 'discard') AS is_discarded,
+        BOOL_OR(f.nature IN ('Forwarded HTTP Request Replay',
+                             'Forwarded HTTP Response Replay',
+                             'Forwarded HTTP Response Replay Error'))   AS is_replayed,
+        BOOL_OR(COALESCE(f.uri, '') LIKE '%$validate%')                 AS is_validate_call
+    FROM techbd_udi_ingress.sat_interaction_fhir_request f
+    JOIN csv_ids i ON i.csv_id = f.group_hub_interaction_id
+    GROUP BY f.group_hub_interaction_id
+),
+flagged AS (
+    -- Part 1: CSV groups
+    SELECT
+        c.zip_id                                                        AS zip_hub_interaction_id,
+        c.csv_id                                                        AS csv_hub_interaction_id,
+        f.bundle_id,
+        COALESCE(z.uri, c.uri)                                          AS uri,
+        z.total_files_in_zip,
+        z.fhir_bundles_generated,
+        c.total_records + COALESCE(f.fhir_records, 0)                   AS total_records,
+        (
+            SELECT ARRAY_AGG(DISTINCT n ORDER BY n)
+            FROM UNNEST(
+                COALESCE(z.zip_natures,  ARRAY[]::text[]) ||
+                COALESCE(c.csv_natures,  ARRAY[]::text[]) ||
+                COALESCE(f.fhir_natures, ARRAY[]::text[])
+            ) AS n
+        )                                                               AS natures_present,
+        COALESCE(z.created_at, c.first_created_at)                      AS first_created_at,
+        GREATEST(c.last_created_at, f.fhir_last_created_at)             AS last_created_at,
+        ARRAY_REMOVE(ARRAY[
+            CASE WHEN NOT COALESCE(z.has_zip, FALSE)
+                 THEN 'Original CSV Zip Archive' END,
+            CASE WHEN NOT c.has_original_csv
+                 THEN 'Original Flat File CSV' END,
+            CASE WHEN NOT c.has_validation_success
+                 THEN 'CSV Validation Result' END,
+            CASE WHEN NOT c.has_conversion_success
+                 THEN 'Converted to FHIR' END,
+            -- FHIR steps are expected only after a successful conversion
+            CASE WHEN c.has_conversion_success AND NOT COALESCE(f.has_original_payload, FALSE)
+                 THEN 'Original FHIR Payload' END,
+            CASE WHEN c.has_conversion_success AND NOT COALESCE(f.has_disposition, FALSE)
+                 THEN 'techByDesignDisposition' END,
+            CASE WHEN c.has_conversion_success AND NOT COALESCE(f.has_forward_request, FALSE)
+                 THEN 'Forward HTTP Request' END,
+            CASE WHEN c.has_conversion_success
+                  AND NOT (COALESCE(f.has_response_success, FALSE) OR COALESCE(f.has_response_error, FALSE))
+                 THEN 'Forwarded HTTP Response / Forwarded HTTP Response Error' END
+        ], NULL)                                                        AS missing_natures
+    FROM csv_summary c
+    LEFT JOIN zip_summary  z ON z.zip_id = c.zip_id
+    LEFT JOIN fhir_summary f ON f.csv_id = c.csv_id
+    WHERE NOT c.is_validate_call
+      AND NOT COALESCE(z.is_validate_call, FALSE)
+      AND NOT COALESCE(f.is_validate_call, FALSE)
+      AND NOT c.has_validation_failed          -- stops here
+      AND NOT c.has_conversion_failed          -- stops here
+      AND NOT COALESCE(f.is_discarded, FALSE)  -- stops here
+      AND NOT COALESCE(f.is_replayed, FALSE)
+
+    UNION ALL
+
+    -- Part 2: zips that produced no CSV group at all
+    SELECT
+        z.zip_id,
+        NULL::text,
+        NULL::text,
+        z.uri,
+        z.total_files_in_zip,
+        z.fhir_bundles_generated,
+        0,
+        z.zip_natures,
+        z.created_at,
+        z.created_at,
+        ARRAY['Original Flat File CSV (no groups extracted from zip)']
+    FROM zip_summary z
+    WHERE NOT z.is_validate_call
+      AND NOT EXISTS (
+            SELECT 1
+            FROM techbd_udi_ingress.sat_interaction_flat_file_csv_request c2
+            WHERE c2.zip_file_hub_interaction_id = z.zip_id
+      )
+)
+SELECT
+    zip_hub_interaction_id,
+    csv_hub_interaction_id,
+    first_created_at AS created_at
+FROM flagged
+WHERE CARDINALITY(missing_natures) > 0
+ORDER BY first_created_at DESC;
