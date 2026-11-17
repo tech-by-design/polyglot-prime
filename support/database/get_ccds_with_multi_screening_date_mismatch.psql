@@ -1,5 +1,5 @@
 /* Query to find CCDs that would have had multiple screenings come in and may not have been counted because of the effectiveDateTime issue.
- -- Please update the <start_date> and <end_date> as per the preference in the line 48 as beow before executing the query.
+ -- Please update the <start_date> and <end_date> as per the preference in the line 48 as below before executing the query.
  -- AND r.created_at >= '2026-10-01' AND r.created_at < date('2026-10-07') + INTERVAL '1 day'
 */
 
@@ -45,8 +45,8 @@ src AS MATERIALIZED (
   FROM techbd_udi_ingress.sat_interaction_ccda_request r
   WHERE r.nature = 'Original CCDA Payload'
     AND r.ccda_payload_text IS NOT NULL
-    AND r.created_at >= '2026-10-01' 
-    AND r.created_at < date('2026-10-07') + INTERVAL '1 day'
+    AND r.created_at >= '<start_date>' 
+    AND r.created_at < date('<end_date>') + INTERVAL '1 day'
     AND r.ccda_payload_text ~ '71802-3|96778-6|96779-4|88122-7|88123-5|93030-5|96780-2|96782-8|95618-5|95617-7|95616-9|95615-1|95614-4'
   ORDER BY r.hub_interaction_id, r.created_at DESC
 ),
