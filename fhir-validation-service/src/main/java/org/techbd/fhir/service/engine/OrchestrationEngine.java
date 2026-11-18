@@ -17,8 +17,11 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.TreeMap;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.atomic.AtomicLong;
 import java.util.stream.Collectors;
 import java.util.stream.StreamSupport;
 
@@ -56,6 +59,8 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.annotation.JsonSerialize;
+import com.github.benmanes.caffeine.cache.Cache;
+import com.github.benmanes.caffeine.cache.Caffeine;
 
 import ca.uhn.fhir.context.FhirContext;
 import ca.uhn.fhir.context.support.DefaultProfileValidationSupport;
@@ -285,19 +290,24 @@ public class OrchestrationEngine {
 
     @Getter
     public static class HapiValidationEngine implements OrchestrationEngine.ValidationEngine {
+        private static final int MAX_DYNAMIC_FHIR_BUNDLE_VALIDATORS = 32;
+
         private final Observability observability;
         private final Instant engineInitAt = Instant.now();
         private final Instant engineConstructedAt;
-        private String fhirProfileUrl;
+        private final String fhirProfileUrl;
         private final FhirContext fhirContext;
         private final Map<String, FhirV4Config> igPackages;
-        private String igVersion;
+        private final String igVersion;
         private final Tracer tracer;
         private final AppLogger appLogger;
         private final TemplateLogger LOG;
         private final String interactionId;
-        private final List<FhirBundleValidator> fhirBundleValidators;
-        
+        private final List<ValidatorCacheKey> configuredValidatorKeys = new ArrayList<>();
+        private final Cache<ValidatorCacheKey, CachedFhirBundleValidator> fhirBundleValidators;
+        private final AtomicLong validatorInitializationCount = new AtomicLong();
+        private final AtomicInteger activeValidations = new AtomicInteger();
+
         private HapiValidationEngine(final Builder builder) {
             this.fhirProfileUrl = builder.fhirProfileUrl;
             this.fhirContext = FhirContext.forR4();
@@ -312,8 +322,19 @@ public class OrchestrationEngine {
             this.appLogger = builder.appLogger;
             this.LOG = builder.LOG;
             this.interactionId = builder.interactionId;
-            this.fhirBundleValidators = new ArrayList<>();
+            final int configuredValidatorCount = configuredPackageCount(igPackages);
+            this.fhirBundleValidators = Caffeine.newBuilder()
+                    .maximumSize((long) configuredValidatorCount + MAX_DYNAMIC_FHIR_BUNDLE_VALIDATORS)
+                    .recordStats()
+                    .build();
             initializeFhirBundleValidators();
+        }
+
+        private static int configuredPackageCount(Map<String, FhirV4Config> igPackages) {
+            final FhirV4Config fhirV4Config = igPackages == null ? null : igPackages.get("fhir-v4");
+            final Map<String, ShinnyPackageConfig> shinNyPackages =
+                    fhirV4Config == null ? null : fhirV4Config.getShinnyPackages();
+            return shinNyPackages == null ? 0 : shinNyPackages.size();
         }
 
         private void initializeFhirBundleValidators() {
@@ -323,41 +344,41 @@ public class OrchestrationEngine {
 
                 if (igPackages != null && igPackages.containsKey("fhir-v4")) {
                     FhirV4Config fhirV4Config = igPackages.get("fhir-v4");
-                    Map<String, ShinnyPackageConfig> shinNyPackages = fhirV4Config.getShinnyPackages();
-                    LOG.info("Number of SHIN-NY IG Packages to be loaded :{} for interactionId :{} ",
-                            shinNyPackages == null ? 0 : shinNyPackages.size(), interactionId);
-                    Map<String, String> defaultBasePackages = fhirV4Config.getBasePackages();
-                    LOG.info("Number of Default Base Packages to be loaded :{} interactionId :{} ",
-                            defaultBasePackages == null ? 0 : defaultBasePackages.size(), interactionId);
-                    if (shinNyPackages != null) {
-                        for (ShinnyPackageConfig igPackage : shinNyPackages.values()) {
-                            if (igPackage == null) {
-                                continue;
+                    if (fhirV4Config == null) {
+                        LOG.warn("Configured FHIR v4 package metadata was null for interaction id :{}", interactionId);
+                    } else {
+                        Map<String, ShinnyPackageConfig> shinNyPackages = fhirV4Config.getShinnyPackages();
+                        LOG.info("Number of SHIN-NY IG Packages to be loaded :{} for interactionId :{} ",
+                                shinNyPackages == null ? 0 : shinNyPackages.size(), interactionId);
+                        Map<String, String> defaultBasePackages = fhirV4Config.getBasePackages();
+                        LOG.info("Number of Default Base Packages to be loaded :{} interactionId :{} ",
+                                defaultBasePackages == null ? 0 : defaultBasePackages.size(), interactionId);
+                        if (shinNyPackages != null) {
+                            for (ShinnyPackageConfig igPackage : shinNyPackages.values()) {
+                                if (igPackage == null) {
+                                    continue;
+                                }
+                                String packagePath = igPackage.getPackagePath();
+                                String profileBaseUrl = igPackage.getProfileBaseUrl();
+                                String igVersion = igPackage.getIgVersion();
+
+                                Map<String, String> basePackages = igPackage.getBasePackages() != null
+                                        ? igPackage.getBasePackages()
+                                        : defaultBasePackages;
+                                LOG.info("Creating FhirBundleValidator for package: {} interactionId :{}", packagePath,
+                                        interactionId);
+
+                                final ValidatorCacheKey cacheKey =
+                                        ValidatorCacheKey.create(packagePath, igVersion, profileBaseUrl, basePackages);
+                                if (!configuredValidatorKeys.contains(cacheKey)) {
+                                    configuredValidatorKeys.add(cacheKey);
+                                }
+                                getOrCreateFhirBundleValidator(cacheKey);
+                                LOG.info("Creating validator: package={}, igVersion={}, basePackages={}",
+                                        packagePath,
+                                        igVersion,
+                                        basePackages);
                             }
-                            String packagePath = igPackage.getPackagePath();
-                            String profileBaseUrl = igPackage.getProfileBaseUrl();
-                            String igVersion = igPackage.getIgVersion();
-
-                            Map<String, String> basePackages = igPackage.getBasePackages() != null
-                                    ? igPackage.getBasePackages()
-                                    : defaultBasePackages;
-                            LOG.info("Creating FhirBundleValidator for package: {} interactionId :{}", packagePath,
-                                    interactionId);
-
-                            FhirBundleValidator bundleValidator = FhirBundleValidator.builder()
-                                    .fhirContext(FhirContext.forR4())
-                                    .fhirValidator(initializeFhirValidator(packagePath, basePackages, profileBaseUrl, igVersion)) // Pass
-                                                                                                                       // igPackageMap
-                                    // directly
-                                    .baseFHIRUrl(profileBaseUrl)
-                                    .packagePath(packagePath)
-                                    .igVersion(igVersion)
-                                    .build();
-                            fhirBundleValidators.add(bundleValidator);
-                            LOG.info("Creating validator: package={}, igVersion={}, basePackages={}",
-                                    packagePath,
-                                    igVersion,
-                                    basePackages);
                         }
                     }
                 } else {
@@ -366,6 +387,70 @@ public class OrchestrationEngine {
             } finally {
                 span.end();
             }
+        }
+
+        private FhirBundleValidator getOrCreateFhirBundleValidator(ValidatorCacheKey cacheKey) {
+            final CachedFhirBundleValidator cachedValidator = fhirBundleValidators.get(cacheKey, key -> {
+                final FhirBundleValidator validator = FhirBundleValidator.builder()
+                        .fhirContext(FhirContext.forR4())
+                        .fhirValidator(initializeFhirValidator(
+                                key.packageIdentity(),
+                                key.basePackageConfiguration(),
+                                key.profileBaseUrl(),
+                                key.igVersion()))
+                        .baseFHIRUrl(key.profileBaseUrl())
+                        .packagePath(key.packageIdentity())
+                        .igVersion(key.igVersion())
+                        .build();
+                final long initializationNumber = validatorInitializationCount.incrementAndGet();
+                LOG.info(
+                        "Initialized FHIR validator: package={}, IG version={}, profileBaseUrl={}, "
+                                + "initializationCount={}, activeValidations={}",
+                        key.packageIdentity(),
+                        key.igVersion(),
+                        key.profileBaseUrl(),
+                        initializationNumber,
+                        activeValidations.get());
+                return new CachedFhirBundleValidator(key, validator, initializationNumber);
+            });
+            final var cacheStats = fhirBundleValidators.stats();
+            LOG.debug(
+                    "FHIR validator cache lookup: hitCount={}, missCount={}, initializationCount={}, "
+                            + "cacheSize={}, activeValidations={}",
+                    cacheStats.hitCount(),
+                    cacheStats.missCount(),
+                    validatorInitializationCount.get(),
+                    fhirBundleValidators.estimatedSize(),
+                    activeValidations.get());
+            return cachedValidator.validator();
+        }
+
+        private record ValidatorCacheKey(
+                String packageIdentity,
+                String igVersion,
+                String profileBaseUrl,
+                Map<String, String> basePackageConfiguration) {
+
+            private static ValidatorCacheKey create(
+                    String packageIdentity,
+                    String igVersion,
+                    String profileBaseUrl,
+                    Map<String, String> basePackageConfiguration) {
+                final Map<String, String> stableBasePackageConfiguration =
+                        Collections.unmodifiableMap(new TreeMap<>(
+                                basePackageConfiguration == null ? Map.of() : basePackageConfiguration));
+                return new ValidatorCacheKey(
+                        packageIdentity,
+                        igVersion,
+                        profileBaseUrl,
+                        stableBasePackageConfiguration);
+            }
+        }
+
+        private record CachedFhirBundleValidator(
+                ValidatorCacheKey key,
+                FhirBundleValidator validator,
+                long initializationOrder) {
         }
 
         public FhirValidator initializeFhirValidator(String shinNyPackagePath, Map<String, String> basePackages, String profileBaseUrl , String igVersion) {
@@ -487,11 +572,22 @@ public class OrchestrationEngine {
         }
 
         public FhirBundleValidator findFhirBundleValidator(String profileUrl) {
-            return fhirBundleValidators.stream()
-                    .peek(validator -> System.out.println("Checking Profile URL: " + validator.getFhirProfileUrl()))
-                    .filter(validator -> validator.getFhirProfileUrl().equals(profileUrl))
-                    .findFirst()
-                    .orElse(null);
+            for (final ValidatorCacheKey cacheKey : configuredValidatorKeys) {
+                if (Objects.equals(FHIRUtil.getProfileUrl(cacheKey.profileBaseUrl(), FHIRUtil.BUNDLE), profileUrl)) {
+                    return getOrCreateFhirBundleValidator(cacheKey);
+                }
+            }
+
+            CachedFhirBundleValidator firstMatchingValidator = null;
+            for (final CachedFhirBundleValidator cachedValidator : fhirBundleValidators.asMap().values()) {
+                if (!configuredValidatorKeys.contains(cachedValidator.key())
+                        && Objects.equals(cachedValidator.validator().getFhirProfileUrl(), profileUrl)
+                        && (firstMatchingValidator == null
+                                || cachedValidator.initializationOrder() < firstMatchingValidator.initializationOrder())) {
+                    firstMatchingValidator = cachedValidator;
+                }
+            }
+            return firstMatchingValidator == null ? null : firstMatchingValidator.validator();
         }
 
         // 1. Validate after parsing into Bundle
@@ -530,6 +626,8 @@ public class OrchestrationEngine {
                 final String interactionId, final String requestedIgVersion) {
             final var initiatedAt = Instant.now();
             Span span = tracer.spanBuilder("OrchestrationEngine.validate").startSpan();
+            String resolvedProfileUrl = null;
+            String resolvedIgVersion = null;
             try {
                 try {
                     LOG.info("VALIDATOR -BEGIN initiated At : {} for interactionid:{}", initiatedAt, interactionId);
@@ -538,11 +636,16 @@ public class OrchestrationEngine {
                     FhirBundleValidator bundleValidator;
                     String shinNyPackagePath = null;
                     var headerIgVersion = requestedIgVersion;
-                    FhirV4Config fhirV4Config = igPackages.get("fhir-v4");
-                    Map<String, ShinnyPackageConfig> shinNyPackages = fhirV4Config.getShinnyPackages();
-                    Map<String, String> defaultBasePackages = fhirV4Config.getBasePackages();
+                    FhirV4Config fhirV4Config = igPackages == null ? null : igPackages.get("fhir-v4");
+                    Map<String, ShinnyPackageConfig> shinNyPackages = fhirV4Config == null ? null : fhirV4Config.getShinnyPackages();
+                    Map<String, String> defaultBasePackages = fhirV4Config == null ? null : fhirV4Config.getBasePackages();
                     ShinnyPackageConfig matchingPackage = null;
 
+                    if (headerIgVersion != null && fhirV4Config == null) {
+                        LOG.warn("No configured FHIR package metadata for requested IG version {} for interactionId :{}",
+                                headerIgVersion, interactionId);
+                        headerIgVersion = null;
+                    }
                     if (headerIgVersion != null) {
                         if (profileUrl != null && profileUrl.toLowerCase().contains("test")) {
                             shinNyPackagePath = "ig-packages/shin-ny-ig/test-shinny/v" + headerIgVersion;
@@ -575,21 +678,18 @@ public class OrchestrationEngine {
                                         ? matchingPackage.getBasePackages()
                                         : defaultBasePackages;
                         
-                        String profileBaseUrl = profileUrl;
-                        if (profileUrl != null) {
+                        String profileBaseUrl = matchingPackage != null
+                                ? matchingPackage.getProfileBaseUrl()
+                                : profileUrl;
+                        if (matchingPackage == null && profileUrl != null) {
                             int idx = profileUrl.indexOf("/StructureDefinition/");
                             if (idx != -1) {
                                 profileBaseUrl = profileUrl.substring(0, idx);
                             }
-                        }                                
-                        bundleValidator = FhirBundleValidator.builder()
-                                .fhirContext(FhirContext.forR4())
-                                .fhirValidator(initializeFhirValidator(shinNyPackagePath, basePackages, profileBaseUrl, headerIgVersion))
-                                .baseFHIRUrl(profileBaseUrl)
-                                .packagePath(shinNyPackagePath)
-                                .igVersion(headerIgVersion)
-                                .build();
-                        fhirBundleValidators.add(bundleValidator);
+                        }
+                        final ValidatorCacheKey cacheKey = ValidatorCacheKey.create(
+                                shinNyPackagePath, headerIgVersion, profileBaseUrl, basePackages);
+                        bundleValidator = getOrCreateFhirBundleValidator(cacheKey);
                     } else {
                         bundleValidator = findFhirBundleValidator(profileUrl);
                     }
@@ -602,15 +702,26 @@ public class OrchestrationEngine {
                                 "Bundle validated against version :{} using package at path: {} for interactionId :{} ",
                                 bundleValidator.getIgVersion(), bundleValidator.getPackagePath(), interactionId);
                     }
-                    this.igVersion = bundleValidator.getIgVersion();
-                                        this.fhirProfileUrl = bundleValidator.getFhirProfileUrl();
+                    resolvedProfileUrl = bundleValidator.getFhirProfileUrl();
+                    resolvedIgVersion = bundleValidator.getIgVersion();
                     fhirContext.setParserErrorHandler(new LenientErrorHandler());
 
-                    final var hapiVR = validateAsRawPayload(payload, fhirContext, bundleValidator, interactionId);
+                    activeValidations.incrementAndGet();
+                    LOG.debug("FHIR validation started: interactionId={}, activeValidations={}",
+                            interactionId, activeValidations.get());
+                    final ca.uhn.fhir.validation.ValidationResult hapiVR;
+                    try {
+                        hapiVR = validateAsRawPayload(payload, fhirContext, bundleValidator, interactionId);
+                    } finally {
+                        activeValidations.decrementAndGet();
+                        LOG.debug("FHIR validation finished: interactionId={}, activeValidations={}",
+                                interactionId, activeValidations.get());
+                    }
                     final var completedAt = Instant.now();
+                    final String resultProfileUrl = resolvedProfileUrl;
+                    final String resultIgVersion = resolvedIgVersion;
                     LOG.info("VALIDATOR -END completed at :{} ms for interactionId:{} with ig version :{}",
-                            Duration.between(initiatedAt, completedAt).toMillis(), interactionId, igVersion);
-                    this.igVersion = bundleValidator.getIgVersion();  
+                            Duration.between(initiatedAt, completedAt).toMillis(), interactionId, resultIgVersion);
                     return new OrchestrationEngine.ValidationResult() {
                         @Override
                         @JsonSerialize(using = JsonTextSerializer.class)
@@ -628,15 +739,15 @@ public class OrchestrationEngine {
                         @Override
                         public String getProfileUrl() {
                             LOG.info("Profile url in final outcome :{}  for interactionId :{} ",
-                                    HapiValidationEngine.this.fhirProfileUrl, interactionId);
-                            return HapiValidationEngine.this.fhirProfileUrl;
+                                    resultProfileUrl, interactionId);
+                            return resultProfileUrl;
                         }
 
                         @Override
                         public String getIgVersion() {
-                            LOG.info("IG version in final outcome :{}    for interactionId :{} ", igVersion,
+                            LOG.info("IG version in final outcome :{}    for interactionId :{} ", resultIgVersion,
                                     interactionId);
-                            return igVersion;
+                            return resultIgVersion;
                         }
 
                         @Override
@@ -657,6 +768,8 @@ public class OrchestrationEngine {
 
                 } catch (final Exception e) {
                     final var completedAt = Instant.now();
+                    final String failedProfileUrl = resolvedProfileUrl;
+                    final String failedIgVersion = resolvedIgVersion;
                     return new OrchestrationEngine.ValidationResult() {
                         @Override
                         @JsonSerialize(using = JsonTextSerializer.class)
@@ -677,12 +790,12 @@ public class OrchestrationEngine {
 
                         @Override
                         public String getProfileUrl() {
-                            return HapiValidationEngine.this.fhirProfileUrl;
+                            return failedProfileUrl;
                         }
 
                         @Override
                         public String getIgVersion() {
-                            return igVersion;
+                            return failedIgVersion;
                         }
 
                         @Override
