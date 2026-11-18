@@ -9,10 +9,10 @@
       <boolProp name="TestPlan.serialize_threadgroups">false</boolProp>
     </TestPlan>
     <hashTree>
-      <ThreadGroup guiclass="ThreadGroupGui" testclass="ThreadGroup" testname="Hl7_Bundle_Smoke_Test_Devl">
+      <ThreadGroup guiclass="ThreadGroupGui" testclass="ThreadGroup" testname="Hl7_Bundle_Smoke_Test_UAT">
         <intProp name="ThreadGroup.num_threads">2</intProp>
         <intProp name="ThreadGroup.ramp_time">2</intProp>
-        <boolProp name="ThreadGroup.same_user_on_next_iteration">false</boolProp>
+        <boolProp name="ThreadGroup.same_user_on_next_iteration">true</boolProp>
         <stringProp name="ThreadGroup.on_sample_error">continue</stringProp>
         <elementProp name="ThreadGroup.main_controller" elementType="LoopController" guiclass="LoopControlPanel" testclass="LoopController" testname="Loop Controller">
           <stringProp name="LoopController.loops">1</stringProp>
@@ -20,9 +20,9 @@
         </elementProp>
       </ThreadGroup>
       <hashTree>
-        <HTTPSamplerProxy guiclass="HttpTestSampleGui" testclass="HTTPSamplerProxy" testname="HL7_BUNDLE_Stage_Devl">
+        <HTTPSamplerProxy guiclass="HttpTestSampleGui" testclass="HTTPSamplerProxy" testname="HL7_BUNDLE_UAT">
           <stringProp name="TestPlan.comments">HL7 Bundle API test</stringProp>
-          <stringProp name="HTTPSampler.domain">fhir.api.dev.techbd.org</stringProp>
+          <stringProp name="HTTPSampler.domain">phi.fhir.api.qa.techbd.org</stringProp>
           <stringProp name="HTTPSampler.protocol">https</stringProp>
           <stringProp name="HTTPSampler.path">/hl7v2/Bundle</stringProp>
           <boolProp name="HTTPSampler.follow_redirects">true</boolProp>
@@ -86,7 +86,7 @@
           </CSVDataSet>
           <hashTree/>
           <CSVDataSet guiclass="TestBeanGUI" testclass="CSVDataSet" testname="Upload File Path">
-            <stringProp name="filename">./test-automation/Nexus-HL7-Bundle-SmokeTest-Devl/Input_files.csv</stringProp>
+            <stringProp name="filename">./test-automation/HL7-Bundle-SmokeTest-PHI-QA/Input_files.csv</stringProp>
             <stringProp name="fileEncoding"></stringProp>
             <stringProp name="variableNames">FilePath</stringProp>
             <boolProp name="ignoreFirstLine">false</boolProp>
