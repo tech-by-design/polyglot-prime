@@ -714,14 +714,34 @@
               ],
               "text": "<xsl:value-of select="$encounterTypeDisplay"/>"
             }
-          ],
+          ]
         </xsl:if>
-        "class": {
+
+        <!-- "class": {
           "system": "http://terminology.hl7.org/CodeSystem/v3-ActCode",
           "code": "<xsl:value-of select="ccda:code/@code"/>",
           "display": "<xsl:value-of select="ccda:code/@displayName"/>"
-        },
-        "subject" : {
+        }, -->
+        <!-- Encounter class codes from http://terminology.hl7.org/CodeSystem/v3-ActCode (pipe-delimited) -->
+        <xsl:variable name="actCodeList" select="'|AMB|EMER|FLD|HH|IMP|ACUTE|NONAC|OBSENC|PRENC|SS|VR|'"/>
+        <xsl:variable name="classCode" select="normalize-space(ccda:code/@code)"/>
+
+        <xsl:if test="$classCode != '' and not(ccda:code/@nullFlavor)">
+          <xsl:variable name="isActCode" select="contains($actCodeList, concat('|', $classCode, '|'))"/>
+
+          , "class": {
+            "system": "<xsl:choose>
+                        <xsl:when test="$isActCode">http://terminology.hl7.org/CodeSystem/v3-ActCode</xsl:when>
+                        <xsl:otherwise>http://www.ama-assn.org/go/cpt</xsl:otherwise>
+                      </xsl:choose>",
+            "code": "<xsl:value-of select="$classCode"/>"
+            <xsl:if test="normalize-space(ccda:code/@displayName) != ''">,
+                "display": "<xsl:value-of select="ccda:code/@displayName"/>"
+            </xsl:if>
+          }
+        </xsl:if>
+
+        , "subject" : {
           "reference" : "<xsl:value-of select='$baseFhirUrl'/>/Patient/<xsl:value-of select='$patientResourceId'/>",
           "display" : "<xsl:value-of select="$patientResourceName"/>"
         }
