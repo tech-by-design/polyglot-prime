@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<!-- Version : 0.1.4 -->
+<!-- Version : 0.1.5 -->
 <xsl:stylesheet xmlns:xsl="http://www.w3.org/1999/XSL/Transform" version="1.0"
                 xmlns:ccda="urn:hl7-org:v3"
                 xmlns:fhir="http://hl7.org/fhir"
@@ -918,4 +918,62 @@
     </xsl:choose>
   </xsl:template>
 
+  <xsl:template name="GetEncounterClass">
+    <!-- Node that contains the ccda:code element (encounter, encompassingEncounter, etc.). Defaults to current node. -->
+    <xsl:param name="encounter" select="."/>
+
+    <xsl:variable name="actOid" select="'2.16.840.1.113883.5.4'"/>
+    <xsl:variable name="cptOid" select="'2.16.840.1.113883.6.12'"/>
+
+    <!-- 1st preference: ActCode (code before translation, by document order) -->
+    <xsl:variable name="actNode"
+      select="($encounter/ccda:code[@codeSystem = $actOid][normalize-space(@code) != '']
+              | $encounter/ccda:code/ccda:translation[@codeSystem = $actOid][normalize-space(@code) != ''])[1]"/>
+
+    <!-- 2nd preference: CPT, used only when no ActCode node exists -->
+    <xsl:variable name="cptNode"
+      select="($encounter/ccda:code[@codeSystem = $cptOid][normalize-space(@code) != '']
+              | $encounter/ccda:code/ccda:translation[@codeSystem = $cptOid][normalize-space(@code) != ''])[1]"/>
+
+    <xsl:variable name="classNode" select="($actNode | $cptNode[not($actNode)])[1]"/>
+
+    <xsl:if test="$classNode">
+      <xsl:variable name="classCode" select="normalize-space($classNode/@code)"/>
+      <xsl:variable name="isCpt" select="$classNode/@codeSystem = $cptOid"/>
+
+      <xsl:variable name="classDisplay">
+        <xsl:choose>
+          <xsl:when test="normalize-space($classNode/@displayName) != ''">
+            <xsl:value-of select="normalize-space($classNode/@displayName)"/>
+          </xsl:when>
+          <xsl:when test="not($isCpt)">
+            <xsl:choose>
+              <xsl:when test="$classCode = 'AMB'">ambulatory</xsl:when>
+              <xsl:when test="$classCode = 'EMER'">emergency</xsl:when>
+              <xsl:when test="$classCode = 'FLD'">field</xsl:when>
+              <xsl:when test="$classCode = 'HH'">home health</xsl:when>
+              <xsl:when test="$classCode = 'IMP'">inpatient encounter</xsl:when>
+              <xsl:when test="$classCode = 'ACUTE'">inpatient acute</xsl:when>
+              <xsl:when test="$classCode = 'NONAC'">inpatient non-acute</xsl:when>
+              <xsl:when test="$classCode = 'OBSENC'">observation encounter</xsl:when>
+              <xsl:when test="$classCode = 'PRENC'">pre-admission</xsl:when>
+              <xsl:when test="$classCode = 'SS'">short stay</xsl:when>
+              <xsl:when test="$classCode = 'VR'">virtual</xsl:when>
+            </xsl:choose>
+          </xsl:when>
+        </xsl:choose>
+      </xsl:variable>
+
+      , "class": {
+        "system": "<xsl:choose>
+                      <xsl:when test="$isCpt">http://www.ama-assn.org/go/cpt</xsl:when>
+                      <xsl:otherwise>http://terminology.hl7.org/CodeSystem/v3-ActCode</xsl:otherwise>
+                    </xsl:choose>",
+        "code": "<xsl:value-of select="$classCode"/>"
+        <xsl:if test="string($classDisplay) != ''">
+          , "display": "<xsl:value-of select="$classDisplay"/>"
+        </xsl:if>
+      }
+    </xsl:if>
+  </xsl:template>
 </xsl:stylesheet>
