@@ -1,0 +1,112 @@
+/* Queries to identify all the incomplete submissions.
+ -- Please update the :'start_date' and :'end_date' as per the preference in the line 14 as below before executing the query (remove the ":").
+ -- AND created_at >= DATE '2026-10-01'
+    AND created_at <  DATE '2026-10-07' + INTERVAL '1 day'
+*/
+
+-------------------------------Incomplete HL7 Submissions-------------------------------------
+-- Q3. Query to get all the incomplete HL7 submissions with full details including which nature is missing till the complete FHIR conversion process.
+
+WITH hl7_in_range AS (
+    SELECT DISTINCT hub_interaction_id
+    FROM techbd_udi_ingress.sat_interaction_hl7_request
+    WHERE hub_interaction_id IS NOT NULL
+      AND created_at >= DATE :'start_date'
+      AND created_at <  DATE :'end_date' + INTERVAL '1 day'
+),
+hl7_summary AS (
+    SELECT
+        h.hub_interaction_id,
+        -- uri from the original payload row; falls back to any row if the original is missing
+        COALESCE(MIN(h.uri) FILTER (WHERE h.nature = 'Original HL7 Payload'),
+                 MIN(h.uri))                                          AS uri,
+        COUNT(*)                                                      AS hl7_records,
+        ARRAY_AGG(DISTINCT h.nature)                                  AS hl7_natures,
+        MIN(h.created_at)                                             AS first_created_at,
+        MAX(h.created_at)                                             AS last_created_at,
+        BOOL_OR(h.nature = 'Original HL7 Payload'
+                AND h.to_state = 'HL7_ACCEPT')                        AS has_original_payload,
+        BOOL_OR(h.nature = 'HL7 Validation Result'
+                AND h.to_state = 'VALIDATION_SUCCESS')                AS has_validation_success,
+        BOOL_OR(h.nature = 'HL7 Validation Result'
+                AND h.to_state = 'VALIDATION_FAILED')                 AS has_validation_failed,
+        BOOL_OR(h.nature = 'Converted to FHIR'
+                AND h.to_state = 'CONVERTED_TO_FHIR')                 AS has_conversion_success,
+        BOOL_OR(h.nature = 'Converted to FHIR'
+                AND h.to_state = 'FHIR_CONVERTION_FAILED')            AS has_conversion_failed,
+        BOOL_OR(COALESCE(h.uri, '') LIKE '%$validate%')               AS is_validate_call
+    FROM techbd_udi_ingress.sat_interaction_hl7_request h
+    JOIN hl7_in_range r ON r.hub_interaction_id = h.hub_interaction_id
+    GROUP BY h.hub_interaction_id
+),
+fhir_summary AS (
+    SELECT
+        f.hub_interaction_id,
+        MIN(f.bundle_id::text)                                        AS bundle_id,
+        COUNT(*)                                                      AS fhir_records,
+        ARRAY_AGG(DISTINCT f.nature)                                  AS fhir_natures,
+        MAX(f.created_at)                                             AS fhir_last_created_at,
+        BOOL_OR(f.nature = 'Original FHIR Payload'
+                AND f.to_state = 'ACCEPT_FHIR_BUNDLE')                AS has_fhir_payload,
+        BOOL_OR(f.nature = 'techByDesignDisposition'
+                AND f.to_state = 'DISPOSITION')                       AS has_disposition,
+        BOOL_OR(f.nature = 'Forward HTTP Request'
+                AND f.to_state = 'FORWARD')                           AS has_forward_request,
+        BOOL_OR(f.nature = 'Forwarded HTTP Response'
+                AND f.to_state = 'COMPLETE')                          AS has_response_success,
+        BOOL_OR(f.nature = 'Forwarded HTTP Response Error'
+                AND f.to_state = 'FAIL')                              AS has_response_error,
+        BOOL_OR(LOWER(COALESCE(f.techbd_disposition_action, '')) = 'discard') AS is_discarded,
+        BOOL_OR(f.nature IN ('Forwarded HTTP Request Replay',
+                             'Forwarded HTTP Response Replay',
+                             'Forwarded HTTP Response Replay Error')) AS is_replayed,
+        BOOL_OR(COALESCE(f.uri, '') LIKE '%$validate%')               AS is_validate_call
+    FROM techbd_udi_ingress.sat_interaction_fhir_request f
+    JOIN hl7_in_range r ON r.hub_interaction_id = f.hub_interaction_id
+    GROUP BY f.hub_interaction_id
+),
+flagged AS (
+    SELECT
+        h.hub_interaction_id,
+        f.bundle_id,
+        h.uri,
+        h.hl7_records + COALESCE(f.fhir_records, 0)                   AS total_records,
+        (
+            SELECT ARRAY_AGG(DISTINCT n ORDER BY n)
+            FROM UNNEST(
+                COALESCE(h.hl7_natures,  ARRAY[]::text[]) ||
+                COALESCE(f.fhir_natures, ARRAY[]::text[])
+            ) AS n
+        )                                                             AS natures_present,
+        h.first_created_at,
+        GREATEST(h.last_created_at, f.fhir_last_created_at)           AS last_created_at,
+        ARRAY_REMOVE(ARRAY[
+            CASE WHEN NOT h.has_original_payload
+                 THEN 'Original HL7 Payload' END,
+            CASE WHEN NOT h.has_validation_success
+                 THEN 'HL7 Validation Result' END,
+            CASE WHEN NOT h.has_conversion_success
+                 THEN 'Converted to FHIR' END,
+            CASE WHEN h.has_conversion_success AND NOT COALESCE(f.has_fhir_payload, FALSE)
+                 THEN 'Original FHIR Payload' END,
+            CASE WHEN h.has_conversion_success AND NOT COALESCE(f.has_disposition, FALSE)
+                 THEN 'techByDesignDisposition' END,
+            CASE WHEN h.has_conversion_success AND NOT COALESCE(f.has_forward_request, FALSE)
+                 THEN 'Forward HTTP Request' END,
+            CASE WHEN h.has_conversion_success
+                  AND NOT (COALESCE(f.has_response_success, FALSE) OR COALESCE(f.has_response_error, FALSE))
+                 THEN 'Forwarded HTTP Response / Forwarded HTTP Response Error' END
+        ], NULL)                                                      AS missing_natures
+    FROM hl7_summary h
+    LEFT JOIN fhir_summary f ON f.hub_interaction_id = h.hub_interaction_id
+    WHERE NOT h.is_validate_call
+      AND NOT COALESCE(f.is_validate_call, FALSE)
+      AND NOT h.has_validation_failed
+      AND NOT h.has_conversion_failed
+      AND NOT COALESCE(f.is_discarded, FALSE)
+      AND NOT COALESCE(f.is_replayed, FALSE)
+)
+SELECT *
+FROM flagged
+WHERE CARDINALITY(missing_natures) > 0
+ORDER BY last_created_at DESC;
