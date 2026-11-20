@@ -1,108 +1,159 @@
 /* Query to find CCDs that would have had multiple screenings come in and may not have been counted because of the effectiveDateTime issue.
- -- Please update the <start_date> and <end_date> as per the preference in the line 48 as below before executing the query.
- -- AND r.created_at >= '2026-10-01' AND r.created_at < date('2026-10-07') + INTERVAL '1 day'
+-- Please update the :'start_date' and :'end_date' as per the preference in the line 32 as below before executing the query (remove the ":").
+ -- AND s.created_at >= '2026-10-01' AND s.created_at < date('2026-10-07') + INTERVAL '1 day'
 */
 
--- Helper 1: tolerant XML parser 
-CREATE OR REPLACE FUNCTION techbd_udi_ingress.try_xml(p text) RETURNS xml LANGUAGE plpgsql AS $$
+CREATE OR REPLACE FUNCTION pg_temp.safe_xml(t text) RETURNS xml
+LANGUAGE plpgsql AS $$
 BEGIN
-  RETURN xmlparse(document ltrim(p, E'\ufeff \t\r\n'));
+  -- strip BOM / leading whitespace that often precedes <?xml ... ?>
+  RETURN regexp_replace(t, '^[\s\uFEFF]+', '')::xml;
 EXCEPTION WHEN OTHERS THEN
-  RETURN NULL;
+  RETURN NULL;   -- malformed XML: skip this CCDA instead of failing the whole query
 END $$;
 
--- Helper 2: HL7 TS (YYYYMMDD[HH[MM[SS]]][+/-ZZZZ]) -> timestamptz, so CCDA dates and FHIR dates are comparable.
--- Values without a time zone are treated as UTC.
-CREATE OR REPLACE FUNCTION techbd_udi_ingress.hl7_ts_to_tstz(p text) RETURNS timestamptz LANGUAGE plpgsql IMMUTABLE AS $$
-DECLARE
-  digits text := substring(p from '^\d+');
-  tz     text := substring(p from '([+-]\d{4})$');
-BEGIN
-  IF digits IS NULL OR length(digits) < 8 THEN RETURN NULL; END IF;
-  digits := rpad(substr(digits, 1, 14), 14, '0');
-  RETURN to_timestamp(digits || coalesce(tz, '+0000'), 'YYYYMMDDHH24MISSTZHTZM');
-EXCEPTION WHEN OTHERS THEN
-  RETURN NULL;
-END $$;
+WITH
+params AS (
+  SELECT string_to_array('71802-3|96778-6|96779-4|88122-7|88123-5|93030-5|96780-2|96782-8|95618-5|95617-7|95616-9|95615-1|95614-4','|') AS allowed_codes
+),
 
-WITH params AS (
-  SELECT '|71802-3|96778-6|96779-4|88122-7|88123-5|93030-5|96780-2|96782-8|95618-5|95617-7|95616-9|95615-1|95614-4|'::text AS allowed
+-- Original CCDAs of interactions that were successfully converted to FHIR
+src_raw AS (
+  SELECT s.hub_interaction_id, s.ccda_authoring_device, s.file_name, s.created_at,
+         pg_temp.safe_xml(s.ccda_payload_text) AS doc,
+         CASE WHEN s.ccda_authoring_device ILIKE '%epic%'   THEN 'epic'
+              WHEN s.ccda_authoring_device ILIKE '%athena%' THEN 'athena'
+              WHEN s.ccda_authoring_device ILIKE '%curemd%' THEN 'curemd'
+              WHEN s.ccda_authoring_device ILIKE '%medent%' THEN 'medent'
+              ELSE 'generic' END AS vendor
+  FROM techbd_udi_ingress.sat_interaction_ccda_request s
+  WHERE s.nature = 'Original CCDA Payload'
+    AND s.uri NOT LIKE '%$validate%'
+      AND s.created_at >= DATE :'start_date'
+      AND s.created_at <  DATE :'end_date' + INTERVAL '1 day'
+    AND s.ccda_payload_text IS NOT NULL
+    AND EXISTS (
+          SELECT 1
+          FROM techbd_udi_ingress.sat_interaction_ccda_request c
+          WHERE c.hub_interaction_id = s.hub_interaction_id
+            AND c.nature   = 'Converted to FHIR'
+            AND c.to_state = 'CONVERTED_TO_FHIR')
 ),
-xp AS (
-  SELECT
-    allowed,
-    format('//h:observation[h:entryRelationship/h:observation/h:code[contains(%L, concat(''|'', @code, ''|''))]]', allowed) AS sets,
-    format('//h:entry/h:observation[.//h:entryRelationship/h:observation/h:code[contains(%L, concat(''|'', @code, ''|''))]]', allowed) AS entries,
-    format('//h:observation[h:entryRelationship/h:observation/h:code[contains(%L, concat(''|'', @code, ''|''))]]'
-           '/h:entryRelationship/h:observation/h:code[contains(%L, concat(''|'', @code, ''|''))]/@code', allowed, allowed) AS answer_codes
-  FROM params
+src AS (
+  SELECT * FROM src_raw WHERE doc IS NOT NULL
 ),
-src AS MATERIALIZED (
-  -- the ORIGINAL CCDA payload only
-  SELECT DISTINCT ON (r.hub_interaction_id)
-         r.hub_interaction_id, r.tenant_id, r.file_name, r.ccda_authoring_device, r.created_at,
-         r.ccda_payload_text
-  FROM techbd_udi_ingress.sat_interaction_ccda_request r
-  WHERE r.nature = 'Original CCDA Payload'
-    AND r.ccda_payload_text IS NOT NULL
-    AND r.created_at >= '<start_date>' 
-    AND r.created_at < date('<end_date>') + INTERVAL '1 day'
-    AND r.ccda_payload_text ~ '71802-3|96778-6|96779-4|88122-7|88123-5|93030-5|96780-2|96782-8|95618-5|95617-7|95616-9|95615-1|95614-4'
-  ORDER BY r.hub_interaction_id, r.created_at DESC
+
+-- Every candidate answer node (all vendors); kind = node name + number of enclosing entryRelationships
+nodes AS (
+  SELECT s.hub_interaction_id, s.vendor, x.*
+  FROM src s,
+  XMLTABLE(
+    XMLNAMESPACES('urn:hl7-org:v3' AS ccda),
+    '//ccda:section/ccda:entry/ccda:observation/ccda:entryRelationship[ccda:observation/ccda:code/@code]
+     | //ccda:section/ccda:entry/ccda:observation/ccda:entryRelationship/ccda:observation/ccda:entryRelationship[ccda:observation/ccda:code/@code]
+     | //ccda:section/ccda:entry[ccda:observation/ccda:code/@code]'
+    PASSING s.doc
+    COLUMNS
+      kind      text PATH 'concat(local-name(), count(ancestor::ccda:entryRelationship))',
+      sec_code  text PATH 'string(ancestor::ccda:section[1]/ccda:code/@code)',
+      doc_pos   int  PATH 'count(preceding::*)',
+      grp_pos   int  PATH 'count(ancestor-or-self::ccda:entry[1]/preceding::*)',
+      code      text PATH 'string(ccda:observation/ccda:code/@code)',
+      code_nf   text PATH 'string(ccda:observation/ccda:code/@nullFlavor)',
+      code_sys  text PATH 'string(ccda:observation/ccda:code/@codeSystemName)',
+      val_code  text PATH 'string(ccda:observation/ccda:value/@code)',
+      val_nf    text PATH 'string(ccda:observation/ccda:value/@nullFlavor)',
+      val_value text PATH 'string(ccda:observation/ccda:value/@value)',
+      trans     text PATH 'string(ccda:observation/ccda:value/ccda:translation/@code)',
+      own_val   text PATH 'string(ccda:observation/ccda:effectiveTime/@value)',
+      own_low   text PATH 'string(ccda:observation/ccda:effectiveTime/ccda:low/@value)',
+      par_val   text PATH 'string(../ccda:effectiveTime/@value)',
+      par_low   text PATH 'string(../ccda:effectiveTime/ccda:low/@value)'
+  ) x
 ),
-counted AS MATERIALIZED (
-  SELECT s.hub_interaction_id, s.tenant_id, s.file_name, s.ccda_authoring_device, s.created_at, x.x, xp.*,
-         (xpath('count(' || xp.sets    || ')', x.x, ARRAY[ARRAY['h','urn:hl7-org:v3']]))[1]::text::int AS screening_sets,
-         (xpath('count(' || xp.entries || ')', x.x, ARRAY[ARRAY['h','urn:hl7-org:v3']]))[1]::text::int AS grouper_entries
-  FROM src s
-  CROSS JOIN xp
-  CROSS JOIN LATERAL (SELECT techbd_udi_ingress.try_xml(s.ccda_payload_text) AS x) x
-  WHERE x.x IS NOT NULL
+
+-- keep only the nodes each vendor's XSLT would use
+sel AS (
+  SELECT * FROM nodes
+  WHERE coalesce(code,'') <> ''
+    AND (   (vendor = 'epic'                AND kind = 'entryRelationship1' AND sec_code = '29762-2')
+         OR (vendor IN ('athena','curemd')  AND kind = 'entryRelationship0' AND sec_code = '29762-2')
+         OR (vendor = 'medent'              AND kind = 'entryRelationship0' AND sec_code = '47519-4')
+         OR (vendor = 'generic'             AND kind = 'entry0'))
+),
+
+-- isValidObs + obsRawTime + timeSortKey
+scored AS (
+  SELECT sel.*,
+    (   coalesce(trans,'') IN ('X-SDOH-FLO-1570000066-Patient-unable-to-answer',
+                               'X-SDOH-FLO-1570000066-Patient-declined')
+     OR (coalesce(val_code,'') NOT IN ('', 'UNK')
+         AND code <> 'UNK'
+         AND coalesce(val_nf,'')  = ''
+         AND coalesce(code_nf,'') = ''
+         AND coalesce(code_sys,'') IN ('LOINC','SNOMED','SNOMED CT'))
+     OR (code = '95614-4' AND coalesce(val_value,'') <> '')
+    ) AS is_valid,
+    coalesce(nullif(own_val,''), nullif(own_low,''), nullif(par_val,''), nullif(par_low,'')) AS raw_time,
+    substring(regexp_replace(substring(coalesce(
+        coalesce(nullif(own_val,''), nullif(own_low,''), nullif(par_val,''), nullif(par_low,'')), ''),
+        1, 14), '\D', '', 'g') || '00000000000000', 1, 14)::bigint AS sort_key
+  FROM sel
+),
+
+-- isLatestObs: valid answers with the same code: newest wins, tie -> first in file
+latest AS (
+  SELECT *,
+         row_number() OVER (PARTITION BY hub_interaction_id, code
+                            ORDER BY sort_key DESC, doc_pos ASC) AS rn
+  FROM scored
+  WHERE is_valid
+),
+
+emitted AS (
+  SELECT l.* FROM latest l, params p
+  WHERE l.rn = 1
+    AND l.code = ANY (p.allowed_codes)
+),
+
+-- grouper effectiveDateTime: top emitted answer = latest date, tie -> earliest grouper in the file
+top AS (
+  SELECT DISTINCT ON (hub_interaction_id)
+         hub_interaction_id, raw_time, sort_key, grp_pos, doc_pos
+  FROM emitted
+  ORDER BY hub_interaction_id, sort_key DESC, grp_pos ASC, doc_pos ASC
+),
+
+-- grouper Observation already saved in the FHIR bundle (identified by non-empty hasMember)
+saved AS (
+  SELECT f.hub_interaction_id,
+         array_agg(DISTINCT rpad(substring(regexp_replace(left(r.res->>'effectiveDateTime',19),'\D','','g'),1,14),14,'0')) AS saved_keys,
+         string_agg(DISTINCT r.res->>'effectiveDateTime', ', ') AS saved_effective_datetime
+  FROM techbd_udi_ingress.sat_interaction_ccda_request f
+  CROSS JOIN LATERAL jsonb_array_elements(f.payload->'entry') e(entry)
+  CROSS JOIN LATERAL (SELECT e.entry->'resource' AS res) r
+  WHERE f.nature   = 'Converted to FHIR'
+    AND f.to_state = 'CONVERTED_TO_FHIR'
+    AND f.hub_interaction_id IN (SELECT hub_interaction_id FROM top)
+    AND r.res->>'resourceType' = 'Observation'
+    AND jsonb_typeof(r.res->'hasMember') = 'array'
+    AND jsonb_array_length(r.res->'hasMember') > 0
+    AND r.res->>'effectiveDateTime' IS NOT NULL
+  GROUP BY f.hub_interaction_id
 )
-SELECT c.hub_interaction_id AS bundle_id, c.tenant_id, c.file_name, c.ccda_authoring_device, c.created_at,
-       c.screening_sets, c.grouper_entries,
-       array_to_string(xpath(c.sets || '/h:effectiveTime/@value | ' || c.sets || '/h:effectiveTime/h:low/@value',
-                             c.x, ARRAY[ARRAY['h','urn:hl7-org:v3']])::text[], ', ')        AS screening_dates,
-       rc.repeated_codes,                                                                   -- codes answered in more than one screening
-       cd.ccda_effective_dates      AS new_logic_effective_dates,                           -- dates derived from the CCDA (new logic)
-       fd.fhir_effective_dates      AS saved_fhir_effective_dates                           -- dates in the already saved FHIR bundle
-FROM counted c
-LEFT JOIN LATERAL (
-  SELECT string_agg(code, ', ' ORDER BY code) AS repeated_codes
-  FROM (SELECT a::text AS code
-        FROM unnest(xpath(c.answer_codes, c.x, ARRAY[ARRAY['h','urn:hl7-org:v3']])) a
-        GROUP BY a::text HAVING count(*) > 1) d
-) rc ON true
--- effective dates from the CCDA, normalised to timestamptz
-LEFT JOIN LATERAL (
-  SELECT array_agg(t ORDER BY t) AS ccda_effective_dates
-  FROM (SELECT DISTINCT techbd_udi_ingress.hl7_ts_to_tstz(a::text) AS t
-        FROM unnest(xpath(c.sets || '/h:effectiveTime/@value | ' || c.sets || '/h:effectiveTime/h:low/@value',
-                          c.x, ARRAY[ARRAY['h','urn:hl7-org:v3']])) a) q
-  WHERE t IS NOT NULL
-) cd ON true
--- effectiveDateTime values of the screening Observations in the saved 'Converted to FHIR' bundle
-LEFT JOIN LATERAL (
-  SELECT array_agg(t ORDER BY t) AS fhir_effective_dates
-  FROM (
-    SELECT DISTINCT (e.entry->'resource'->>'effectiveDateTime')::timestamptz AS t
-    FROM (SELECT f.payload::jsonb AS bundle
-          FROM techbd_udi_ingress.sat_interaction_ccda_request f
-          WHERE f.hub_interaction_id = c.hub_interaction_id
-            AND f.nature = 'Converted to FHIR'
-          ORDER BY f.created_at DESC
-          LIMIT 1) fb
-    CROSS JOIN LATERAL jsonb_array_elements(fb.bundle->'entry') e(entry)
-    WHERE e.entry->'resource'->>'resourceType' = 'Observation'
-      AND e.entry->'resource'->>'effectiveDateTime' IS NOT NULL
-      AND ( e.entry->'resource' ? 'hasMember'                      -- screening grouper / set observation
-            OR EXISTS (SELECT 1
-                       FROM jsonb_array_elements(e.entry->'resource'->'code'->'coding') k
-                       WHERE position('|' || (k->>'code') || '|' in c.allowed) > 0) )  -- answer observation
-  ) q
-  WHERE t IS NOT NULL
-) fd ON true
-WHERE c.screening_sets > 1
-  AND fd.fhir_effective_dates IS NOT NULL                                  -- a saved FHIR bundle exists
-  AND cd.ccda_effective_dates IS DISTINCT FROM fd.fhir_effective_dates     -- the two date sets differ
-ORDER BY c.created_at DESC, c.screening_sets DESC;
+
+SELECT t.hub_interaction_id,
+       s.ccda_authoring_device,
+       s.file_name,
+       s.created_at,
+       -- readable yyyy-MM-dd HH:mm:ss built from the 14 digits, no date validation
+       regexp_replace(t.sort_key::text,
+         '^(\d{4})(\d{2})(\d{2})(\d{2})(\d{2})(\d{2})$',
+         '\1-\2-\3 \4:\5:\6')                               AS new_effective_datetime,
+       sv.saved_effective_datetime
+FROM top t
+JOIN src s              ON s.hub_interaction_id = t.hub_interaction_id
+LEFT JOIN saved sv      ON sv.hub_interaction_id = t.hub_interaction_id
+WHERE t.raw_time IS NOT NULL
+  AND (sv.saved_keys IS NULL OR NOT (t.sort_key::text = ANY (sv.saved_keys)))
+ORDER BY s.created_at DESC;
