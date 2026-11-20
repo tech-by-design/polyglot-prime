@@ -23,7 +23,7 @@ public class Constant {
             "/docs/api/interactive/swagger-ui/**", "/support/**",
             "/docs/api/interactive/**",
             "/docs/api/openapi/**",
-            "/api/permissions/**",
+         
             "/error", "/error/**",
                 "/tenants",
                 "/permission-denied",
