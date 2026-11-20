@@ -1,0 +1,113 @@
+/* Queries to identify all the incomplete submissions.
+ -- Please update the :'start_date' and :'end_date' as per the preference in the line 14 as below before executing the query (remove the ":").
+ -- AND created_at >= DATE '2026-10-01'
+    AND created_at <  DATE '2026-10-07' + INTERVAL '1 day'
+*/
+
+-------------------------------Incomplete CCDA Submissions-------------------------------------
+-- Q2. Query to get all the incomplete CCDA submissions with full details including which nature is missing till the complete FHIR conversion process.
+
+WITH ccda_in_range AS (
+    SELECT DISTINCT hub_interaction_id
+    FROM techbd_udi_ingress.sat_interaction_ccda_request
+    WHERE hub_interaction_id IS NOT NULL
+      AND created_at >= DATE :'start_date'
+      AND created_at <  DATE :'end_date' + INTERVAL '1 day'
+),
+ccda_summary AS (
+    SELECT
+        c.hub_interaction_id,
+        -- uri from the original payload row; falls back to any row if the original is missing
+        COALESCE(MIN(c.uri) FILTER (WHERE c.nature = 'Original CCDA Payload'),
+                 MIN(c.uri))                                          AS uri,
+        COUNT(*)                                                      AS ccda_records,
+        ARRAY_AGG(DISTINCT c.nature)                                  AS ccda_natures,
+        MIN(c.created_at)                                             AS first_created_at,
+        MAX(c.created_at)                                             AS last_created_at,
+        BOOL_OR(c.nature = 'Original CCDA Payload'
+                AND c.to_state = 'CCDA_ACCEPT')                       AS has_original_payload,
+        BOOL_OR(c.nature = 'CCDA Validation Result'
+                AND c.to_state = 'VALIDATION_SUCCESS')                AS has_validation_success,
+        BOOL_OR(c.nature = 'CCDA Validation Result'
+                AND c.to_state = 'VALIDATION_FAILED')                 AS has_validation_failed,
+        BOOL_OR(c.nature = 'Converted to FHIR'
+                AND c.to_state = 'CONVERTED_TO_FHIR')                 AS has_conversion_success,
+        BOOL_OR(c.nature = 'Converted to FHIR'
+                AND c.to_state = 'FHIR_CONVERTION_FAILED')            AS has_conversion_failed,
+        BOOL_OR(COALESCE(c.uri, '') LIKE '%$validate%')               AS is_validate_call
+    FROM techbd_udi_ingress.sat_interaction_ccda_request c
+    JOIN ccda_in_range r ON r.hub_interaction_id = c.hub_interaction_id
+    GROUP BY c.hub_interaction_id
+),
+fhir_summary AS (
+    SELECT
+        f.hub_interaction_id,
+        MIN(f.bundle_id::text)                                        AS bundle_id,
+        COUNT(*)                                                      AS fhir_records,
+        ARRAY_AGG(DISTINCT f.nature)                                  AS fhir_natures,
+        MAX(f.created_at)                                             AS fhir_last_created_at,
+        BOOL_OR(f.nature = 'Original FHIR Payload'
+                AND f.to_state = 'ACCEPT_FHIR_BUNDLE')                AS has_fhir_payload,
+        BOOL_OR(f.nature = 'techByDesignDisposition'
+                AND f.to_state = 'DISPOSITION')                       AS has_disposition,
+        BOOL_OR(f.nature = 'Forward HTTP Request'
+                AND f.to_state = 'FORWARD')                           AS has_forward_request,
+        BOOL_OR(f.nature = 'Forwarded HTTP Response'
+                AND f.to_state = 'COMPLETE')                          AS has_response_success,
+        BOOL_OR(f.nature = 'Forwarded HTTP Response Error'
+                AND f.to_state = 'FAIL')                              AS has_response_error,
+        BOOL_OR(LOWER(COALESCE(f.techbd_disposition_action, '')) = 'discard') AS is_discarded,
+        BOOL_OR(f.nature IN ('Forwarded HTTP Request Replay',
+                             'Forwarded HTTP Response Replay',
+                             'Forwarded HTTP Response Replay Error')) AS is_replayed,
+        BOOL_OR(COALESCE(f.uri, '') LIKE '%$validate%')               AS is_validate_call
+    FROM techbd_udi_ingress.sat_interaction_fhir_request f
+    JOIN ccda_in_range r ON r.hub_interaction_id = f.hub_interaction_id
+    GROUP BY f.hub_interaction_id
+),
+flagged AS (
+    SELECT
+        c.hub_interaction_id,
+        f.bundle_id,
+        c.uri,
+        c.ccda_records + COALESCE(f.fhir_records, 0)                  AS total_records,
+        (
+            SELECT ARRAY_AGG(DISTINCT n ORDER BY n)
+            FROM UNNEST(
+                COALESCE(c.ccda_natures, ARRAY[]::text[]) ||
+                COALESCE(f.fhir_natures, ARRAY[]::text[])
+            ) AS n
+        )                                                             AS natures_present,
+        c.first_created_at,
+        GREATEST(c.last_created_at, f.fhir_last_created_at)           AS last_created_at,
+        ARRAY_REMOVE(ARRAY[
+            CASE WHEN NOT c.has_original_payload
+                 THEN 'Original CCDA Payload' END,
+            CASE WHEN NOT c.has_validation_success
+                 THEN 'CCDA Validation Result' END,
+            CASE WHEN NOT c.has_conversion_success
+                 THEN 'Converted to FHIR' END,
+            -- FHIR steps are expected only after a successful conversion
+            CASE WHEN c.has_conversion_success AND NOT COALESCE(f.has_fhir_payload, FALSE)
+                 THEN 'Original FHIR Payload' END,
+            CASE WHEN c.has_conversion_success AND NOT COALESCE(f.has_disposition, FALSE)
+                 THEN 'techByDesignDisposition' END,
+            CASE WHEN c.has_conversion_success AND NOT COALESCE(f.has_forward_request, FALSE)
+                 THEN 'Forward HTTP Request' END,
+            CASE WHEN c.has_conversion_success
+                  AND NOT (COALESCE(f.has_response_success, FALSE) OR COALESCE(f.has_response_error, FALSE))
+                 THEN 'Forwarded HTTP Response / Forwarded HTTP Response Error' END
+        ], NULL)                                                      AS missing_natures
+    FROM ccda_summary c
+    LEFT JOIN fhir_summary f ON f.hub_interaction_id = c.hub_interaction_id
+    WHERE NOT c.is_validate_call
+      AND NOT COALESCE(f.is_validate_call, FALSE)
+      AND NOT c.has_validation_failed            -- stops here
+      AND NOT c.has_conversion_failed            -- stops here
+      AND NOT COALESCE(f.is_discarded, FALSE)    -- stops here
+      AND NOT COALESCE(f.is_replayed, FALSE)
+)
+SELECT *
+FROM flagged
+WHERE CARDINALITY(missing_natures) > 0
+ORDER BY last_created_at DESC;
