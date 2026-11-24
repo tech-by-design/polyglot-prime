@@ -1,95 +1,104 @@
-<codeTemplateLibrary version="26.3.1">
+<codeTemplateLibrary version="26.9.0">
   <id>66cf0efd-4f83-4c42-8b8e-71a5c57d9b11</id>
   <name>TechBD Functions</name>
-  <revision>153</revision>
+  <revision>267</revision>
   <lastModified>
-    <time>1780978497557</time>
+    <time>1794992069872</time>
     <timezone>America/New_York</timezone>
   </lastModified>
   <description></description>
   <includeNewChannels>true</includeNewChannels>
   <enabledChannelIds class="sorted-set">
+    <string>00340250-ce9b-4d83-a27b-a49a7cb1fa1f</string>
+    <string>0460bb4e-c120-48cb-bbfd-cca2e19fc90e</string>
+    <string>046f2abb-6a52-417e-aed4-6e5b12e957cf</string>
     <string>04ef5b0d-3120-4dd4-ba3f-fd7ec1ab1fdb</string>
-    <string>0f01102b-8ef8-4237-a8c8-0e79c35be41d</string>
-    <string>12467de6-360c-47c1-83af-09aae915eb8c</string>
-    <string>140795e4-5d41-4769-885b-b815c18bbc62</string>
-    <string>158a1edb-a782-4fb4-bc18-f05f40ce3e18</string>
-    <string>1886486f-4cbd-4e25-9057-ebd6cc6f6478</string>
-    <string>19069366-0852-4caa-875c-1c503461f8a1</string>
-    <string>1908260b-7361-46dc-a9c9-e7114b06e698</string>
+    <string>07df4a64-66aa-455c-9f47-5ae9bb0c4a7c</string>
+    <string>0de4f42b-5d9e-4802-b3ab-f8935d7c0d8a</string>
+    <string>172dd367-2b02-4d8a-b998-504605d7d164</string>
+    <string>1771e2fd-3b46-4e64-bbea-0fa03e85671f</string>
+    <string>1a724ef8-4fe2-4646-8dad-5af43ba85de4</string>
     <string>1c406954-d304-4882-b05d-b513d699785b</string>
-    <string>207ba60a-9430-4126-9553-8c8eb588f419</string>
-    <string>20d4fc56-4e53-408c-a8a0-20ef046f9fa5</string>
+    <string>1c62ac23-fc88-47fa-84aa-f44b2219750e</string>
     <string>2240d25e-de1d-4c6f-904c-832e7f68a574</string>
-    <string>29316ddf-46cc-4d33-813d-2b71a8b41902</string>
-    <string>2d6fac85-49e1-4aa8-b39f-b4e39f12597e</string>
-    <string>330819e8-5e01-45b0-9d7d-b87048a8813a</string>
-    <string>35ee3e0b-ad66-44c5-bf30-6ebe8ff7c7ec</string>
+    <string>2440a65b-486b-4f03-8972-8bace78287d3</string>
+    <string>281247c5-fb87-4b56-9691-190174cc834f</string>
+    <string>287a166d-02e5-4266-b198-dab2740d7b02</string>
+    <string>28be0628-cfe1-4c16-8acc-4a53928c9c34</string>
+    <string>2c47f2b9-ebc9-4aa7-bd5f-0bf5f0d6ed39</string>
+    <string>34c181c7-0d84-4960-a2e7-df73d4c4a3cc</string>
+    <string>369df10a-9d27-4b18-a398-f06a2607ae1a</string>
     <string>38c30482-47ef-41e0-b6f3-fa56e8bc76ae</string>
-    <string>3acb72be-f9c1-4721-b990-ff0486b038fc</string>
-    <string>3bfca654-f2c7-4c5e-bb88-1ab68cd32f44</string>
-    <string>3f3f6dcd-2923-4f09-89c3-1e248c1556b3</string>
-    <string>4cd30607-97b1-44ad-9d8f-4cfc7dfa4028</string>
-    <string>520ded48-a0be-4492-8cba-4fad5a227afd</string>
-    <string>548ec946-51d0-4c8b-a402-78345d8f0242</string>
+    <string>3ab2e65e-b5fd-448d-b879-e42bc1a00203</string>
+    <string>3c5d0850-0841-4603-a1f8-0ee6e9ef8559</string>
+    <string>3d78e317-ccf7-45e2-8cbe-200cbfc5ba21</string>
+    <string>417892cd-09d4-47fe-b7c9-c7164db71938</string>
+    <string>439731b6-d490-42cc-a4f8-a15c50ee2fe9</string>
+    <string>43c53c2d-beb1-476b-b497-096fd565fe06</string>
+    <string>47283a5e-090c-41d7-8b5d-14994d64d395</string>
+    <string>48679919-904a-4913-a593-28f19da61615</string>
     <string>576131f3-aa5b-4453-929f-1e07d7534e82</string>
-    <string>5cf24505-f00b-4002-a769-836686016c37</string>
-    <string>61730c66-eedd-4c67-bb98-71c867be56a4</string>
-    <string>6432709e-b815-40a3-91a8-f77570d3273e</string>
-    <string>6504ba62-2e9e-42cc-9b65-09e832b1f27a</string>
-    <string>657d9972-aa59-406d-b248-22f39bbceed2</string>
-    <string>66b6457a-d8a4-40fb-bf4a-7fd09c941285</string>
-    <string>6ba3d163-f959-4b4f-9aca-f9bcdc5e7887</string>
-    <string>6db40d54-c29f-47e3-aaf8-fc99cb2e53b6</string>
-    <string>715fe7c8-223a-4949-a669-f1defb24cd95</string>
-    <string>78fd5c66-613e-46dd-bd45-c3dd0021a5fb</string>
-    <string>7bfc4fca-cf0a-4caf-b297-b4579d23684c</string>
-    <string>7f9360b4-e80f-4bbb-951f-58347ab2ca5a</string>
-    <string>8255fb74-da31-4573-ba36-1da03f1bfc27</string>
-    <string>869c806f-d639-44ea-93d7-9efbe211cc3c</string>
-    <string>87d008ec-f78d-4f2f-b986-cb1a4d926540</string>
-    <string>89def8c9-d8d2-46e2-a254-6345b05cfcb4</string>
-    <string>8be2be72-35cf-44a6-8b6e-5e37bd770672</string>
-    <string>8ca393c1-16ac-4b77-b78f-a8fca05ae3d6</string>
-    <string>8ff42419-20be-4845-b40c-77853eb27b35</string>
-    <string>91adead5-81ab-44f2-b3ac-f875a620846c</string>
-    <string>92bad760-5de9-4b86-91f4-33011e68ca43</string>
-    <string>95b30942-c7ab-4267-8dc8-7e9436e0f470</string>
-    <string>96bd9c4c-3490-4ed9-9efe-4179e3d7d33d</string>
-    <string>9c85680a-7b06-43fb-9d12-01db1d9c0448</string>
-    <string>9f99a5c7-84d9-4dc2-aa7f-451096b5bb8b</string>
-    <string>a0b29ee9-cd50-4228-8de1-c890131f4350</string>
-    <string>a1bf0b83-9809-4841-b748-41ee68cb1765</string>
-    <string>a9428f62-99b2-4c17-9466-433dfeedb5ad</string>
+    <string>57b5e566-b5cb-4185-9600-4de0bbf10b84</string>
+    <string>631aa62d-39a7-4cd3-a7bc-a43d73d14853</string>
+    <string>67b29422-6e62-4506-b4db-d4974de82b8c</string>
+    <string>694e29f3-7820-4ce7-85ba-aa90ce8296c9</string>
+    <string>6b9625c8-f150-4229-b632-cb07e388adcd</string>
+    <string>6cd5fbb1-b5f6-4a12-953f-e4af9a074a45</string>
+    <string>6ff46655-b4cc-479a-93b3-98a356f9d6b0</string>
+    <string>76e531c1-d4fe-4108-a740-88365b7a47fc</string>
+    <string>7940022b-7a39-470b-9936-bcf8b2f4982e</string>
+    <string>796d0ae4-5baa-40a3-bc76-ab9af2d025c5</string>
+    <string>7e15f9f1-7c03-419a-8dcd-2e6b56e90503</string>
+    <string>814b471c-b5fa-4f30-861f-134c40762ef6</string>
+    <string>8231df95-a7fa-4367-bd07-a3f892d9cd51</string>
+    <string>83a655f2-bad4-497a-bdfb-7dbe404a7e30</string>
+    <string>89bb549e-d2fc-415f-a784-9f97ac3f1d05</string>
+    <string>8df9ab1a-4845-43cd-9884-81be53cfc87a</string>
+    <string>94d93cc7-9346-4ed6-81f0-767364a29138</string>
+    <string>9f1272c2-47b8-4583-af54-145a88202c3b</string>
+    <string>a09455c6-4e95-4e8c-ba33-735980b6ef27</string>
+    <string>a3ece49e-f52f-40bb-927d-03cc71087ad7</string>
+    <string>a542e427-909f-4963-a374-3a214dcb8bd1</string>
+    <string>a581aac5-930d-4a48-b2c3-d3b7e0aebb4f</string>
+    <string>a68d74fd-c26b-4cd2-885b-b2ad890b8494</string>
+    <string>a8630d07-6ac1-46f8-8d95-01a70ac59206</string>
+    <string>a9d46eba-a9b6-436a-af7a-aaf3a9570c42</string>
+    <string>aa14ae37-7b8e-48c0-8cf0-c0fe150ff9a1</string>
+    <string>aa52ca3d-503a-432e-a446-db5ba9a9aec6</string>
     <string>ab20f626-8de4-4845-8080-0f2c6b80669a</string>
-    <string>abe04006-4dc5-462a-88f6-93fdefb35933</string>
-    <string>af622c7c-a713-4fe6-a12c-3d8b199efc75</string>
-    <string>b84ee0f0-dfed-40bd-8a9e-af052b60860e</string>
-    <string>b947708e-312d-4458-aef3-93761eb9fe9c</string>
+    <string>b028255d-3d33-4562-b1a4-6b81c080013e</string>
+    <string>b24d4603-8f5a-4872-89d2-9b474d7ea6db</string>
+    <string>b5462351-f38a-4fe0-bd04-f0175f5aacf7</string>
+    <string>b93c86f6-8ddf-4d53-8696-4a09d93bfaa7</string>
     <string>bafa98dd-04f2-48ef-babb-4a3bedbcb0ed</string>
-    <string>bb812d5c-9a11-4e21-a134-c369f39dc5b3</string>
-    <string>bbf0fb0d-7a57-43c4-b3b0-2e0d257ae92b</string>
-    <string>c00e53b6-6165-4bb3-bd47-7f1e5d9708d4</string>
-    <string>c09ea42f-cb4b-4f67-92cd-830a1ab4c51c</string>
-    <string>c156a7a7-d1ac-49ce-a70f-cb2c1eb800cf</string>
-    <string>c79799dd-a972-4d99-beba-1331ed5e49a2</string>
-    <string>d320f5d3-7af1-4de1-b618-6ed11e84390d</string>
-    <string>d341dceb-069e-49ab-8efa-c45398145216</string>
-    <string>d8205661-526c-4762-bef0-0cb8414424cb</string>
+    <string>bb7b54f0-d213-4c09-b315-ad522cc1f2d5</string>
+    <string>bd2f2840-ea03-40fe-b780-64fde42849a9</string>
+    <string>be60d481-5755-4ad7-81ed-246e4af4d86a</string>
+    <string>c1ded0ae-82b0-4f5d-b6ed-85a43e716cb5</string>
+    <string>c53bfb5a-143a-4104-ab9c-ed67ed71521f</string>
+    <string>c5b49016-b136-484c-bc77-04e53122cbdc</string>
+    <string>c7b5084b-e9cd-43e1-9a55-1b1b70e88e62</string>
+    <string>cac50f15-1204-495d-a15e-0f341c494171</string>
+    <string>cd812443-81f7-4523-8d16-1d7af162ca3c</string>
+    <string>d224a326-e089-4653-9f73-fb9b3642cad8</string>
+    <string>d65c4196-a138-448b-880d-52c63a575ceb</string>
+    <string>d77fcb36-3c97-45fe-b8ba-5fdc9bcf1df2</string>
     <string>d85d0014-300a-46f9-81b7-ad6c6ef1516b</string>
-    <string>dc1d3367-14d7-4e36-a87e-d208d839fc78</string>
-    <string>dfa0f0a0-c211-4aa2-bb6c-444d5c23da7e</string>
-    <string>e3a5613e-0da0-4921-a270-b48cf72253de</string>
-    <string>e634b038-8196-4ac4-80fc-819a0a9c9bb1</string>
-    <string>f23e19b0-a0e0-422a-884c-caae6c52ecac</string>
+    <string>deb1f914-4662-4568-bf71-da5a7aecda44</string>
+    <string>e17a4c92-8f3d-4b6a-9c21-5d7f0a2b6e44</string>
+    <string>e216b33f-b7f0-4bac-ba23-7750fa5b2af0</string>
+    <string>e58f5bd0-fee5-4ecb-868f-9a4a7c0ef689</string>
+    <string>ecb5ad78-09f4-4206-81a1-7d9383871580</string>
     <string>f2d185dd-96c3-4065-bbb9-5044afb7ba80</string>
-    <string>fa2e04e2-8435-4a9c-bad2-ac65c1bb3a33</string>
+    <string>f56adef6-2213-46e0-88fa-851958abc801</string>
+    <string>f6e97e19-1a32-4b8b-b959-633c515defbc</string>
+    <string>f701ba21-58fd-4731-827f-7e2af70c0e52</string>
+    <string>fbdd7c10-ab02-4f4e-ae71-25084a4a0020</string>
+    <string>fcbe4ae0-effd-4980-af36-d923b23fe8c1</string>
   </enabledChannelIds>
-  <disabledChannelIds class="sorted-set">
-    <string>ff4672aa-a05f-428f-8427-3ad8033346cd</string>
-  </disabledChannelIds>
+  <disabledChannelIds class="sorted-set"/>
   <codeTemplates>
-    <codeTemplate version="26.3.1">
+    <codeTemplate version="26.9.0">
       <id>030add36-72d6-4bb4-8db4-aa0cc8b906c9</id>
       <name>setErrorResponse</name>
       <revision>15</revision>
@@ -140,6 +149,159 @@ function setErrorResponse(statusCode, errorMessage, map) {
 */
 function createJsonResponse(status, message) {
     return JSON.stringify({ status: status, message: message });
+}</code>
+      </properties>
+    </codeTemplate>
+    <codeTemplate version="26.9.0">
+      <id>e99a2428-4fd5-4f08-847b-f95016d6efbc</id>
+      <name>xmlCache</name>
+      <revision>1</revision>
+      <lastModified>
+        <time>1794992069903</time>
+        <timezone>America/New_York</timezone>
+      </lastModified>
+      <contextSet>
+        <delegate class="sorted-set">
+          <contextType>GLOBAL_DEPLOY</contextType>
+          <contextType>GLOBAL_UNDEPLOY</contextType>
+          <contextType>GLOBAL_PREPROCESSOR</contextType>
+          <contextType>GLOBAL_POSTPROCESSOR</contextType>
+          <contextType>CHANNEL_DEPLOY</contextType>
+          <contextType>CHANNEL_UNDEPLOY</contextType>
+          <contextType>CHANNEL_PREPROCESSOR</contextType>
+          <contextType>CHANNEL_POSTPROCESSOR</contextType>
+          <contextType>CHANNEL_ATTACHMENT</contextType>
+          <contextType>CHANNEL_BATCH</contextType>
+          <contextType>SOURCE_RECEIVER</contextType>
+          <contextType>SOURCE_FILTER_TRANSFORMER</contextType>
+          <contextType>DESTINATION_FILTER_TRANSFORMER</contextType>
+          <contextType>DESTINATION_DISPATCHER</contextType>
+          <contextType>DESTINATION_RESPONSE_TRANSFORMER</contextType>
+        </delegate>
+      </contextSet>
+      <properties class="com.mirth.connect.model.codetemplates.BasicCodeTemplateProperties">
+        <type>FUNCTION</type>
+        <code>/**
+	Server-wide, thread-safe cache of COMPILED XML artefacts (XSD Schema, XSLT Templates),
+	loaded from Lookup Manager group &quot;SchemaFiles&quot;. Nothing is written to disk.
+
+	Only immutable, thread-safe objects are cached. Callers must create a new
+	Validator / Transformer per message from the cached object:
+	    getCompiledSchema(&apos;CDA.xsd&apos;).newValidator().validate(source);
+	    var transformer = getCompiledXslt(&apos;cda-phi-filter-epic&apos;).newTransformer();
+
+	Each artefact is compiled once per server (first caller compiles, concurrent callers
+	wait for that result). A failed compile is not cached, so the next call retries.
+	Schema files are fixed; if one is changed, restart the server or call clearXmlCache().
+*/
+var TECHBD_XML_CACHE_KEY = &apos;techbd.xmlCache&apos;;
+var TECHBD_XML_BASE_URI = &apos;file:///techbd-lookup/&apos;; // stable virtual systemId for include resolution; never read from disk
+
+/**
+	Returns the shared ConcurrentHashMap, creating it exactly once (lock on the globalMap singleton).
+*/
+function xmlCache() {
+    var cache = globalMap.get(TECHBD_XML_CACHE_KEY);
+    if (cache != null) return cache;
+    var init = new Packages.org.mozilla.javascript.Synchronizer(function () {
+        var c = globalMap.get(TECHBD_XML_CACHE_KEY);
+        if (c == null) {
+            c = new java.util.concurrent.ConcurrentHashMap();
+            globalMap.put(TECHBD_XML_CACHE_KEY, c);
+        }
+        return c;
+    }, globalMap);
+    return init();
+}
+
+/**
+	Reads a Lookup Manager &quot;SchemaFiles&quot; entry as a JS string, or null if missing/empty.
+*/
+function lookupSchemaFileText(key) {
+    var raw = LookupHelper.get(&quot;SchemaFiles&quot;, key);
+    if (raw == null) return null;
+    var text = (typeof raw === &quot;object&quot; &amp;&amp; raw.content) ? String(raw.content) : String(raw);
+    return text.trim().length &gt; 0 ? text : null;
+}
+
+function xmlRefBaseName(ref) {
+    return String(ref).replace(/^.*[\/\\]/, &apos;&apos;);
+}
+
+/**
+	Compiled XSD (javax.xml.validation.Schema). Includes/imports are resolved from Lookup by file name.
+	@param {String} rootXsdKey - Lookup key of the root schema, e.g. &quot;CDA.xsd&quot;
+*/
+function getCompiledSchema(rootXsdKey) {
+    var rootKey = xmlRefBaseName(rootXsdKey);
+    return xmlCache().computeIfAbsent(&apos;xsd:&apos; + rootKey, new java.util.function.Function({
+        apply: function () {
+            var rootText = lookupSchemaFileText(rootKey);
+            if (rootText == null) throw new Error(&quot;LookupManager: Missing XSD in SchemaFiles: &quot; + rootKey);
+
+            var ls = org.w3c.dom.bootstrap.DOMImplementationRegistry.newInstance().getDOMImplementation(&quot;LS&quot;);
+            var sf = javax.xml.validation.SchemaFactory.newInstance(javax.xml.XMLConstants.W3C_XML_SCHEMA_NS_URI);
+            sf.setResourceResolver(new org.w3c.dom.ls.LSResourceResolver({
+                resolveResource: function (type, namespaceURI, publicId, systemId, baseURI) {
+                    var name = xmlRefBaseName(systemId);
+                    var text = lookupSchemaFileText(name);
+                    if (text == null) throw new Error(&quot;LookupManager: Missing XSD in SchemaFiles: &quot; + name);
+                    var input = ls.createLSInput();
+                    input.setStringData(text);
+                    input.setSystemId(TECHBD_XML_BASE_URI + name);
+                    input.setPublicId(publicId);
+                    return input;
+                }
+            }));
+
+            var start = java.lang.System.currentTimeMillis();
+            var schema = sf.newSchema(new javax.xml.transform.stream.StreamSource(
+                new java.io.StringReader(rootText), TECHBD_XML_BASE_URI + rootKey));
+            logger.info(&quot;xmlCache: compiled XSD &quot; + rootKey + &quot; in &quot; + (java.lang.System.currentTimeMillis() - start) + &quot; ms&quot;);
+            return schema;
+        }
+    }));
+}
+
+/**
+	Compiled XSLT (javax.xml.transform.Templates). xsl:include/xsl:import are resolved from Lookup
+	by file name without &quot;.xslt&quot; (same convention as the CCD channel).
+	@param {String} lookupKey - exact Lookup key, e.g. &quot;cda-phi-filter-epic&quot; or &quot;hl7v2-fhir-bundle.xslt&quot;
+*/
+function getCompiledXslt(lookupKey) {
+    var key = String(lookupKey);
+    return xmlCache().computeIfAbsent(&apos;xslt:&apos; + key, new java.util.function.Function({
+        apply: function () {
+            var text = lookupSchemaFileText(key);
+            if (text == null) throw new Error(&quot;LookupManager: No XSLT found for key &quot; + key);
+
+            var tf = javax.xml.transform.TransformerFactory.newInstance();
+            tf.setURIResolver(new javax.xml.transform.URIResolver({
+                resolve: function (href, base) {
+                    var incKey = xmlRefBaseName(href).replace(/\.xslt$/, &apos;&apos;);
+                    var incText = lookupSchemaFileText(incKey);
+                    if (incText == null) throw new Error(&quot;LookupManager: No XSLT found for included key: &quot; + incKey);
+                    return new javax.xml.transform.stream.StreamSource(
+                        new java.io.StringReader(incText), TECHBD_XML_BASE_URI + incKey + &apos;.xslt&apos;);
+                }
+            }));
+
+            var start = java.lang.System.currentTimeMillis();
+            var templates = tf.newTemplates(new javax.xml.transform.stream.StreamSource(
+                new java.io.StringReader(text), TECHBD_XML_BASE_URI + xmlRefBaseName(key)));
+            logger.info(&quot;xmlCache: compiled XSLT &quot; + key + &quot; in &quot; + (java.lang.System.currentTimeMillis() - start) + &quot; ms&quot;);
+            return templates;
+        }
+    }));
+}
+
+/**
+	Drops all compiled artefacts (or one, e.g. &quot;xsd:CDA.xsd&quot; / &quot;xslt:hl7v2-fhir-bundle.xslt&quot;).
+	Only needed if a schema file is changed without a server restart.
+*/
+function clearXmlCache(cacheKey) {
+    if (cacheKey) xmlCache().remove(String(cacheKey));
+    else xmlCache().clear();
 }</code>
       </properties>
     </codeTemplate>

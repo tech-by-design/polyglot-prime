@@ -1,0 +1,30 @@
+<map>
+  <entry>
+    <string>Undeploy</string>
+    <string>// This script executes once for each deploy, undeploy, or redeploy task
+// if at least one channel was undeployed
+// You only have access to the globalMap here to persist data
+return;</string>
+  </entry>
+  <entry>
+    <string>Postprocessor</string>
+    <string>// This script executes once after a message has been processed
+// This script applies across all channels
+// Responses returned from here will be stored as &quot;Postprocessor&quot; in the response map
+// You have access to &quot;response&quot;, if returned from the channel postprocessor
+return;</string>
+  </entry>
+  <entry>
+    <string>Deploy</string>
+    <string>// Initialize shared UUID generator once, before channels start processing messages
+if (globalMap.get(&apos;UUID_GENERATOR&apos;) == null) {
+    globalMap.put(&apos;UUID_GENERATOR&apos;, Packages.com.fasterxml.uuid.Generators.timeBasedEpochGenerator());
+}</string>
+  </entry>
+  <entry>
+    <string>Preprocessor</string>
+    <string>// Modify the message variable below to pre process data
+// This script applies across all channels
+return message;</string>
+  </entry>
+</map>
