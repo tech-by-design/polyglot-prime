@@ -330,8 +330,48 @@ const CLI = new Command()
       .option("-v, --verbose", "Enable verbose output (for JAR deployment)")
       .action(async (options) => {
         await CLI.parse(["ic", "generate", "sql"]);
-        await CLI.parse(["ic", "load-sql", "--destroy-first", "--conn-id", options.connId]);
+        await CLI.parse(["ic", "load-sql", "--destroy-first", "--conn-id", options.connId]);        
+        await CLI.parse(["ic", "migrate", "--conn-id", options.connId, "--is-linted", options.isLinted]);
         await CLI.parse(["ic", "test", "--conn-id", options.connId]);
+        await CLI.parse(["ic", "generate", "java", "jooq", "--conn-id", options.connId]);
+
+        // Deploy JAR if requested
+        if (options.deployJar) {
+          console.log("\n?? Starting JAR deployment...");
+
+          // Use provided JAR path or default to the generated jOOQ JAR
+          const jarPath = options.jar || "../hub-prime/lib/techbd-udi-jooq-ingress.auto.jar";
+
+          // Build deploy-jar command arguments
+          const deployArgs = ["ic", "deploy-jar", "--jar", jarPath];
+
+          if (options.targets) {
+            deployArgs.push("--targets", options.targets);
+          }
+
+          if (options.dryRun) {
+            deployArgs.push("--dry-run");
+          }
+
+          if (options.verbose) {
+            deployArgs.push("--verbose");
+          }
+
+          await CLI.parse(deployArgs);
+        }
+      })
+    .command("omnibus-update", "Update the given connection ID")
+      .option("-c, --conn-id <id:string>", "pgpass connection ID to use for psql", { required: true, default: "UDI_PRIME_DESTROYABLE_DEVL" })
+      .option("-l, --is-linted <id:string>", "migrate lint", { required: true, default: "true" })
+      .option("--deploy-jar", "Deploy the generated JAR file after omnibus-fresh completes")
+      .option("--jar <jar:string>", "Path to the JAR file to deploy (defaults to generated jOOQ JAR)")
+      .option("-t, --targets <targets:string>", "Comma-separated list of target directories for JAR deployment (optional)")
+      .option("--dry-run", "Show what would be copied without actually copying (for JAR deployment)")
+      .option("-v, --verbose", "Enable verbose output (for JAR deployment)")
+      .action(async (options) => {
+        await CLI.parse(["ic", "generate", "sql"]);
+        await CLI.parse(["ic", "load-sql", "--conn-id", options.connId]);
+        //await CLI.parse(["ic", "test", "--conn-id", options.connId]);
         await CLI.parse(["ic", "migrate", "--conn-id", options.connId, "--is-linted", options.isLinted]);
         await CLI.parse(["ic", "generate", "java", "jooq", "--conn-id", options.connId]);
 
@@ -359,6 +399,14 @@ const CLI = new Command()
 
           await CLI.parse(deployArgs);
         }
+      })
+    .command("omnibus-test", "Do only the pgTap tests for the given connection ID")
+      .option("-c, --conn-id <id:string>", "pgpass connection ID to use for psql", { required: true, default: "UDI_PRIME_DESTROYABLE_DEVL" })
+      .action(async (options) => {
+        await CLI.parse(["ic", "generate", "sql"]);
+        await CLI.parse(["ic", "load-sql", "--conn-id", options.connId]);
+        await CLI.parse(["ic", "migrate", "--conn-id", options.connId, "--is-linted", "true"]);
+        await CLI.parse(["ic", "test", "--conn-id", options.connId]);
       })
     .command("deploy-jar", new Command()
       .description("Deploy JAR file to multiple target lib directories")
