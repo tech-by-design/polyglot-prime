@@ -1504,8 +1504,13 @@ PID|||112024345690^123^12345||Doe Le^John^^^MR||19651015|M||2054-5^Black|123 Mai
 	        ); 
     END IF;
 
-	PERFORM techbd_udi_assurance.test_json_action_rule_upsert('techbd_udi_ingress'::text);
-	PERFORM techbd_udi_assurance.test_idp_functions('techbd_udi_ingress'::text);
+	--PERFORM techbd_udi_assurance.test_json_action_rule_upsert('techbd_udi_ingress'::text);
+	--PERFORM techbd_udi_assurance.test_idp_functions('techbd_udi_ingress'::text);
+	RETURN QUERY SELECT * FROM techbd_udi_assurance.test_json_action_rule_upsert('techbd_udi_ingress'::text);
+    RETURN QUERY SELECT * FROM techbd_udi_assurance.test_idp_functions('techbd_udi_ingress'::text);
+
+	RETURN QUERY SELECT * FROM techbd_udi_assurance.test_mco_tables_and_functions('mco_data'::text);
+    RETURN QUERY SELECT * FROM techbd_udi_assurance.test_screening_extracts_tables('screening_extracts'::text);
 END;
 $function$
 ;
@@ -1685,6 +1690,520 @@ BEGIN
 		'Procedure configure_rls_policies exists'
 	);
     
+END;
+$function$
+;
+
+/*====================================================================================
+ * MCO data table/function structure tests
+ *====================================================================================*/
+DROP FUNCTION IF EXISTS techbd_udi_assurance.test_mco_tables_and_functions(text, text);
+DROP FUNCTION IF EXISTS techbd_udi_assurance.test_mco_tables_and_functions(text);
+
+CREATE OR REPLACE FUNCTION techbd_udi_assurance.test_mco_tables_and_functions(
+    mco_schema_name text DEFAULT 'mco_data'::text
+)
+RETURNS SETOF text
+LANGUAGE plpgsql
+AS $function$
+BEGIN
+    /*=============================== MCO DATA ==================================*/
+
+    /*----------------------------- TABLE EXISTENCE -----------------------------*/
+    RETURN NEXT has_table(mco_schema_name, 'mco_records',
+        'The table mco_data.mco_records should exist.');
+    RETURN NEXT has_table(mco_schema_name, 'mco_record_details',
+        'The table mco_data.mco_record_details should exist.');
+    RETURN NEXT has_table(mco_schema_name, 'mco_error_types',
+        'The table mco_data.mco_error_types should exist.');
+    RETURN NEXT has_table(mco_schema_name, 'mco_record_error_logs',
+        'The table mco_data.mco_record_error_logs should exist.');
+
+    /*----------------------------- PRIMARY KEYS --------------------------------
+      The supplied production DDL does not define primary keys on these four
+      mco_data tables. Do not assert PKs that are not present in that DDL.
+    -----------------------------------------------------------------------------*/
+
+    /*----------------------------- COLUMN STRUCTURE ----------------------------*/
+    RETURN NEXT columns_are(mco_schema_name, 'mco_records',
+        ARRAY['batch_id', 'root_file_name', 'created_on_utc', 'updated_on_utc',
+              'total_records', 'processed_count', 'errored_count', 'is_active',
+              'status', 'tenant_id', 'file_size_in_kb', 'resubmitted_count',
+              'sent_to_datalake_time', 'qa_completed_time', 'sent_to_mco_time',
+              'reporting_month', 'batch_guid', 'reporting_month_date'],
+        'The columns of mco_data.mco_records should match the production structure.');
+
+    RETURN NEXT columns_are(mco_schema_name, 'mco_record_details',
+        ARRAY['batch_details_id', 'current_file_name', 'file_size_in_kb',
+              'total_records', 'processed_count', 'errored_count',
+              'qa_completed_time', 'sent_to_datalake_time', 'sent_to_mco_time',
+              'created_on_utc', 'updated_on_utc', 'is_active', 'status',
+              'batch_id', 'reporting_month', 'tenant_id', 'batch_details_guid'],
+        'The columns of mco_data.mco_record_details should match the production structure.');
+
+    RETURN NEXT columns_are(mco_schema_name, 'mco_error_types',
+        ARRAY['error_type_id', 'error_type_name', 'error_type_description',
+              'is_active', 'created_on_utc', 'updated_on_utc', 'error_type_guid'],
+        'The columns of mco_data.mco_error_types should match the production structure.');
+
+    RETURN NEXT columns_are(mco_schema_name, 'mco_record_error_logs',
+        ARRAY['error_log_id', 'batch_id', 'error_json', 'created_on_utc',
+              'updated_on_utc', 'batch_details_id', 'is_active',
+              'error_type_id', 'tenant_id', 'error_log_guid'],
+        'The columns of mco_data.mco_record_error_logs should match the production structure.');
+
+    /*----------------------------- REQUIRED COLUMNS ----------------------------*/
+    RETURN NEXT col_not_null(mco_schema_name, 'mco_records', 'batch_id',
+        'mco_records.batch_id should be NOT NULL.');
+    RETURN NEXT col_not_null(mco_schema_name, 'mco_records', 'created_on_utc',
+        'mco_records.created_on_utc should be NOT NULL.');
+    RETURN NEXT col_not_null(mco_schema_name, 'mco_records', 'total_records',
+        'mco_records.total_records should be NOT NULL.');
+    RETURN NEXT col_not_null(mco_schema_name, 'mco_records', 'is_active',
+        'mco_records.is_active should be NOT NULL.');
+    RETURN NEXT col_not_null(mco_schema_name, 'mco_records', 'tenant_id',
+        'mco_records.tenant_id should be NOT NULL.');
+    RETURN NEXT col_not_null(mco_schema_name, 'mco_records', 'batch_guid',
+        'mco_records.batch_guid should be NOT NULL.');
+
+    RETURN NEXT col_not_null(mco_schema_name, 'mco_record_details', 'batch_details_id',
+        'mco_record_details.batch_details_id should be NOT NULL.');
+    RETURN NEXT col_not_null(mco_schema_name, 'mco_record_details', 'total_records',
+        'mco_record_details.total_records should be NOT NULL.');
+    RETURN NEXT col_not_null(mco_schema_name, 'mco_record_details', 'is_active',
+        'mco_record_details.is_active should be NOT NULL.');
+    RETURN NEXT col_not_null(mco_schema_name, 'mco_record_details', 'batch_id',
+        'mco_record_details.batch_id should be NOT NULL.');
+    RETURN NEXT col_not_null(mco_schema_name, 'mco_record_details', 'tenant_id',
+        'mco_record_details.tenant_id should be NOT NULL.');
+    RETURN NEXT col_not_null(mco_schema_name, 'mco_record_details', 'batch_details_guid',
+        'mco_record_details.batch_details_guid should be NOT NULL.');
+
+    RETURN NEXT col_not_null(mco_schema_name, 'mco_error_types', 'error_type_id',
+        'mco_error_types.error_type_id should be NOT NULL.');
+    RETURN NEXT col_not_null(mco_schema_name, 'mco_error_types', 'is_active',
+        'mco_error_types.is_active should be NOT NULL.');
+    RETURN NEXT col_not_null(mco_schema_name, 'mco_error_types', 'error_type_guid',
+        'mco_error_types.error_type_guid should be NOT NULL.');
+
+    RETURN NEXT col_not_null(mco_schema_name, 'mco_record_error_logs', 'error_log_id',
+        'mco_record_error_logs.error_log_id should be NOT NULL.');
+    RETURN NEXT col_not_null(mco_schema_name, 'mco_record_error_logs', 'batch_id',
+        'mco_record_error_logs.batch_id should be NOT NULL.');
+    RETURN NEXT col_not_null(mco_schema_name, 'mco_record_error_logs', 'batch_details_id',
+        'mco_record_error_logs.batch_details_id should be NOT NULL.');
+    RETURN NEXT col_not_null(mco_schema_name, 'mco_record_error_logs', 'is_active',
+        'mco_record_error_logs.is_active should be NOT NULL.');
+    RETURN NEXT col_not_null(mco_schema_name, 'mco_record_error_logs', 'error_type_id',
+        'mco_record_error_logs.error_type_id should be NOT NULL.');
+    RETURN NEXT col_not_null(mco_schema_name, 'mco_record_error_logs', 'tenant_id',
+        'mco_record_error_logs.tenant_id should be NOT NULL.');
+    RETURN NEXT col_not_null(mco_schema_name, 'mco_record_error_logs', 'error_log_guid',
+        'mco_record_error_logs.error_log_guid should be NOT NULL.');
+
+    /*----------------------------- UNIQUE CONSTRAINTS --------------------------*/
+    RETURN NEXT col_is_unique(mco_schema_name, 'mco_records', 'batch_id',
+        'mco_records.batch_id should be unique.');
+    RETURN NEXT col_is_unique(mco_schema_name, 'mco_error_types', 'error_type_id',
+        'mco_error_types.error_type_id should be unique.');
+    RETURN NEXT col_is_unique(mco_schema_name, 'mco_error_types', 'error_type_name',
+        'mco_error_types.error_type_name should be unique.');
+
+    /*----------------------------- FOREIGN KEYS --------------------------------*/
+    RETURN NEXT col_is_fk(mco_schema_name, 'mco_records', 'tenant_id',
+        'mco_records.tenant_id should reference techbd_udi_ingress.tenants.');
+    RETURN NEXT col_is_fk(mco_schema_name, 'mco_record_details', 'tenant_id',
+        'mco_record_details.tenant_id should reference techbd_udi_ingress.tenants.');
+    RETURN NEXT col_is_fk(mco_schema_name, 'mco_record_error_logs', 'tenant_id',
+        'mco_record_error_logs.tenant_id should reference techbd_udi_ingress.tenants.');
+
+    /*----------------------------- COLUMN DATA TYPES ---------------------------*/
+    RETURN NEXT col_type_is(mco_schema_name, 'mco_records', 'batch_id', 'bigint',
+        'mco_records.batch_id should be bigint.');
+    RETURN NEXT col_type_is(mco_schema_name, 'mco_records', 'created_on_utc', 'timestamp with time zone',
+        'mco_records.created_on_utc should be timestamptz.');
+    RETURN NEXT col_type_is(mco_schema_name, 'mco_records', 'reporting_month_date', 'date',
+        'mco_records.reporting_month_date should be date.');
+    RETURN NEXT col_type_is(mco_schema_name, 'mco_records', 'tenant_id', 'text',
+        'mco_records.tenant_id should be text.');
+    RETURN NEXT col_type_is(mco_schema_name, 'mco_records', 'is_active', 'boolean',
+        'mco_records.is_active should be boolean.');
+    RETURN NEXT col_type_is(mco_schema_name, 'mco_records', 'total_records', 'integer',
+        'mco_records.total_records should be integer.');
+
+    RETURN NEXT col_type_is(mco_schema_name, 'mco_record_details', 'batch_details_id', 'bigint',
+        'mco_record_details.batch_details_id should be bigint.');
+    RETURN NEXT col_type_is(mco_schema_name, 'mco_record_details', 'batch_id', 'integer',
+        'mco_record_details.batch_id should be integer.');
+    RETURN NEXT col_type_is(mco_schema_name, 'mco_record_details', 'tenant_id', 'text',
+        'mco_record_details.tenant_id should be text.');
+    RETURN NEXT col_type_is(mco_schema_name, 'mco_record_details', 'total_records', 'integer',
+        'mco_record_details.total_records should be integer.');
+
+    RETURN NEXT col_type_is(mco_schema_name, 'mco_error_types', 'error_type_id', 'integer',
+        'mco_error_types.error_type_id should be integer.');
+    RETURN NEXT col_type_is(mco_schema_name, 'mco_error_types', 'error_type_name', 'text',
+        'mco_error_types.error_type_name should be text.');
+
+    RETURN NEXT col_type_is(mco_schema_name, 'mco_record_error_logs', 'error_log_id', 'bigint',
+        'mco_record_error_logs.error_log_id should be bigint.');
+    RETURN NEXT col_type_is(mco_schema_name, 'mco_record_error_logs', 'batch_id', 'integer',
+        'mco_record_error_logs.batch_id should be integer.');
+    RETURN NEXT col_type_is(mco_schema_name, 'mco_record_error_logs', 'error_json', 'jsonb',
+        'mco_record_error_logs.error_json should be jsonb.');
+    RETURN NEXT col_type_is(mco_schema_name, 'mco_record_error_logs', 'tenant_id', 'text',
+        'mco_record_error_logs.tenant_id should be text.');
+
+    /*----------------------------- INDEXES -------------------------------------*/
+    RETURN NEXT has_index(mco_schema_name, 'mco_records',
+        'idx_mco_records_reporting_month_date', ARRAY['reporting_month_date'],
+        'Index idx_mco_records_reporting_month_date should exist.');
+    RETURN NEXT has_index(mco_schema_name, 'mco_records',
+        'idx_mco_records_tenant_reporting_month', ARRAY['tenant_id', 'reporting_month_date'],
+        'Index idx_mco_records_tenant_reporting_month should exist.');
+    RETURN NEXT has_index(mco_schema_name, 'mco_record_details',
+        'idx_mco_record_details_created_on_utc', ARRAY['created_on_utc'],
+        'Index idx_mco_record_details_created_on_utc should exist.');
+
+    /*----------------------------- GENERATED / DEFAULT COLUMNS -----------------*/
+    RETURN NEXT ok(
+        EXISTS (
+            SELECT 1
+            FROM information_schema.columns
+            WHERE table_schema = mco_schema_name
+              AND table_name = 'mco_records'
+              AND column_name = 'reporting_month_date'
+              AND is_generated = 'ALWAYS'
+        ),
+        'mco_records.reporting_month_date should be a stored generated column.'
+    );
+    RETURN NEXT ok(
+        EXISTS (
+            SELECT 1
+            FROM information_schema.columns
+            WHERE table_schema = mco_schema_name
+              AND table_name = 'mco_records'
+              AND column_name = 'batch_id'
+              AND column_default LIKE 'nextval(%'
+        ),
+        'mco_records.batch_id should have a sequence-backed default.'
+    );
+    RETURN NEXT ok(
+        EXISTS (
+            SELECT 1
+            FROM information_schema.columns
+            WHERE table_schema = mco_schema_name
+              AND table_name = 'mco_record_details'
+              AND column_name = 'batch_details_id'
+              AND column_default LIKE 'nextval(%'
+        ),
+        'mco_record_details.batch_details_id should have a sequence-backed default.'
+    );
+    RETURN NEXT ok(
+        EXISTS (
+            SELECT 1
+            FROM information_schema.columns
+            WHERE table_schema = mco_schema_name
+              AND table_name = 'mco_record_error_logs'
+              AND column_name = 'error_log_id'
+              AND column_default LIKE 'nextval(%'
+        ),
+        'mco_record_error_logs.error_log_id should have a sequence-backed default.'
+    );
+
+    /*----------------------------- MCO FUNCTION SIGNATURES --------------------*/
+    RETURN NEXT has_function(mco_schema_name, 'get_mco_error_logs',
+        ARRAY['text'],
+        'Function mco_data.get_mco_error_logs(text) should exist.');
+    RETURN NEXT has_function(mco_schema_name, 'get_mco_dashboard_metrics',
+        ARRAY['text', 'text', 'boolean'],
+        'Function mco_data.get_mco_dashboard_metrics(text, text, boolean) should exist.');
+    RETURN NEXT has_function(mco_schema_name, 'get_mco_historical_details',
+        ARRAY['text', 'text', 'boolean'],
+        'Function mco_data.get_mco_historical_details(text, text, boolean) should exist.');
+    RETURN NEXT has_function(mco_schema_name, 'get_mco_historical_records',
+        ARRAY['text', 'text', 'text', 'boolean'],
+        'Function mco_data.get_mco_historical_records(text, text, text, boolean) should exist.');
+END;
+$function$
+;
+
+/*====================================================================================
+ * Screening extracts table structure tests
+ *====================================================================================*/
+DROP FUNCTION IF EXISTS techbd_udi_assurance.test_screening_extracts_tables(text);
+
+CREATE OR REPLACE FUNCTION techbd_udi_assurance.test_screening_extracts_tables(
+    screening_schema_name text DEFAULT 'screening_extracts'::text
+)
+RETURNS SETOF text
+LANGUAGE plpgsql
+AS $function$
+BEGIN
+    /*=========================== SCREENING EXTRACTS ============================*/
+
+    /*----------------------------- TABLE EXISTENCE -----------------------------*/
+    RETURN NEXT has_table(screening_schema_name, 'resource_types',
+        'The table screening_extracts.resource_types should exist.');
+    RETURN NEXT has_table(screening_schema_name, 'screening_error_types',
+        'The table screening_extracts.screening_error_types should exist.');
+    RETURN NEXT has_table(screening_schema_name, 'mco_screening_extracts',
+        'The table screening_extracts.mco_screening_extracts should exist.');
+    RETURN NEXT has_table(screening_schema_name, 'mco_screening_extracts_details',
+        'The table screening_extracts.mco_screening_extracts_details should exist.');
+    RETURN NEXT has_table(screening_schema_name, 'mco_screening_extracts_error_logs',
+        'The table screening_extracts.mco_screening_extracts_error_logs should exist.');
+    RETURN NEXT has_table(screening_schema_name, 'mco_screening_preferences',
+        'The table screening_extracts.mco_screening_preferences should exist.');
+
+    /*----------------------------- PRIMARY KEYS --------------------------------*/
+    RETURN NEXT has_pk(screening_schema_name, 'resource_types',
+        'screening_extracts.resource_types should have a primary key.');
+    RETURN NEXT has_pk(screening_schema_name, 'screening_error_types',
+        'screening_extracts.screening_error_types should have a primary key.');
+    RETURN NEXT has_pk(screening_schema_name, 'mco_screening_extracts',
+        'screening_extracts.mco_screening_extracts should have a primary key.');
+    RETURN NEXT has_pk(screening_schema_name, 'mco_screening_extracts_details',
+        'screening_extracts.mco_screening_extracts_details should have a primary key.');
+    RETURN NEXT has_pk(screening_schema_name, 'mco_screening_extracts_error_logs',
+        'screening_extracts.mco_screening_extracts_error_logs should have a primary key.');
+    RETURN NEXT has_pk(screening_schema_name, 'mco_screening_preferences',
+        'screening_extracts.mco_screening_preferences should have a primary key.');
+
+    /*----------------------------- COLUMN STRUCTURE ----------------------------*/
+    RETURN NEXT columns_are(screening_schema_name, 'resource_types',
+        ARRAY['resource_type_guid', 'resource_type_id', 'resource_type_name',
+              'is_active', 'created_on_utc', 'update_on_utc'],
+        'The columns of screening_extracts.resource_types should match production DDL.');
+
+    RETURN NEXT columns_are(screening_schema_name, 'screening_error_types',
+        ARRAY['screening_error_type_guid', 'screening_error_type_id',
+              'screening_error_type_name', 'screening_error_type_description',
+              'is_active', 'created_on_utc', 'updated_on_utc'],
+        'The columns of screening_extracts.screening_error_types should match production DDL.');
+
+    RETURN NEXT columns_are(screening_schema_name, 'mco_screening_extracts',
+        ARRAY['mco_screening_guid', 'mco_screening_id', 'tenant_id',
+              'resource_type_id', 'is_active', 'created_on_utc', 'updated_on_utc',
+              'status', 'control_file_name', 'request_bundle_id', 'sent_to_mco',
+              'acknowledge_time', 'received_file_size_in_kb', 'response_bundle_id',
+              'sent_file_name'],
+        'The columns of screening_extracts.mco_screening_extracts should match production DDL.');
+
+    RETURN NEXT columns_are(screening_schema_name, 'mco_screening_extracts_details',
+        ARRAY['mco_screening_extracts_details_guid',
+              'mco_screening_extracts_details_id', 'mco_screening_id',
+              'reprocess_count', 'resource_type_id', 'is_active', 'file_name',
+              'notification_doc', 'record_count', 'created_on_utc', 'updated_on_utc',
+              'status', 'received_data_file_size_in_kb'],
+        'The columns of screening_extracts.mco_screening_extracts_details should match production DDL.');
+
+    RETURN NEXT columns_are(screening_schema_name, 'mco_screening_extracts_error_logs',
+        ARRAY['mco_screening_extracts_error_log_guid',
+              'mco_screening_extracts_error_log_id', 'mco_screening_id',
+              'error_json', 'created_on_utc', 'updated_on_utc',
+              'mco_screening_extracts_details_id', 'is_active',
+              'screening_error_type_id'],
+        'The columns of screening_extracts.mco_screening_extracts_error_logs should match production DDL.');
+
+    RETURN NEXT columns_are(screening_schema_name, 'mco_screening_preferences',
+        ARRAY['mco_screening_preferences_guid', 'mco_screening_preferences_id',
+              'tenant_id', 'resource_type_id', 'is_active', 'created_on_utc',
+              'deactivated_on_utc'],
+        'The columns of screening_extracts.mco_screening_preferences should match production DDL.');
+
+    /*----------------------------- REQUIRED COLUMNS ----------------------------*/
+    RETURN NEXT col_not_null(screening_schema_name, 'resource_types', 'resource_type_guid',
+        'resource_types.resource_type_guid should be NOT NULL.');
+    RETURN NEXT col_not_null(screening_schema_name, 'resource_types', 'resource_type_id',
+        'resource_types.resource_type_id should be NOT NULL.');
+
+    RETURN NEXT col_not_null(screening_schema_name, 'screening_error_types', 'screening_error_type_guid',
+        'screening_error_types.screening_error_type_guid should be NOT NULL.');
+    RETURN NEXT col_not_null(screening_schema_name, 'screening_error_types', 'screening_error_type_id',
+        'screening_error_types.screening_error_type_id should be NOT NULL.');
+
+    RETURN NEXT col_not_null(screening_schema_name, 'mco_screening_extracts', 'mco_screening_guid',
+        'mco_screening_extracts.mco_screening_guid should be NOT NULL.');
+    RETURN NEXT col_not_null(screening_schema_name, 'mco_screening_extracts', 'mco_screening_id',
+        'mco_screening_extracts.mco_screening_id should be NOT NULL.');
+
+    RETURN NEXT col_not_null(screening_schema_name, 'mco_screening_extracts_details',
+        'mco_screening_extracts_details_guid',
+        'mco_screening_extracts_details_guid should be NOT NULL.');
+    RETURN NEXT col_not_null(screening_schema_name, 'mco_screening_extracts_details',
+        'mco_screening_extracts_details_id',
+        'mco_screening_extracts_details_id should be NOT NULL.');
+
+    RETURN NEXT col_not_null(screening_schema_name, 'mco_screening_extracts_error_logs',
+        'mco_screening_extracts_error_log_guid',
+        'mco_screening_extracts_error_log_guid should be NOT NULL.');
+    RETURN NEXT col_not_null(screening_schema_name, 'mco_screening_extracts_error_logs',
+        'mco_screening_extracts_error_log_id',
+        'mco_screening_extracts_error_log_id should be NOT NULL.');
+
+    RETURN NEXT col_not_null(screening_schema_name, 'mco_screening_preferences',
+        'mco_screening_preferences_guid',
+        'mco_screening_preferences_guid should be NOT NULL.');
+    RETURN NEXT col_not_null(screening_schema_name, 'mco_screening_preferences',
+        'mco_screening_preferences_id',
+        'mco_screening_preferences_id should be NOT NULL.');
+    RETURN NEXT col_not_null(screening_schema_name, 'mco_screening_preferences', 'tenant_id',
+        'mco_screening_preferences.tenant_id should be NOT NULL.');
+    RETURN NEXT col_not_null(screening_schema_name, 'mco_screening_preferences', 'resource_type_id',
+        'mco_screening_preferences.resource_type_id should be NOT NULL.');
+    RETURN NEXT col_not_null(screening_schema_name, 'mco_screening_preferences', 'is_active',
+        'mco_screening_preferences.is_active should be NOT NULL.');
+    RETURN NEXT col_not_null(screening_schema_name, 'mco_screening_preferences', 'created_on_utc',
+        'mco_screening_preferences.created_on_utc should be NOT NULL.');
+
+    /*----------------------------- UNIQUE CONSTRAINTS --------------------------*/
+    RETURN NEXT col_is_unique(screening_schema_name, 'resource_types', 'resource_type_id',
+        'resource_types.resource_type_id should be unique.');
+    RETURN NEXT col_is_unique(screening_schema_name, 'resource_types', 'resource_type_name',
+        'resource_types.resource_type_name should be unique.');
+    RETURN NEXT col_is_unique(screening_schema_name, 'screening_error_types', 'screening_error_type_id',
+        'screening_error_types.screening_error_type_id should be unique.');
+    RETURN NEXT col_is_unique(screening_schema_name, 'screening_error_types', 'screening_error_type_name',
+        'screening_error_types.screening_error_type_name should be unique.');
+    RETURN NEXT col_is_unique(screening_schema_name, 'mco_screening_extracts', 'mco_screening_id',
+        'mco_screening_extracts.mco_screening_id should be unique.');
+    RETURN NEXT col_is_unique(screening_schema_name, 'mco_screening_extracts_details',
+        'mco_screening_extracts_details_id',
+        'mco_screening_extracts_details.mco_screening_extracts_details_id should be unique.');
+    RETURN NEXT col_is_unique(screening_schema_name, 'mco_screening_preferences', 'tenant_id',
+        'mco_screening_preferences.tenant_id should be unique.');
+
+    /*----------------------------- FOREIGN KEYS --------------------------------*/
+    RETURN NEXT col_is_fk(screening_schema_name, 'mco_screening_extracts', 'resource_type_id',
+        'mco_screening_extracts.resource_type_id should reference resource_types.');
+    RETURN NEXT col_is_fk(screening_schema_name, 'mco_screening_extracts', 'tenant_id',
+        'mco_screening_extracts.tenant_id should reference techbd_udi_ingress.tenants.');
+    RETURN NEXT col_is_fk(screening_schema_name, 'mco_screening_extracts_details', 'mco_screening_id',
+        'mco_screening_extracts_details.mco_screening_id should reference mco_screening_extracts.');
+    RETURN NEXT col_is_fk(screening_schema_name, 'mco_screening_extracts_details', 'resource_type_id',
+        'mco_screening_extracts_details.resource_type_id should reference resource_types.');
+    RETURN NEXT col_is_fk(screening_schema_name, 'mco_screening_extracts_error_logs',
+        'mco_screening_extracts_details_id',
+        'mco_screening_extracts_error_logs.mco_screening_extracts_details_id should reference details.');
+    RETURN NEXT col_is_fk(screening_schema_name, 'mco_screening_extracts_error_logs',
+        'mco_screening_id',
+        'mco_screening_extracts_error_logs.mco_screening_id should reference mco_screening_extracts.');
+    RETURN NEXT col_is_fk(screening_schema_name, 'mco_screening_extracts_error_logs',
+        'screening_error_type_id',
+        'mco_screening_extracts_error_logs.screening_error_type_id should reference screening_error_types.');
+    RETURN NEXT col_is_fk(screening_schema_name, 'mco_screening_preferences', 'tenant_id',
+        'mco_screening_preferences.tenant_id should reference techbd_udi_ingress.tenants.');
+    RETURN NEXT col_is_fk(screening_schema_name, 'mco_screening_preferences', 'resource_type_id',
+        'mco_screening_preferences.resource_type_id should reference resource_types.');
+
+    /*----------------------------- COLUMN DATA TYPES ---------------------------*/
+    RETURN NEXT col_type_is(screening_schema_name, 'resource_types', 'resource_type_guid', 'text',
+        'resource_types.resource_type_guid should be text.');
+    RETURN NEXT col_type_is(screening_schema_name, 'resource_types', 'resource_type_id', 'bigint',
+        'resource_types.resource_type_id should be bigint.');
+    RETURN NEXT col_type_is(screening_schema_name, 'resource_types', 'created_on_utc', 'timestamp with time zone',
+        'resource_types.created_on_utc should be timestamptz.');
+
+    RETURN NEXT col_type_is(screening_schema_name, 'screening_error_types', 'screening_error_type_id', 'bigint',
+        'screening_error_types.screening_error_type_id should be bigint.');
+    RETURN NEXT col_type_is(screening_schema_name, 'screening_error_types', 'screening_error_type_description', 'text',
+        'screening_error_types.screening_error_type_description should be text.');
+
+    RETURN NEXT col_type_is(screening_schema_name, 'mco_screening_extracts', 'mco_screening_id', 'bigint',
+        'mco_screening_extracts.mco_screening_id should be bigint.');
+    RETURN NEXT col_type_is(screening_schema_name, 'mco_screening_extracts', 'resource_type_id', 'bigint',
+        'mco_screening_extracts.resource_type_id should be bigint.');
+    RETURN NEXT col_type_is(screening_schema_name, 'mco_screening_extracts', 'tenant_id', 'text',
+        'mco_screening_extracts.tenant_id should be text.');
+
+    RETURN NEXT col_type_is(screening_schema_name, 'mco_screening_extracts_details',
+        'mco_screening_extracts_details_id', 'bigint',
+        'mco_screening_extracts_details_id should be bigint.');
+    RETURN NEXT col_type_is(screening_schema_name, 'mco_screening_extracts_details', 'mco_screening_id', 'bigint',
+        'mco_screening_extracts_details.mco_screening_id should be bigint.');
+    RETURN NEXT col_type_is(screening_schema_name, 'mco_screening_extracts_details', 'notification_doc', 'jsonb',
+        'mco_screening_extracts_details.notification_doc should be jsonb.');
+
+    RETURN NEXT col_type_is(screening_schema_name, 'mco_screening_extracts_error_logs',
+        'mco_screening_extracts_error_log_id', 'bigint',
+        'mco_screening_extracts_error_log_id should be bigint.');
+    RETURN NEXT col_type_is(screening_schema_name, 'mco_screening_extracts_error_logs', 'error_json', 'json',
+        'mco_screening_extracts_error_logs.error_json should be json.');
+
+    RETURN NEXT col_type_is(screening_schema_name, 'mco_screening_preferences',
+        'mco_screening_preferences_id', 'bigint',
+        'mco_screening_preferences_id should be bigint.');
+    RETURN NEXT col_type_is(screening_schema_name, 'mco_screening_preferences', 'tenant_id', 'text',
+        'mco_screening_preferences.tenant_id should be text.');
+    RETURN NEXT col_type_is(screening_schema_name, 'mco_screening_preferences', 'created_on_utc',
+        'timestamp with time zone',
+        'mco_screening_preferences.created_on_utc should be timestamptz.');
+
+    /*----------------------------- INDEXES -------------------------------------*/
+    RETURN NEXT has_index(screening_schema_name, 'resource_types',
+        'resource_types_resource_type_id_key', ARRAY['resource_type_id'],
+        'resource_types_resource_type_id_key should exist.');
+    RETURN NEXT has_index(screening_schema_name, 'resource_types',
+        'resource_types_resource_type_name_unqky', ARRAY['resource_type_name'],
+        'resource_types_resource_type_name_unqky should exist.');
+    RETURN NEXT has_index(screening_schema_name, 'mco_screening_extracts',
+        'mco_screening_extracts_mco_screening_id_unqky', ARRAY['mco_screening_id'],
+        'mco_screening_extracts_mco_screening_id_unqky should exist.');
+    RETURN NEXT has_index(screening_schema_name, 'mco_screening_preferences',
+        'mco_screening_preferences_tenant_id_unqky', ARRAY['tenant_id'],
+        'mco_screening_preferences_tenant_id_unqky should exist.');
+
+    /*----------------------------- SEQUENCE DEFAULTS ---------------------------*/
+    RETURN NEXT ok(
+        EXISTS (SELECT 1 FROM information_schema.columns
+                WHERE table_schema = screening_schema_name
+                  AND table_name = 'resource_types'
+                  AND column_name = 'resource_type_id'
+                  AND column_default LIKE 'nextval(%'),
+        'resource_types.resource_type_id should have a sequence-backed default.'
+    );
+    RETURN NEXT ok(
+        EXISTS (SELECT 1 FROM information_schema.columns
+                WHERE table_schema = screening_schema_name
+                  AND table_name = 'screening_error_types'
+                  AND column_name = 'screening_error_type_id'
+                  AND column_default LIKE 'nextval(%'),
+        'screening_error_types.screening_error_type_id should have a sequence-backed default.'
+    );
+    RETURN NEXT ok(
+        EXISTS (SELECT 1 FROM information_schema.columns
+                WHERE table_schema = screening_schema_name
+                  AND table_name = 'mco_screening_extracts'
+                  AND column_name = 'mco_screening_id'
+                  AND column_default LIKE 'nextval(%'),
+        'mco_screening_extracts.mco_screening_id should have a sequence-backed default.'
+    );
+    RETURN NEXT ok(
+        EXISTS (SELECT 1 FROM information_schema.columns
+                WHERE table_schema = screening_schema_name
+                  AND table_name = 'mco_screening_extracts_details'
+                  AND column_name = 'mco_screening_extracts_details_id'
+                  AND column_default LIKE 'nextval(%'),
+        'mco_screening_extracts_details.mco_screening_extracts_details_id should have a sequence-backed default.'
+    );
+    RETURN NEXT ok(
+        EXISTS (SELECT 1 FROM information_schema.columns
+                WHERE table_schema = screening_schema_name
+                  AND table_name = 'mco_screening_extracts_error_logs'
+                  AND column_name = 'mco_screening_extracts_error_log_id'
+                  AND column_default LIKE 'nextval(%'),
+        'mco_screening_extracts_error_logs.mco_screening_extracts_error_log_id should have a sequence-backed default.'
+    );
+    RETURN NEXT ok(
+        EXISTS (SELECT 1 FROM information_schema.columns
+                WHERE table_schema = screening_schema_name
+                  AND table_name = 'mco_screening_preferences'
+                  AND column_name = 'mco_screening_preferences_id'
+                  AND column_default LIKE 'nextval(%'),
+        'mco_screening_preferences.mco_screening_preferences_id should have a sequence-backed default.'
+    );
+
 END;
 $function$
 ;
