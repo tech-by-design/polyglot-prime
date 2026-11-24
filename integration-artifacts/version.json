@@ -3,9 +3,9 @@
     {
       "type": "FHIR",
       "channel": "FhirBundleSubmission.xml",
-      "version": "0.8.49",
+      "version": "0.8.50",
       "editedby": "abhiramisanthosh90",
-      "date": "2026-10-20"
+      "date": "2026-11-24"
     },
     {
       "type": "FHIR",
@@ -59,9 +59,9 @@
     {
       "type": "HL7v2",
       "channel": "TechBD HL7 Workflow.xml",
-      "version": "0.1.54",
+      "version": "0.1.55",
       "editedby": "abhiramisanthosh90",
-      "date": "2026-07-07"
+      "date": "2026-11-24"
     },
     {
       "type": "HL7v2",
@@ -74,8 +74,8 @@
       "type": "Global script",
       "channel": "global-script.xml",
       "version": "",
-      "editedby": "anoopvarma-2000-p",
-      "date": "2025-07-24"
+      "editedby": "abhiramisanthosh90",
+      "date": "2025-11-24"
     },
     {
       "type": "Lookup Manager",
@@ -115,9 +115,9 @@
     {
       "type": "CCDA",
       "channel": "TechBD CCD Workflow.xml",
-      "version": "0.5.46",
-      "editedby": "jewelbonnie",
-      "date": "2026-11-10"
+      "version": "0.5.47",
+      "editedby": "abhiramisanthosh90",
+      "date": "2026-11-24"
     },
     {
       "type": "Router",
@@ -307,16 +307,23 @@
     {
       "type": "code-templates",
       "channel": "UuidUtil.xml",
-      "version": "0.1.0",
+      "version": "0.1.1",
       "editedby": "abhiramisanthosh90",
-      "date": "2026-04-20"
+      "date": "2026-11-24"
     },
     {
       "type": "code-templates",
       "channel": "TechBD Functions.xml",
+      "version": "0.1.1",
+      "editedby": "abhiramisanthosh90",
+      "date": "2026-11-24"
+    },
+    {
+      "type": "code-templates",
+      "channel": "TechBD Common Helpers.xml",
       "version": "0.1.0",
       "editedby": "abhiramisanthosh90",
-      "date": "2026-06-11"
+      "date": "2026-11-24"
     },
     {
       "type": "code-templates",

@@ -1,16 +1,21 @@
-<channel version="26.6.0">
+<channel version="26.9.0">
   <id>a581aac5-930d-4a48-b2c3-d3b7e0aebb4f</id>
   <nextMetaDataId>12</nextMetaDataId>
   <name>TechBD CCD Workflow</name>
-  <description>Version 0.5.46
-Updated CCDA processing to use the most recent Observation effectiveDateTime for the Grouper Screening resource&apos;s hasMember entry across Epic, AthenaHealth, Medent, and CureMD implementations.</description>
-  <revision>16</revision>
-  <sourceConnector version="26.6.0">
+  <description>Version 0.5.47
+Message storage mode changed as production
+Removed shared instance
+Implemented code template for common functions.</description>
+  <revision>45</revision>
+  <sourceConnector version="26.9.0">
     <metaDataId>0</metaDataId>
     <name>sourceConnector</name>
-    <properties class="com.mirth.connect.connectors.http.HttpReceiverProperties" version="26.6.0">
+    <properties class="com.mirth.connect.connectors.http.HttpReceiverProperties" version="26.9.0">
       <pluginProperties>
-        <com.mirth.connect.plugins.ssl.SSLSettingsProperties version="26.6.0">
+        <com.mirth.connect.plugins.httpauth.NoneHttpAuthProperties version="26.9.0">
+  <authType>NONE</authType>
+        </com.mirth.connect.plugins.httpauth.NoneHttpAuthProperties>
+        <com.mirth.connect.plugins.ssl.SSLSettingsProperties version="26.9.0">
   <sslEnabled>false</sslEnabled>
           <mutualTlsEnabled>false</mutualTlsEnabled>
           <mutualTlsMigrated>true</mutualTlsMigrated>
@@ -38,15 +43,12 @@ Updated CCDA processing to use the most recent Observation effectiveDateTime for
           <pinnedLeafPins/>
           <subjectSanFilterPatterns/>
         </com.mirth.connect.plugins.ssl.SSLSettingsProperties>
-        <com.mirth.connect.plugins.httpauth.NoneHttpAuthProperties version="26.6.0">
-  <authType>NONE</authType>
-        </com.mirth.connect.plugins.httpauth.NoneHttpAuthProperties>
       </pluginProperties>
-      <listenerConnectorProperties version="26.6.0">
+      <listenerConnectorProperties version="26.9.0">
         <host>0.0.0.0</host>
         <port>9002</port>
       </listenerConnectorProperties>
-      <sourceConnectorProperties version="26.6.0">
+      <sourceConnectorProperties version="26.9.0">
         <responseVariable>finalResponse</responseVariable>
         <respondAfterProcessing>true</respondAfterProcessing>
         <processBatch>false</processBatch>
@@ -109,9 +111,9 @@ Updated CCDA processing to use the most recent Observation effectiveDateTime for
         </com.mirth.connect.connectors.http.HttpStaticResource>
       </staticResources>
     </properties>
-    <transformer version="26.6.0">
+    <transformer version="26.9.0">
       <elements>
-        <com.mirth.connect.plugins.javascriptstep.JavaScriptStep version="26.6.0">
+        <com.mirth.connect.plugins.javascriptstep.JavaScriptStep version="26.9.0">
           <name>DB Save</name>
           <sequenceNumber>0</sequenceNumber>
           <enabled>true</enabled>
@@ -274,7 +276,7 @@ function saveCcdaPayload(interactionId, tenantId, requestUri, payloadJson, opera
 	}
 }</script>
         </com.mirth.connect.plugins.javascriptstep.JavaScriptStep>
-        <com.mirth.connect.plugins.javascriptstep.JavaScriptStep version="26.6.0">
+        <com.mirth.connect.plugins.javascriptstep.JavaScriptStep version="26.9.0">
           <name>Common JS functions</name>
           <sequenceNumber>1</sequenceNumber>
           <enabled>true</enabled>
@@ -331,63 +333,6 @@ function getJsonInvalidOperationOutcome(errorMsg, code, severity) {
             };
 }
 
-function sendDataLedgerSync(payload) {
-    
-    var apiUrl = LookupHelper.get(&quot;Config&quot;, &quot;DATA_LEDGER_API_URL&quot;);
-
-//Load from Lookup Manager (NOT sensitive)
-var dataLedgerApiKey = LookupHelper.get(&quot;Config-sensitive&quot;, &quot;TECHBD_NYEC_DATALEDGER_API_KEY&quot;);
-&#xd;
-//store real key into channelMap
-channelMap.put(&quot;DATA_LEDGER_API_KEY&quot;, dataLedgerApiKey);
-    if (apiUrl == null) {
-        throw new Error(&quot;Environment variable DATA_LEDGER_API_URL is not set.&quot;);
-    }
-    if (dataLedgerApiKey == null) {
-        throw new Error(&quot;Environment variable &apos;TECHBD_NYEC_DATALEDGER_API_KEY&apos; is not set.&quot;);
-    }
-
-    try {
-        var HttpClients = org.apache.http.impl.client.HttpClients;
-        var HttpPost = org.apache.http.client.methods.HttpPost;
-        var StringEntity = org.apache.http.entity.StringEntity;
-        var EntityUtils = org.apache.http.util.EntityUtils;
-
-        var httpClient = HttpClients.createDefault();
-        var httpPost = new HttpPost(apiUrl);
-
-        httpPost.setHeader(&quot;Content-Type&quot;, &quot;application/json&quot;);
-        httpPost.setHeader(&quot;Accept&quot;, &quot;application/json&quot;);
-       
-        if (dataLedgerApiKey != null) {
-        	httpPost.setHeader(&quot;x-api-key&quot;, dataLedgerApiKey); // ✅ Add x-api-key header
-        }
-
-        var entity = new StringEntity(payload, &quot;UTF-8&quot;);
-        httpPost.setEntity(entity);
-
-        var response = httpClient.execute(httpPost);
-        try {
-            var statusCode = response.getStatusLine().getStatusCode();
-            var responseBody = EntityUtils.toString(response.getEntity());
-
-            if (statusCode &gt;= 200 &amp;&amp; statusCode &lt; 300) {
-                return {
-                    statusCode: statusCode,
-                    body: responseBody
-                };
-            } else {
-                logger.error(&quot;Data Ledger API Error. Status: &quot; + statusCode + &quot;, Response: &quot; + responseBody);
-                throw new Error(&quot;Request failed with status &quot; + statusCode);
-            }
-        } finally {
-            EntityUtils.consumeQuietly(response.getEntity());
-        }
-    } catch (error) {
-        logger.error(&quot;Data Ledger API Request Failed: &quot; + error.message);
-        throw error;
-    }
-}
 
 function saveDataLedgerSync(interactionId) {
 	//*********** DATA LEDGER ***************
@@ -670,7 +615,7 @@ function applyPhiFilter(xmlString) {
     var fileNameWithExt = xsltPath.substring(xsltPath.lastIndexOf(&apos;/&apos;) + 1);
     var fileName = fileNameWithExt.replace(&apos;.xslt&apos;, &apos;&apos;);
 
-    // ← ADDED: Retrieve XSLT content from LookupHelper
+   /* // ← ADDED: Retrieve XSLT content from LookupHelper
     var xsltContent = LookupHelper.get(&quot;SchemaFiles&quot;, fileName);
 
     // ← ADDED: Validation check
@@ -685,7 +630,11 @@ function applyPhiFilter(xmlString) {
     
     var transformer = javax.xml.transform.TransformerFactory
         .newInstance()
-        .newTransformer(xsltSource);  // ← Using xsltSource variable
+        .newTransformer(xsltSource); */ // ← Using xsltSource variable
+
+    // XSLT is compiled once per server and cached (TechBD Functions &amp;gt; xmlCache).
+    // A new Transformer is created per message - Transformers are not thread-safe.
+    var transformer = getCompiledXslt(fileName).newTransformer();
 
     var writer = new java.io.StringWriter();
     transformer.transform(
@@ -696,7 +645,7 @@ function applyPhiFilter(xmlString) {
     return writer.toString();
 }
 
-function validateAgainstXsd(xmlString) {
+/*function validateAgainstXsd(xmlString) {
     var xsdFilePath = channelMap.get(&apos;xsdFilePath&apos;);
     
     // ← ADDED: Extract filename from path
@@ -770,8 +719,23 @@ function validateAgainstXsd(xmlString) {
             new java.io.StringReader(xmlString)
         )
     );
-}
+}*/
 
+function validateAgainstXsd(xmlString) {
+    var xsdFilePath = channelMap.get(&apos;xsdFilePath&apos;);
+    var xsdFileName = xsdFilePath.substring(xsdFilePath.lastIndexOf(&apos;/&apos;) + 1);
+
+    // XSD (and every included/imported XSD, resolved in memory from Lookup Manager &amp;quot;SchemaFiles&amp;quot;)
+    // is compiled once per server and cached (TechBD Functions &amp;gt; xmlCache). Nothing is written to disk.
+    // A new Validator is created per message - Validators are not thread-safe.
+    var validator = getCompiledSchema(xsdFileName).newValidator();
+
+    validator.validate(
+        new javax.xml.transform.stream.StreamSource(
+            new java.io.StringReader(xmlString)
+        )
+    );
+}
 function setBaseFhirURL() {
     // -----------------------------------
     // Base FHIR URL handling
@@ -811,7 +775,7 @@ function convertCcdaToFhirBundle(phiFilteredXml) {
     var fileNameWithExt = xsltPath.substring(xsltPath.lastIndexOf(&apos;/&apos;) + 1);
     var fileName = fileNameWithExt.replace(&apos;.xslt&apos;, &apos;&apos;);
 
-    var xsltContent = LookupHelper.get(&quot;SchemaFiles&quot;, fileName);
+    /*var xsltContent = LookupHelper.get(&quot;SchemaFiles&quot;, fileName);
     
 
     if (!xsltContent) {
@@ -841,7 +805,12 @@ function convertCcdaToFhirBundle(phiFilteredXml) {
     }
 }));&#xd;       
     var transformer = transformerFactory.newTransformer(xsltSource);
+*/
 
+    // XSLT (and its xsl:include files, resolved from Lookup) is compiled once per server and cached
+    // (TechBD Functions &amp;gt; xmlCache). A new Transformer is created per message - Transformers are not thread-safe.
+    var transformer = getCompiledXslt(fileName).newTransformer();
+    
     // -----------------------------------
     // Timestamp parameter
     // -----------------------------------
@@ -873,80 +842,12 @@ function convertCcdaToFhirBundle(phiFilteredXml) {
     return cleanedJsonString;
 }</script>
         </com.mirth.connect.plugins.javascriptstep.JavaScriptStep>
-        <com.mirth.connect.plugins.javascriptstep.JavaScriptStep version="26.6.0">
+        <com.mirth.connect.plugins.javascriptstep.JavaScriptStep version="26.9.0">
           <name>Validate HTTP Request and collect headers</name>
           <sequenceNumber>2</sequenceNumber>
           <enabled>true</enabled>
           <script>logger.info(&quot;HTTP request validation started.&quot;);
 
-/********************************************
-    1️ Fetch JDBC configuration from Lookup Manager(Config-sensitive)
-********************************************/
-
-try {
-  
-var jdbc_Passord = LookupHelper.get(&quot;Config-sensitive&quot;, &quot;MC_JDBC_PASSWORD&quot;);
-channelMap.put(&quot;JDBC_PASSWORD&quot;, jdbc_Passord);
-var jdbc_Username = LookupHelper.get(&quot;Config-sensitive&quot;, &quot;MC_JDBC_USERNAME&quot;);
-channelMap.put(&quot;JDBC_USERNAME&quot;, jdbc_Username);   
-    
-} catch (e) {
-    logger.error(&quot;❌ Error processing JDBC Attributes: &quot; + e.message);
-}
-
-/********************************************
-    2 FETCH DATA LEDGER API KEY (Plain text)
-********************************************/
-
-try {
-    var dataLedgerKey = LookupHelper.get(&quot;Config-sensitive&quot;, &quot;TECHBD_NYEC_DATALEDGER_API_KEY&quot;);
-    
-    channelMap.put(&quot;DATA_LEDGER_API_KEY&quot;, dataLedgerKey);
-
-} catch (e) {
-    logger.error(&quot;❌ Error processing DataLedger API Config-sensitive group: &quot; + e.message);
-}
-
-/********************************************
-    3️ FETCH FHIR BUNDLE SUBMISSION API URL (Plain text)
-********************************************/
-try {
-    var fhirApiUrl = LookupHelper.get(&quot;Config&quot;, &quot;MC_FHIR_BUNDLE_SUBMISSION_API_URL&quot;);
-
-    if (!fhirApiUrl || fhirApiUrl.trim() === &quot;&quot;) {
-        throw &quot;Lookup Manager configuration  for FHIR API URL returned empty.&quot;;
-    }
-
-    channelMap.put(&quot;FHIR_API_URL&quot;, fhirApiUrl);
-     channelMap.put(&quot;fhirBundleSubmissionApiUrl&quot;, fhirApiUrl);
-
-} catch (e) {
-    logger.error(&quot;❌ Error fetching FHIR API URL: &quot; + e);
-    setErrorResponse(500, &quot;Failed to load FHIR API URL&quot;);
-    throw e;
-}
-
-/********************************************
-    4 FETCH JDBC URL (Plain text)
-********************************************/
-try {
-
-    // Get REAL jdbc URL from Config-sensitive group
-    var jdbcUrl = LookupHelper.get(&quot;Config-sensitive&quot;, &quot;MC_JDBC_URL&quot;);
-    
-
-    if (!jdbcUrl || jdbcUrl.trim() === &quot;&quot;) {
-        throw &quot;Lookup Manager(config) for MC_JDBC_URL returned empty.&quot;;
-    }
-
-    jdbcUrl = jdbcUrl.trim(); // IMPORTANT: remove trailing spaces
-    channelMap.put(&quot;jdbcUrl&quot;, jdbcUrl);
-
-} catch (e) {
-    logger.error(&quot;❌ Error fetching JDBC URL: &quot; + e);
-    setErrorResponse(500, &quot;Failed to load JDBC URL&quot;);
-    throw e;
-}
 
 /********************************************
     6 FETCH DEFAULT DATALAKE API URL (Plain text)
@@ -1050,7 +951,6 @@ channelMap.put(&quot;DATALAKE_API_URL&quot;, datalakeApiUrl);
         headerDataLakeApiUrl = headerDataLakeApiUrl.trim();
         channelMap.put(&quot;DATALAKE_API_URL&quot;, headerDataLakeApiUrl);
         
-        logger.info(&quot;✔DataLake API URL overridden from request header: &quot; + headerDataLakeApiUrl);
     } 
 
 /********************************************
@@ -1068,40 +968,6 @@ try {
 }
 
 /********************************************
-    9 FETCH DATA LEDGER API URL (Plain text)
-********************************************/
-
-try {
-    var ledgerUrl = LookupHelper.get(&quot;Config&quot;, &quot;DATA_LEDGER_API_URL&quot;);
-    
-     globalMap.put(&quot;DATA_LEDGER_API_URL&quot;, ledgerUrl);
-
-} catch (e) {
-    logger.error(&quot;❌ Error processing DataLedger API URL from Lookup Manager(config): &quot; + e.message);
-}
-/********************************************
-    10 FETCH HUB UI URL (Plain text)
-********************************************/
-// Retrieves the Hub UI URL used to populate the Access-Control-Allow-Origin header
-try {
-    var hubUiUrl = LookupHelper.get(&quot;Config&quot;, &quot;HUB_UI_URL&quot;);
- 
-    if (!hubUiUrl || hubUiUrl.trim() === &quot;&quot;) {
-        throw &quot;Lookup Manager(config) for HUB_UI_URL returned empty.&quot;;
-    }
- 
-    hubUiUrl = hubUiUrl.trim();
- 
-    channelMap.put(&quot;HUB_UI_URL&quot;, hubUiUrl);
-    globalMap.put(&quot;HUB_UI_URL&quot;, hubUiUrl);
- 
-} catch (e) {
-    logger.error(&quot;❌ Error fetching HUB UI URL: &quot; + e);
-    setErrorResponse(500, &quot;Failed to load HUB UI URL&quot;);
-    throw e;
-}
-
-/********************************************
     DONE
 ********************************************/
 
@@ -1110,6 +976,8 @@ var requestedPath = sourceMap.get(&apos;contextPath&apos;);
 if (requestedPath == &quot;/&quot;) {
 	return;
 }
+
+
 
 // Initialize missing headers array
 var missingHeaders = [];
@@ -1217,7 +1085,9 @@ if (missingHeaders.length &gt; 0) {
     throw errorMessage;
 }
 
-///////////////////////////////////////////////////////////////////////////
+
+
+/////
 // Parse the incoming request (assumes multipart form data)
 var rawData = connectorMessage.getRawData();
 
@@ -1227,6 +1097,7 @@ if (!rawData || rawData.trim().length == 0 || rawData.trim() == &apos;&apos;) {
     setErrorResponse(400, errorMessage);
     throw errorMessage;
 }
+
 
 // -----------------------------------------------------
 // Multiple multipart / multiple file validation
@@ -1415,39 +1286,9 @@ function getManufacturerModelName(xmlData) {
 
         throw new Error(errorMsg);
      }
-}
-
-var jdbcUrl = channelMap.get(&quot;jdbcUrl&quot;);
-if(jdbcUrl != null) {
-    globalMap.put(&apos;jdbcUrl&apos;, jdbcUrl);
-} else {
-    var errorMessage = &apos;MC_JDBC_URL variable is not set&apos;;
-    logger.error(errorMessage);
-    setErrorResponse(500, errorMessage); // Set the HTTP response status to 500 (Server error)
-    throw errorMessage; // Stop further processing by throwing an exception
-}
-
-var jdbcUsername = channelMap.get(&quot;JDBC_USERNAME&quot;);
-if(jdbcUsername != null) {
-    globalMap.put(&apos;jdbcUsername&apos;, jdbcUsername);
-} else {
-    var errorMessage = &apos;JDBC_USERNAME missing from Lookup manager (Config-sensitive).&apos;;
-    logger.error(errorMessage);
-    setErrorResponse(500, errorMessage); // Set the HTTP response status to 500 (Server error)
-    throw errorMessage; // Stop further processing by throwing an exception
-}
-var jdbcPassword = channelMap.get(&quot;JDBC_PASSWORD&quot;);
-
-  if(jdbcPassword != null) {
-    globalMap.put(&apos;jdbcPassword&apos;, jdbcPassword);
-} else {
-    var errorMessage = &apos;JDBC_PASSWORD missing from from Lookup manager (Config-sensitive)&apos;;
-    logger.error(errorMessage);
-    setErrorResponse(500, errorMessage); // Set the HTTP response status to 500 (Server error)
-    throw errorMessage; // Stop further processing by throwing an exception
 }</script>
         </com.mirth.connect.plugins.javascriptstep.JavaScriptStep>
-        <com.mirth.connect.plugins.javascriptstep.JavaScriptStep version="26.6.0">
+        <com.mirth.connect.plugins.javascriptstep.JavaScriptStep version="26.9.0">
           <name>step_validate_profile_urls_env_variables</name>
           <sequenceNumber>3</sequenceNumber>
           <enabled>true</enabled>
@@ -2771,7 +2612,7 @@ function getConsentResourceStatus(sourceXml) {
      }
 }</script>
         </com.mirth.connect.plugins.javascriptstep.JavaScriptStep>
-        <com.mirth.connect.plugins.javascriptstep.JavaScriptStep version="26.6.0">
+        <com.mirth.connect.plugins.javascriptstep.JavaScriptStep version="26.9.0">
           <name>Validate Mandatory Fields</name>
           <sequenceNumber>4</sequenceNumber>
           <enabled>true</enabled>
@@ -2953,7 +2794,7 @@ function validateMandatoryFields() {
     return null; // validation passed
 }</script>
         </com.mirth.connect.plugins.javascriptstep.JavaScriptStep>
-        <com.mirth.connect.plugins.javascriptstep.JavaScriptStep version="26.6.0">
+        <com.mirth.connect.plugins.javascriptstep.JavaScriptStep version="26.9.0">
           <name>API endpoint processing</name>
           <sequenceNumber>5</sequenceNumber>
           <enabled>true</enabled>
@@ -3270,11 +3111,11 @@ else {
       <outboundTemplate encoding="base64"></outboundTemplate>
       <inboundDataType>XML</inboundDataType>
       <outboundDataType>RAW</outboundDataType>
-      <inboundProperties class="com.mirth.connect.plugins.datatypes.xml.XMLDataTypeProperties" version="26.6.0">
-        <serializationProperties class="com.mirth.connect.plugins.datatypes.xml.XMLSerializationProperties" version="26.6.0">
+      <inboundProperties class="com.mirth.connect.plugins.datatypes.xml.XMLDataTypeProperties" version="26.9.0">
+        <serializationProperties class="com.mirth.connect.plugins.datatypes.xml.XMLSerializationProperties" version="26.9.0">
           <stripNamespaces>false</stripNamespaces>
         </serializationProperties>
-        <batchProperties class="com.mirth.connect.plugins.datatypes.xml.XMLBatchProperties" version="26.6.0">
+        <batchProperties class="com.mirth.connect.plugins.datatypes.xml.XMLBatchProperties" version="26.9.0">
           <splitType>Element_Name</splitType>
           <elementName></elementName>
           <level>1</level>
@@ -3282,16 +3123,16 @@ else {
           <batchScript></batchScript>
         </batchProperties>
       </inboundProperties>
-      <outboundProperties class="com.mirth.connect.plugins.datatypes.raw.RawDataTypeProperties" version="26.6.0">
-        <batchProperties class="com.mirth.connect.plugins.datatypes.raw.RawBatchProperties" version="26.6.0">
+      <outboundProperties class="com.mirth.connect.plugins.datatypes.raw.RawDataTypeProperties" version="26.9.0">
+        <batchProperties class="com.mirth.connect.plugins.datatypes.raw.RawBatchProperties" version="26.9.0">
           <splitType>JavaScript</splitType>
           <batchScript></batchScript>
         </batchProperties>
       </outboundProperties>
     </transformer>
-    <filter version="26.6.0">
+    <filter version="26.9.0">
       <elements>
-        <com.mirth.connect.plugins.javascriptrule.JavaScriptRule version="26.6.0">
+        <com.mirth.connect.plugins.javascriptrule.JavaScriptRule version="26.9.0">
           <name>Http url and method validation</name>
           <sequenceNumber>0</sequenceNumber>
           <enabled>true</enabled>
@@ -3401,12 +3242,12 @@ function notFound() {
     <waitForPrevious>true</waitForPrevious>
   </sourceConnector>
   <destinationConnectors>
-    <connector version="26.6.0">
+    <connector version="26.9.0">
       <metaDataId>1</metaDataId>
       <name>dest_bundle_validate</name>
-      <properties class="com.mirth.connect.connectors.vm.VmDispatcherProperties" version="26.6.0">
+      <properties class="com.mirth.connect.connectors.vm.VmDispatcherProperties" version="26.9.0">
         <pluginProperties/>
-        <destinationConnectorProperties version="26.6.0">
+        <destinationConnectorProperties version="26.9.0">
           <queueEnabled>false</queueEnabled>
           <sendFirst>false</sendFirst>
           <retryIntervalMillis>10000</retryIntervalMillis>
@@ -3430,45 +3271,45 @@ function notFound() {
         <channelTemplate>${message.encodedData}</channelTemplate>
         <mapVariables/>
       </properties>
-      <transformer version="26.6.0">
+      <transformer version="26.9.0">
         <elements/>
         <inboundTemplate encoding="base64"></inboundTemplate>
         <outboundTemplate encoding="base64"></outboundTemplate>
         <inboundDataType>RAW</inboundDataType>
         <outboundDataType>RAW</outboundDataType>
-        <inboundProperties class="com.mirth.connect.plugins.datatypes.raw.RawDataTypeProperties" version="26.6.0">
-          <batchProperties class="com.mirth.connect.plugins.datatypes.raw.RawBatchProperties" version="26.6.0">
+        <inboundProperties class="com.mirth.connect.plugins.datatypes.raw.RawDataTypeProperties" version="26.9.0">
+          <batchProperties class="com.mirth.connect.plugins.datatypes.raw.RawBatchProperties" version="26.9.0">
             <splitType>JavaScript</splitType>
             <batchScript></batchScript>
           </batchProperties>
         </inboundProperties>
-        <outboundProperties class="com.mirth.connect.plugins.datatypes.raw.RawDataTypeProperties" version="26.6.0">
-          <batchProperties class="com.mirth.connect.plugins.datatypes.raw.RawBatchProperties" version="26.6.0">
+        <outboundProperties class="com.mirth.connect.plugins.datatypes.raw.RawDataTypeProperties" version="26.9.0">
+          <batchProperties class="com.mirth.connect.plugins.datatypes.raw.RawBatchProperties" version="26.9.0">
             <splitType>JavaScript</splitType>
             <batchScript></batchScript>
           </batchProperties>
         </outboundProperties>
       </transformer>
-      <responseTransformer version="26.6.0">
+      <responseTransformer version="26.9.0">
         <elements/>
         <inboundDataType>RAW</inboundDataType>
         <outboundDataType>RAW</outboundDataType>
-        <inboundProperties class="com.mirth.connect.plugins.datatypes.raw.RawDataTypeProperties" version="26.6.0">
-          <batchProperties class="com.mirth.connect.plugins.datatypes.raw.RawBatchProperties" version="26.6.0">
+        <inboundProperties class="com.mirth.connect.plugins.datatypes.raw.RawDataTypeProperties" version="26.9.0">
+          <batchProperties class="com.mirth.connect.plugins.datatypes.raw.RawBatchProperties" version="26.9.0">
             <splitType>JavaScript</splitType>
             <batchScript></batchScript>
           </batchProperties>
         </inboundProperties>
-        <outboundProperties class="com.mirth.connect.plugins.datatypes.raw.RawDataTypeProperties" version="26.6.0">
-          <batchProperties class="com.mirth.connect.plugins.datatypes.raw.RawBatchProperties" version="26.6.0">
+        <outboundProperties class="com.mirth.connect.plugins.datatypes.raw.RawDataTypeProperties" version="26.9.0">
+          <batchProperties class="com.mirth.connect.plugins.datatypes.raw.RawBatchProperties" version="26.9.0">
             <splitType>JavaScript</splitType>
             <batchScript></batchScript>
           </batchProperties>
         </outboundProperties>
       </responseTransformer>
-      <filter version="26.6.0">
+      <filter version="26.9.0">
         <elements>
-          <com.mirth.connect.plugins.rulebuilder.RuleBuilderRule version="26.6.0">
+          <com.mirth.connect.plugins.rulebuilder.RuleBuilderRule version="26.9.0">
             <name>Accept message if &quot;$(&apos;endpoint&apos;)&quot; equals &apos;validate&apos;</name>
             <sequenceNumber>0</sequenceNumber>
             <enabled>true</enabled>
@@ -3485,12 +3326,12 @@ function notFound() {
       <enabled>true</enabled>
       <waitForPrevious>true</waitForPrevious>
     </connector>
-    <connector version="26.6.0">
+    <connector version="26.9.0">
       <metaDataId>2</metaDataId>
       <name>dest_bundle</name>
-      <properties class="com.mirth.connect.connectors.http.HttpDispatcherProperties" version="26.6.0">
+      <properties class="com.mirth.connect.connectors.http.HttpDispatcherProperties" version="26.9.0">
         <pluginProperties>
-          <com.mirth.connect.plugins.ssl.SSLSettingsProperties version="26.6.0">
+          <com.mirth.connect.plugins.ssl.SSLSettingsProperties version="26.9.0">
   <sslEnabled>false</sslEnabled>
             <mutualTlsEnabled>false</mutualTlsEnabled>
             <mutualTlsMigrated>true</mutualTlsMigrated>
@@ -3519,7 +3360,7 @@ function notFound() {
             <subjectSanFilterPatterns/>
           </com.mirth.connect.plugins.ssl.SSLSettingsProperties>
         </pluginProperties>
-        <destinationConnectorProperties version="26.6.0">
+        <destinationConnectorProperties version="26.9.0">
           <queueEnabled>false</queueEnabled>
           <sendFirst>false</sendFirst>
           <retryIntervalMillis>10000</retryIntervalMillis>
@@ -3677,45 +3518,45 @@ function notFound() {
         <charset>UTF-8</charset>
         <socketTimeout>300000</socketTimeout>
       </properties>
-      <transformer version="26.6.0">
+      <transformer version="26.9.0">
         <elements/>
         <inboundTemplate encoding="base64"></inboundTemplate>
         <outboundTemplate encoding="base64"></outboundTemplate>
         <inboundDataType>RAW</inboundDataType>
         <outboundDataType>RAW</outboundDataType>
-        <inboundProperties class="com.mirth.connect.plugins.datatypes.raw.RawDataTypeProperties" version="26.6.0">
-          <batchProperties class="com.mirth.connect.plugins.datatypes.raw.RawBatchProperties" version="26.6.0">
+        <inboundProperties class="com.mirth.connect.plugins.datatypes.raw.RawDataTypeProperties" version="26.9.0">
+          <batchProperties class="com.mirth.connect.plugins.datatypes.raw.RawBatchProperties" version="26.9.0">
             <splitType>JavaScript</splitType>
             <batchScript></batchScript>
           </batchProperties>
         </inboundProperties>
-        <outboundProperties class="com.mirth.connect.plugins.datatypes.raw.RawDataTypeProperties" version="26.6.0">
-          <batchProperties class="com.mirth.connect.plugins.datatypes.raw.RawBatchProperties" version="26.6.0">
+        <outboundProperties class="com.mirth.connect.plugins.datatypes.raw.RawDataTypeProperties" version="26.9.0">
+          <batchProperties class="com.mirth.connect.plugins.datatypes.raw.RawBatchProperties" version="26.9.0">
             <splitType>JavaScript</splitType>
             <batchScript></batchScript>
           </batchProperties>
         </outboundProperties>
       </transformer>
-      <responseTransformer version="26.6.0">
+      <responseTransformer version="26.9.0">
         <elements/>
         <inboundDataType>RAW</inboundDataType>
         <outboundDataType>RAW</outboundDataType>
-        <inboundProperties class="com.mirth.connect.plugins.datatypes.raw.RawDataTypeProperties" version="26.6.0">
-          <batchProperties class="com.mirth.connect.plugins.datatypes.raw.RawBatchProperties" version="26.6.0">
+        <inboundProperties class="com.mirth.connect.plugins.datatypes.raw.RawDataTypeProperties" version="26.9.0">
+          <batchProperties class="com.mirth.connect.plugins.datatypes.raw.RawBatchProperties" version="26.9.0">
             <splitType>JavaScript</splitType>
             <batchScript></batchScript>
           </batchProperties>
         </inboundProperties>
-        <outboundProperties class="com.mirth.connect.plugins.datatypes.raw.RawDataTypeProperties" version="26.6.0">
-          <batchProperties class="com.mirth.connect.plugins.datatypes.raw.RawBatchProperties" version="26.6.0">
+        <outboundProperties class="com.mirth.connect.plugins.datatypes.raw.RawDataTypeProperties" version="26.9.0">
+          <batchProperties class="com.mirth.connect.plugins.datatypes.raw.RawBatchProperties" version="26.9.0">
             <splitType>JavaScript</splitType>
             <batchScript></batchScript>
           </batchProperties>
         </outboundProperties>
       </responseTransformer>
-      <filter version="26.6.0">
+      <filter version="26.9.0">
         <elements>
-          <com.mirth.connect.plugins.rulebuilder.RuleBuilderRule version="26.6.0">
+          <com.mirth.connect.plugins.rulebuilder.RuleBuilderRule version="26.9.0">
             <name>Accept message if &quot;$(&apos;endpoint&apos;)&quot; equals &apos;bundle&apos;</name>
             <sequenceNumber>0</sequenceNumber>
             <enabled>true</enabled>
@@ -3725,7 +3566,7 @@ function notFound() {
               <string>&apos;bundle&apos;</string>
             </values>
           </com.mirth.connect.plugins.rulebuilder.RuleBuilderRule>
-          <com.mirth.connect.plugins.rulebuilder.RuleBuilderRule version="26.6.0">
+          <com.mirth.connect.plugins.rulebuilder.RuleBuilderRule version="26.9.0">
             <name>Accept message if &quot;sourceMap.get(&apos;contextPath&apos;)&quot; equals &apos;/ccda/Bundle/&apos; or &apos;/ccda/Bundle&apos;</name>
             <sequenceNumber>1</sequenceNumber>
             <enabled>true</enabled>
@@ -3745,8 +3586,7 @@ function notFound() {
       <waitForPrevious>true</waitForPrevious>
     </connector>
   </destinationConnectors>
-  <preprocessingScript>return message;
-</preprocessingScript>
+  <preprocessingScript></preprocessingScript>
   <postprocessingScript>// This script executes once after a message has been processed
 // Responses returned from here will be stored as &quot;Postprocessor&quot; in the response map
 
@@ -3775,15 +3615,93 @@ if(endpoint == &apos;bundle&apos;) {
 }
 
 return;</postprocessingScript>
-  <deployScript>
+  <deployScript>// Load DB connection details once at deploy time
+globalChannelMap.put(&apos;channelName&apos;,channelName);
+try {
+    var jdbcUrl = LookupHelper.get(&quot;Config-sensitive&quot;, &quot;MC_JDBC_URL&quot;);
+    var jdbcUsername = LookupHelper.get(&quot;Config-sensitive&quot;, &quot;MC_JDBC_USERNAME&quot;);
+    var jdbcPassword = LookupHelper.get(&quot;Config-sensitive&quot;, &quot;MC_JDBC_PASSWORD&quot;);
+
+    if (!jdbcUrl || jdbcUrl.trim() === &quot;&quot;) {
+        throw &quot;Lookup Manager value MC_JDBC_URL returned empty.&quot;;
+    }
+    if (!jdbcUsername) {
+        throw &quot;MC_JDBC_USERNAME missing from Lookup Manager (Config-sensitive).&quot;;
+    }
+    if (!jdbcPassword) {
+        throw &quot;MC_JDBC_PASSWORD missing from Lookup Manager (Config-sensitive).&quot;;
+    }
+
+    globalMap.put(&apos;jdbcUrl&apos;, jdbcUrl.trim());
+    globalMap.put(&apos;jdbcUsername&apos;, jdbcUsername);
+    globalMap.put(&apos;jdbcPassword&apos;, jdbcPassword);
+} catch (e) {
+    logger.error(&quot;Failed to load JDBC configuration at deploy: &quot; + e);
+    throw e; // fails the deploy instead of failing every request later
+}
+
+
+
+/********************************************
+    2️⃣ FETCH DATA LEDGER API KEY (Plain text)
+********************************************/
+
+try {
+     globalChannelMap.put(&quot;TECHBD_NYEC_DATALEDGER_API_KEY&quot;, LookupHelper.get(&quot;Config-sensitive&quot;, &quot;TECHBD_NYEC_DATALEDGER_API_KEY&quot;));
+
+} catch (e) {
+    logger.error(&quot; Error processing DataLedger API Key secret: &quot; + e.message);
+}
+
+
+/********************************************
+    8️⃣ FETCH DATA LEDGER API URL (Plain text)
+********************************************/
+
+try {
+     globalChannelMap.put(&quot;DATA_LEDGER_API_URL&quot;, LookupHelper.get(&quot;Config&quot;, &quot;DATA_LEDGER_API_URL&quot;));
+
+} catch (e) {
+    logger.error(&quot; Error processing DataLedger API URL  secret: &quot; + e.message);
+}
+
+/********************************************
+    COMMON HTTP CLIENT
+********************************************/
+
+var cm = new Packages.org.apache.http.impl.conn.PoolingHttpClientConnectionManager();
+cm.setMaxTotal(10);
+cm.setDefaultMaxPerRoute(10);
+
+var rc = Packages.org.apache.http.client.config.RequestConfig.custom()
+    .setConnectTimeout(15000)
+    .setSocketTimeout(30000)
+    .setConnectionRequestTimeout(5000)
+    .build();
+
+var oldClient = globalChannelMap.get(&quot;HTTP_CLIENT&quot;);
+if (oldClient != null) { try { oldClient.close(); } catch (e) {} }   // redeploy safety
+
+globalChannelMap.put(&quot;HTTP_CLIENT&quot;,
+    Packages.org.apache.http.impl.client.HttpClients.custom()
+        .setConnectionManager(cm)
+        .setDefaultRequestConfig(rc)
+        .build());
+
 return;
 </deployScript>
   <undeployScript>// This script executes once when the channel is undeployed
 // You only have access to the globalMap and globalChannelMap here to persist data
+try {
+    var c = globalChannelMap.get(&quot;HTTP_CLIENT&quot;);
+    if (c != null) c.close();
+} catch (e) {
+    logger.error(&quot;Error closing HTTP_CLIENT: &quot; + e.message);
+}
 return;</undeployScript>
-  <properties version="26.6.0">
+  <properties version="26.9.0">
     <clearGlobalChannelMap>true</clearGlobalChannelMap>
-    <messageStorageMode>DEVELOPMENT</messageStorageMode>
+    <messageStorageMode>PRODUCTION</messageStorageMode>
     <encryptData>false</encryptData>
     <encryptAttachments>false</encryptAttachments>
     <encryptCustomMetaData>false</encryptCustomMetaData>
@@ -3879,7 +3797,7 @@ return;</undeployScript>
         <mappingName>DATALAKE_API_URL</mappingName>
       </metaDataColumn>
     </metaDataColumns>
-    <attachmentProperties version="26.6.0">
+    <attachmentProperties version="26.9.0">
       <type>None</type>
       <properties/>
     </attachmentProperties>
@@ -3894,7 +3812,7 @@ return;</undeployScript>
     <metadata>
       <enabled>true</enabled>
       <lastModified>
-        <time>1793962354657</time>
+        <time>1795498403990</time>
         <timezone>Asia/Calcutta</timezone>
       </lastModified>
       <pruningSettings>
@@ -3902,18 +3820,18 @@ return;</undeployScript>
         <archiveEnabled>true</archiveEnabled>
         <pruneErroredMessages>false</pruneErroredMessages>
       </pruningSettings>
-      <userId>10</userId>
+      <userId>6</userId>
     </metadata>
     <channelTags>
       <channelTag>
-        <id>d754e9ce-d08f-4733-9bcf-52236fa45bf5</id>
-        <name>0_5_46</name>
+        <id>7225f5a6-8e23-425d-9eb1-be3d7b5a8c18</id>
+        <name>0_5_47</name>
         <channelIds>
-          <string>046f2abb-6a52-417e-aed4-6e5b12e957cf</string>
           <string>a581aac5-930d-4a48-b2c3-d3b7e0aebb4f</string>
+          <string>76e531c1-d4fe-4108-a740-88365b7a47fc</string>
         </channelIds>
         <backgroundColor>
-          <red>255</red>
+          <red>128</red>
           <green>0</green>
           <blue>0</blue>
           <alpha>255</alpha>

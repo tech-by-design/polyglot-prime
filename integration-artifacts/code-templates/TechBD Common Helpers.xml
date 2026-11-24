@@ -1,0 +1,637 @@
+<codeTemplateLibrary version="26.9.0">
+  <id>ac4f3b30-75da-479a-bc43-082e3afc30c4</id>
+  <name>TechBD Common Helpers</name>
+  <revision>8</revision>
+  <lastModified>
+    <time>1795436748400</time>
+    <timezone>America/New_York</timezone>
+  </lastModified>
+  <description></description>
+  <includeNewChannels>false</includeNewChannels>
+  <enabledChannelIds class="sorted-set">
+    <string>3ab2e65e-b5fd-448d-b879-e42bc1a00203</string>
+    <string>7e15f9f1-7c03-419a-8dcd-2e6b56e90503</string>
+    <string>a581aac5-930d-4a48-b2c3-d3b7e0aebb4f</string>
+    <string>b93c86f6-8ddf-4d53-8696-4a09d93bfaa7</string>
+  </enabledChannelIds>
+  <disabledChannelIds class="sorted-set">
+    <string>00340250-ce9b-4d83-a27b-a49a7cb1fa1f</string>
+    <string>0460bb4e-c120-48cb-bbfd-cca2e19fc90e</string>
+    <string>046f2abb-6a52-417e-aed4-6e5b12e957cf</string>
+    <string>04ef5b0d-3120-4dd4-ba3f-fd7ec1ab1fdb</string>
+    <string>07df4a64-66aa-455c-9f47-5ae9bb0c4a7c</string>
+    <string>0de4f42b-5d9e-4802-b3ab-f8935d7c0d8a</string>
+    <string>172dd367-2b02-4d8a-b998-504605d7d164</string>
+    <string>1771e2fd-3b46-4e64-bbea-0fa03e85671f</string>
+    <string>1a724ef8-4fe2-4646-8dad-5af43ba85de4</string>
+    <string>1c406954-d304-4882-b05d-b513d699785b</string>
+    <string>1c62ac23-fc88-47fa-84aa-f44b2219750e</string>
+    <string>2240d25e-de1d-4c6f-904c-832e7f68a574</string>
+    <string>2440a65b-486b-4f03-8972-8bace78287d3</string>
+    <string>281247c5-fb87-4b56-9691-190174cc834f</string>
+    <string>287a166d-02e5-4266-b198-dab2740d7b02</string>
+    <string>28be0628-cfe1-4c16-8acc-4a53928c9c34</string>
+    <string>2c47f2b9-ebc9-4aa7-bd5f-0bf5f0d6ed39</string>
+    <string>34c181c7-0d84-4960-a2e7-df73d4c4a3cc</string>
+    <string>369df10a-9d27-4b18-a398-f06a2607ae1a</string>
+    <string>38c30482-47ef-41e0-b6f3-fa56e8bc76ae</string>
+    <string>3c5d0850-0841-4603-a1f8-0ee6e9ef8559</string>
+    <string>3d78e317-ccf7-45e2-8cbe-200cbfc5ba21</string>
+    <string>417892cd-09d4-47fe-b7c9-c7164db71938</string>
+    <string>439731b6-d490-42cc-a4f8-a15c50ee2fe9</string>
+    <string>43c53c2d-beb1-476b-b497-096fd565fe06</string>
+    <string>47283a5e-090c-41d7-8b5d-14994d64d395</string>
+    <string>48679919-904a-4913-a593-28f19da61615</string>
+    <string>576131f3-aa5b-4453-929f-1e07d7534e82</string>
+    <string>57b5e566-b5cb-4185-9600-4de0bbf10b84</string>
+    <string>631aa62d-39a7-4cd3-a7bc-a43d73d14853</string>
+    <string>67b29422-6e62-4506-b4db-d4974de82b8c</string>
+    <string>694e29f3-7820-4ce7-85ba-aa90ce8296c9</string>
+    <string>6b9625c8-f150-4229-b632-cb07e388adcd</string>
+    <string>6cd5fbb1-b5f6-4a12-953f-e4af9a074a45</string>
+    <string>6ff46655-b4cc-479a-93b3-98a356f9d6b0</string>
+    <string>76e531c1-d4fe-4108-a740-88365b7a47fc</string>
+    <string>7940022b-7a39-470b-9936-bcf8b2f4982e</string>
+    <string>796d0ae4-5baa-40a3-bc76-ab9af2d025c5</string>
+    <string>814b471c-b5fa-4f30-861f-134c40762ef6</string>
+    <string>8231df95-a7fa-4367-bd07-a3f892d9cd51</string>
+    <string>83a655f2-bad4-497a-bdfb-7dbe404a7e30</string>
+    <string>89bb549e-d2fc-415f-a784-9f97ac3f1d05</string>
+    <string>8df9ab1a-4845-43cd-9884-81be53cfc87a</string>
+    <string>94d93cc7-9346-4ed6-81f0-767364a29138</string>
+    <string>9f1272c2-47b8-4583-af54-145a88202c3b</string>
+    <string>a09455c6-4e95-4e8c-ba33-735980b6ef27</string>
+    <string>a3ece49e-f52f-40bb-927d-03cc71087ad7</string>
+    <string>a542e427-909f-4963-a374-3a214dcb8bd1</string>
+    <string>a68d74fd-c26b-4cd2-885b-b2ad890b8494</string>
+    <string>a8630d07-6ac1-46f8-8d95-01a70ac59206</string>
+    <string>a9d46eba-a9b6-436a-af7a-aaf3a9570c42</string>
+    <string>aa14ae37-7b8e-48c0-8cf0-c0fe150ff9a1</string>
+    <string>aa52ca3d-503a-432e-a446-db5ba9a9aec6</string>
+    <string>ab20f626-8de4-4845-8080-0f2c6b80669a</string>
+    <string>b028255d-3d33-4562-b1a4-6b81c080013e</string>
+    <string>b24d4603-8f5a-4872-89d2-9b474d7ea6db</string>
+    <string>b5462351-f38a-4fe0-bd04-f0175f5aacf7</string>
+    <string>bafa98dd-04f2-48ef-babb-4a3bedbcb0ed</string>
+    <string>bb7b54f0-d213-4c09-b315-ad522cc1f2d5</string>
+    <string>bd2f2840-ea03-40fe-b780-64fde42849a9</string>
+    <string>be60d481-5755-4ad7-81ed-246e4af4d86a</string>
+    <string>c1ded0ae-82b0-4f5d-b6ed-85a43e716cb5</string>
+    <string>c53bfb5a-143a-4104-ab9c-ed67ed71521f</string>
+    <string>c5b49016-b136-484c-bc77-04e53122cbdc</string>
+    <string>c7b5084b-e9cd-43e1-9a55-1b1b70e88e62</string>
+    <string>cac50f15-1204-495d-a15e-0f341c494171</string>
+    <string>cd812443-81f7-4523-8d16-1d7af162ca3c</string>
+    <string>d224a326-e089-4653-9f73-fb9b3642cad8</string>
+    <string>d65c4196-a138-448b-880d-52c63a575ceb</string>
+    <string>d77fcb36-3c97-45fe-b8ba-5fdc9bcf1df2</string>
+    <string>d85d0014-300a-46f9-81b7-ad6c6ef1516b</string>
+    <string>deb1f914-4662-4568-bf71-da5a7aecda44</string>
+    <string>e17a4c92-8f3d-4b6a-9c21-5d7f0a2b6e44</string>
+    <string>e216b33f-b7f0-4bac-ba23-7750fa5b2af0</string>
+    <string>e58f5bd0-fee5-4ecb-868f-9a4a7c0ef689</string>
+    <string>ecb5ad78-09f4-4206-81a1-7d9383871580</string>
+    <string>f2d185dd-96c3-4065-bbb9-5044afb7ba80</string>
+    <string>f56adef6-2213-46e0-88fa-851958abc801</string>
+    <string>f6e97e19-1a32-4b8b-b959-633c515defbc</string>
+    <string>f701ba21-58fd-4731-827f-7e2af70c0e52</string>
+    <string>fbdd7c10-ab02-4f4e-ae71-25084a4a0020</string>
+    <string>fcbe4ae0-effd-4980-af36-d923b23fe8c1</string>
+  </disabledChannelIds>
+  <codeTemplates>
+    <codeTemplate version="26.9.0">
+      <id>ab11a469-d7d5-4049-b761-8066aaab7535</id>
+      <name>saveFHIRPayload</name>
+      <revision>10</revision>
+      <lastModified>
+        <time>1795075440346</time>
+        <timezone>America/New_York</timezone>
+      </lastModified>
+      <contextSet>
+        <delegate class="sorted-set">
+          <contextType>GLOBAL_DEPLOY</contextType>
+          <contextType>GLOBAL_UNDEPLOY</contextType>
+          <contextType>GLOBAL_PREPROCESSOR</contextType>
+          <contextType>GLOBAL_POSTPROCESSOR</contextType>
+          <contextType>CHANNEL_DEPLOY</contextType>
+          <contextType>CHANNEL_UNDEPLOY</contextType>
+          <contextType>CHANNEL_PREPROCESSOR</contextType>
+          <contextType>CHANNEL_POSTPROCESSOR</contextType>
+          <contextType>CHANNEL_ATTACHMENT</contextType>
+          <contextType>CHANNEL_BATCH</contextType>
+          <contextType>SOURCE_RECEIVER</contextType>
+          <contextType>SOURCE_FILTER_TRANSFORMER</contextType>
+          <contextType>DESTINATION_FILTER_TRANSFORMER</contextType>
+          <contextType>DESTINATION_DISPATCHER</contextType>
+          <contextType>DESTINATION_RESPONSE_TRANSFORMER</contextType>
+        </delegate>
+      </contextSet>
+      <properties class="com.mirth.connect.model.codetemplates.BasicCodeTemplateProperties">
+        <type>FUNCTION</type>
+        <code>/**
+	Modify the description here. Modify the function name and parameters as needed. One function per
+	template is recommended; create a new code template for each new function.
+
+	@param {Any} interactionId - 
+	@param {Any} tenantId - 
+	@param {Any} requestUri - 
+	@param {Any} payloadJson - 
+	@param {Any} operation - 
+	@param {Any} source - 
+	@param {Any} isHistorical - 
+	@param {Any} groupInteractionId - 
+	@param {Any} masterInteractionId - 
+	@return {String} return description
+*/
+function saveFHIRPayload(interactionId, tenantId, requestUri, payloadJson, operation,source, isHistorical,groupInteractionId,masterInteractionId) {&#xd;
+	var channelName = globalChannelMap.get(&apos;channelName&apos;);&#xd;
+	logger.info(&quot;[CHANNEL: 1115 TECHBD &quot; + channelName + &quot;][INTERACTION ID: &quot; +interactionId +&quot; ]:tenantId: &quot; + tenantId);&#xd;
+	logger.info(&quot;[CHANNEL: 1115 TECHBD &quot; + channelName + &quot;][INTERACTION ID: &quot; +interactionId +&quot; ]:requestUri: &quot; + requestUri);&#xd;
+	logger.info(&quot;[CHANNEL: 1115 TECHBD &quot; + channelName + &quot;][INTERACTION ID: &quot; +interactionId +&quot; ]: operation: &quot; + operation);&#xd;
+	&#xd;
+	var conn = null;&#xd;
+	var stmt = null;
+  //var groupInteractionId = globalMap.get(&quot;groupInteractionId&quot;);
+  //var masterInteractionId = globalMap.get(&quot;masterInteractionId&quot;);&#xd;
+	logger.info(&quot;[CHANNEL: 1115 TECHBD &quot; + channelName + &quot;][INTERACTION ID: &quot; + interactionId
+        + &quot; ]: groupInteractionId: &quot; + groupInteractionId
+        + &quot;, masterInteractionId: &quot; + masterInteractionId);&#xd;
+	try {&#xd;
+	    &#xd;
+		//Devl&#xd;
+	    conn = globalChannelMap.get(&quot;DB_POOL&quot;).getConnection();&#xd;
+&#xd;
+	    logger.info(&quot;[CHANNEL: 1115 TECHBD &quot; + channelName + &quot;][INTERACTION ID: &quot; +interactionId +&quot; ]: Database connection established successfully.&quot;);&#xd;
+	&#xd;
+		//var sql = &quot;select techbd_udi_ingress.register_interaction_fhir_request(?::text,?::text,?::jsonb,?::jsonb,?::text,?::jsonb,?::text,?::jsonb,?::text,?::text,?::text,?::text,?::text,?::text,?::text,?::text,?::text,?,?::text,?,?::text,?::text,?::text,?::text,?::text,?::text,?::text)&quot;;
+		var sql =
+		  &quot;select techbd_udi_ingress.register_interaction_fhir_request(&quot; +
+		  &quot;?::text, ?::text, ?::jsonb, ?::jsonb, ?::text, ?::text, ?::jsonb, &quot; +
+		  &quot;?::text, ?::text, ?::text, ?::text, ?::text, ?::text, ?::text, ?::text, ?::text, &quot; +
+		  &quot;?::timestamptz, ?::text, ?::boolean, ?::text, ?::text, ?::text, ?::text, ?::text, ?::jsonb, ?::text&quot; +
+		  &quot;)&quot;;
+&#xd;
+	 // prepareCall(sql) done before
+		stmt = conn.prepareCall(sql);
+		
+		// 1. p_interaction_id
+		stmt.setString(1, interactionId);
+		
+		// 2. p_interaction_key  (you stated second is requestUri)
+		stmt.setString(2, requestUri);
+		
+		// 3. p_nature jsonb -- include tenantId inside nature as you did
+		var natureObj;
+		if (operation === &quot;saveForwardFHIRPayload&quot;) {
+		  natureObj = { nature: &apos;Forward HTTP Request&apos;, tenant_id: tenantId };
+		} else if (operation === &quot;saveForwardFHIRSuccess&quot;) {
+		  natureObj = { nature: &apos;Forwarded HTTP Response&apos;, tenant_id: tenantId };
+		} else if (operation === &quot;saveForwardFHIRFailure&quot;) {
+		  natureObj = { nature: &apos;Forwarded HTTP Response Error&apos;, tenant_id: tenantId };
+		} else {
+		  natureObj = { nature: operation || &apos;UNKNOWN&apos;, tenant_id: tenantId };
+		}
+		stmt.setObject(3, toJsonb(JSON.stringify(natureObj)), java.sql.Types.OTHER);
+		// 4. p_payload jsonb: set payload JSON or NULL for og case
+		if (operation === &quot;saveForwardFHIRPayload&quot;) {
+		   stmt.setObject(4, toJsonb(payloadJson), java.sql.Types.OTHER);
+		} else {
+		  // if payloadJson is already a JSON string
+		  stmt.setObject(4, payloadJson, java.sql.Types.OTHER);
+		}
+		
+//		// 5. p_hub_nexus_interaction_id text
+//		stmt.setNull(5, java.sql.Types.VARCHAR);
+		
+		// 5. p_payload_text text (if you want to store as raw text) — choose either text or null
+		// If you don&apos;t want to store text version, leave NULL:
+		stmt.setNull(5, java.sql.Types.VARCHAR);
+		
+		// 6. p_rule_namespace text
+		stmt.setNull(6, java.sql.Types.VARCHAR);
+		
+		// 7. p_elaboration jsonb
+		stmt.setNull(7, java.sql.Types.OTHER);
+		
+		// 8. p_content_type text
+		stmt.setNull(8, java.sql.Types.VARCHAR);
+		
+		// 9. p_from_state text  (you were setting these earlier to &quot;DISPOSITION&quot;/&quot;FORWARD&quot;, etc.)
+		if (operation === &quot;saveForwardFHIRPayload&quot;) {
+		  stmt.setString(9, &quot;DISPOSITION&quot;);
+		  stmt.setString(10, &quot;FORWARD&quot;);
+		} else if (operation === &quot;saveForwardFHIRSuccess&quot;) {
+		  stmt.setString(9, &quot;FORWARD&quot;);
+		  stmt.setString(10, &quot;COMPLETE&quot;);
+		} else if (operation === &quot;saveForwardFHIRFailure&quot;) {
+		  stmt.setString(9, &quot;FORWARD&quot;);
+		  stmt.setString(10, &quot;FAIL&quot;);
+		} else {
+		  stmt.setNull(9, java.sql.Types.VARCHAR);
+		  stmt.setNull(10, java.sql.Types.VARCHAR);
+		}
+		
+		// 11. p_state_transition_reason
+		stmt.setNull(11, java.sql.Types.VARCHAR);
+		
+		// 12. p_user_id
+		stmt.setNull(12, java.sql.Types.VARCHAR);
+		
+		// 13. p_user_name
+		stmt.setNull(13, java.sql.Types.VARCHAR);
+		
+		// 14. p_user_session
+		stmt.setNull(14, java.sql.Types.VARCHAR);
+		
+		// 15. p_user_role
+		stmt.setNull(15, java.sql.Types.VARCHAR);
+		
+		// 16. p_created_by
+		stmt.setNull(16, java.sql.Types.VARCHAR);
+		
+		// 17. p_created_at (timestamp with time zone)
+		stmt.setNull(17, java.sql.Types.TIMESTAMP_WITH_TIMEZONE); // java.sql.Types.TIMESTAMP_WITH_TIMEZONE
+		
+	
+		var featureEnabled = String(globalChannelMap.get(&quot;ORG_TECHBD_PROCESSING_AGENT_FEATURE_ENABLED&quot;)).toLowerCase() === &quot;true&quot;;
+		var configuredTenants = globalChannelMap.get(&quot;ORG_TECHBD_PROCESSING_AGENT_TENANT_IDS&quot;);
+		var configuredAgentValue = globalChannelMap.get(&quot;ORG_TECHBD_PROCESSING_AGENT_VALUE&quot;);
+		
+		var processingAgentFinal = tenantId; 
+		
+		if (featureEnabled &amp;&amp; configuredTenants != null) {
+		    var tenantList = String(configuredTenants)
+		        .split(&quot;,&quot;)
+		        .map(function(t) { return t.trim().toUpperCase(); });
+		
+		    if (tenantId != null &amp;&amp; tenantList.indexOf(String(tenantId).toUpperCase()) !== -1) {
+		        processingAgentFinal = configuredAgentValue; // TXD
+		    }
+		}
+		
+var provenanceString;
+
+if (isHistorical) {
+    provenanceString =
+        &quot;channel:&quot; + channelName +
+        &quot;,submission:historical&quot; +
+        &quot;, script:deploy&quot;;
+} else {
+    provenanceString =
+        &quot;channel:&quot; + channelName +
+        &quot;,submission:normal&quot; +
+        &quot;, script:deploy&quot;;
+}
+		
+		// ONLY for Forward HTTP Request
+		if (operation === &quot;saveForwardFHIRPayload&quot;) {
+		    provenanceString += &quot;, processingAgent:&quot; + processingAgentFinal;
+		}
+		logger.info(&quot;[CHANNEL: &quot; + channelName + &quot;] PROVENANCE being sent: &quot; + provenanceString);
+		// 18. p_provenance
+		stmt.setString(18, provenanceString);
+
+		// 19. p_hub_upsert_behavior boolean
+		stmt.setNull(19, java.sql.Types.BOOLEAN);
+		
+		// 20. p_source_hub_interaction_id
+		stmt.setString(20, masterInteractionId);
+		
+		// 21. p_origin
+		stmt.setNull(21, java.sql.Types.VARCHAR);
+		
+		// 22. p_source_type
+		//stmt.setNull(22, java.sql.Types.VARCHAR);
+		stmt.setString(22, source);
+		
+		// 23. p_group_hub_interaction_id
+		var normalizedSource = source ? String(source).trim().toUpperCase() : null;
+		if (normalizedSource === &apos;CSV&apos;){
+			stmt.setString(23, groupInteractionId);
+			}
+		else{
+		stmt.setNull(23, java.sql.Types.VARCHAR);
+		}
+		
+		// 24. p_request_source
+		stmt.setNull(24, java.sql.Types.VARCHAR);
+		
+		// 25. p_additional_details jsonb
+			if (operation === &quot;saveForwardFHIRSuccess&quot; || operation === &quot;saveForwardFHIRFailure&quot;) {	
+			var endTime = java.time.Instant.now();
+			var finishIso;&#xd;
+			if (endTime instanceof java.time.Instant) {&#xd;
+			    finishIso = endTime.toString(); // good ISO format e.g. 2025-11-12T14:09:47.637109646Z&#xd;
+			} else if (typeof endTime === &apos;string&apos;) {&#xd;
+			    finishIso = endTime;&#xd;
+			} else {&#xd;
+			    finishIso = (new Date()).toISOString();&#xd;
+			}
+		//stmt.setNull(25, java.sql.Types.OTHER);
+		
+		var additionalDetailsObj = {&#xd;
+		  request: {&#xd;
+		    &quot;X-Observability-Metric-Interaction-Finish-Time&quot;: finishIso&#xd;
+		  }&#xd;
+		};
+		stmt.setObject(25, toJsonb(additionalDetailsObj), java.sql.Types.OTHER);
+		} else{
+		stmt.setNull(25, java.sql.Types.OTHER);
+		}
+		
+		// 26. p_techbd_version_number text
+		stmt.setNull(26, java.sql.Types.VARCHAR);
+		
+		// execute
+		var result = stmt.execute();&#xd;
+	&#xd;
+	} catch (e) {&#xd;
+	    logger.error(&quot;[CHANNEL: 1115 TECHBD &quot; + channelName + &quot;][INTERACTION ID: &quot; +interactionId +&quot; ]: Error executing stored procedure: &quot; + e);
+	    throw e;&#xd;
+	} finally {&#xd;
+	    if (stmt != null) stmt.close();&#xd;
+	    if (conn != null) conn.close();&#xd;
+	    logger.info(&quot;[CHANNEL: 1115 TECHBD &quot; + channelName + &quot;][INTERACTION ID: &quot; +interactionId +&quot; ]:  DB connection closed.&quot;);&#xd;
+	}&#xd;
+}
+
+
+// This script executes once when the channel is deployed
+// You only have access to the globalMap and globalChannelMap here to persist data</code>
+      </properties>
+    </codeTemplate>
+    <codeTemplate version="26.9.0">
+      <id>a72e551f-a1d3-4ec1-96b6-02b6e403b5f1</id>
+      <name>saveHL7Payload</name>
+      <revision>4</revision>
+      <lastModified>
+        <time>1794909523667</time>
+        <timezone>America/New_York</timezone>
+      </lastModified>
+      <contextSet>
+        <delegate class="sorted-set">
+          <contextType>GLOBAL_DEPLOY</contextType>
+          <contextType>GLOBAL_UNDEPLOY</contextType>
+          <contextType>GLOBAL_PREPROCESSOR</contextType>
+          <contextType>GLOBAL_POSTPROCESSOR</contextType>
+          <contextType>CHANNEL_DEPLOY</contextType>
+          <contextType>CHANNEL_UNDEPLOY</contextType>
+          <contextType>CHANNEL_PREPROCESSOR</contextType>
+          <contextType>CHANNEL_POSTPROCESSOR</contextType>
+          <contextType>CHANNEL_ATTACHMENT</contextType>
+          <contextType>CHANNEL_BATCH</contextType>
+          <contextType>SOURCE_RECEIVER</contextType>
+          <contextType>SOURCE_FILTER_TRANSFORMER</contextType>
+          <contextType>DESTINATION_FILTER_TRANSFORMER</contextType>
+          <contextType>DESTINATION_DISPATCHER</contextType>
+          <contextType>DESTINATION_RESPONSE_TRANSFORMER</contextType>
+        </delegate>
+      </contextSet>
+      <properties class="com.mirth.connect.model.codetemplates.BasicCodeTemplateProperties">
+        <type>FUNCTION</type>
+        <code>/**
+	Modify the description here. Modify the function name and parameters as needed. One function per
+	template is recommended; create a new code template for each new function.
+
+	@param {String} arg1 - arg1 description
+	@return {String} return description
+*/
+function saveHL7Payload(interactionId, tenantId, requestUri, payloadJson, operation,headers,userAgent,fileName) {
+
+	var conn = null;
+	var stmt = null;
+	
+	try {
+	    
+		//Devl
+	    conn = globalChannelMap.get(&quot;DB_POOL&quot;).getConnection();
+	
+		var sql = &quot;select techbd_udi_ingress.register_interaction_hl7_request(?::text,?::text,?::jsonb,?::text,?::text,?::jsonb,?::text,?::text,?::jsonb,?::text,?::text,?::text,?::text,?::text,?::text,?::text,?,?::text,?,?::text,?::text,?::text,?::text,?::text,?::text,?::text,?::text,?::text)&quot;;
+	    stmt = conn.prepareCall(sql);
+
+		stmt.setString(1, interactionId);
+		stmt.setString(2, requestUri);		
+		if(operation === &quot;saveOgHL7Payload&quot;){
+			stmt.setObject(3, toJsonb(JSON.stringify({
+			    nature: &apos;Original HL7 Payload&apos;,
+			    tenant_id: tenantId
+			})), java.sql.Types.OTHER);
+			stmt.setString(4, &quot;NONE&quot;);	
+			stmt.setString(5, &quot;HL7_ACCEPT&quot;);		
+		} else if (operation === &quot;saveValidationSuccess&quot;) {
+			stmt.setObject(3, toJsonb(JSON.stringify({
+			    nature: &apos;HL7 Validation Result&apos;,
+			    tenant_id: tenantId
+			})), java.sql.Types.OTHER);
+			stmt.setString(4, &quot;HL7_ACCEPT&quot;);	
+			stmt.setString(5, &quot;VALIDATION_SUCCESS&quot;);
+		} else if (operation === &quot;saveConversionSuccess&quot;) {
+			stmt.setObject(3, toJsonb(JSON.stringify({
+			    nature: &apos;Converted to FHIR&apos;,
+			    tenant_id: tenantId
+			})), java.sql.Types.OTHER);
+			stmt.setString(4, &quot;VALIDATION_SUCCESS&quot;);	
+			stmt.setString(5, &quot;CONVERTED_TO_FHIR&quot;);
+		} else {
+			stmt.setObject(3, toJsonb(JSON.stringify({
+			    nature: &apos;HL7 Validation Result&apos;,
+			    tenant_id: tenantId
+			})), java.sql.Types.OTHER);
+			stmt.setString(4, &quot;HL7_ACCEPT&quot;);	
+			stmt.setString(5, &quot;VALIDATION_FAILED&quot;);
+		}
+		//stmt.setNull(6, java.sql.Types.VARCHAR);
+
+		if(operation === &quot;saveOgHL7Payload&quot;){
+			stmt.setNull(6, java.sql.Types.OTHER);
+		} else {
+			stmt.setObject(6, toJsonb(payloadJson), java.sql.Types.OTHER);	
+		}
+		
+		if(operation == &quot;saveValidationSuccess&quot; || operation == &quot;saveValidationFailed&quot; || operation === &quot;saveConversionSuccess&quot;){
+			stmt.setNull(7, java.sql.Types.OTHER);
+		} else {
+			stmt.setString(7, payloadJson);
+		}
+					
+		stmt.setNull(8, java.sql.Types.VARCHAR);
+		if(operation === &quot;saveOgHL7Payload&quot;){
+			stmt.setObject(9, toJsonb(headers), java.sql.Types.OTHER);
+		} else {
+			stmt.setNull(9, java.sql.Types.OTHER);
+		}
+		stmt.setNull(10, java.sql.Types.VARCHAR);
+		stmt.setNull(11, java.sql.Types.VARCHAR);
+		stmt.setNull(12, java.sql.Types.VARCHAR);
+		stmt.setNull(13, java.sql.Types.VARCHAR);
+		stmt.setNull(14, java.sql.Types.VARCHAR);
+		stmt.setNull(15, java.sql.Types.VARCHAR);
+		stmt.setNull(16, java.sql.Types.VARCHAR);
+		stmt.setNull(17, java.sql.Types.TIMESTAMP_WITH_TIMEZONE);
+		stmt.setNull(18, java.sql.Types.VARCHAR);
+		stmt.setNull(19, java.sql.Types.BOOLEAN);
+		stmt.setNull(20, java.sql.Types.VARCHAR);
+		stmt.setNull(21, java.sql.Types.VARCHAR);
+		stmt.setString(22, userAgent); 
+		stmt.setNull(23, java.sql.Types.VARCHAR);
+		stmt.setNull(24, java.sql.Types.VARCHAR);
+		stmt.setNull(25, java.sql.Types.VARCHAR);
+		stmt.setNull(26, java.sql.Types.VARCHAR);
+		stmt.setNull(27, java.sql.Types.VARCHAR);
+		stmt.setString(28,fileName);
+
+	    var result = stmt.execute();
+	
+	} catch (e) {
+	    logger.error(&quot;Error executing stored procedure: &quot; + e);
+	    throw e;
+	} finally {
+	    if (stmt != null) stmt.close();
+	    if (conn != null) conn.close();
+	}
+}</code>
+      </properties>
+    </codeTemplate>
+    <codeTemplate version="26.9.0">
+      <id>8ef39b84-b7a5-43b5-bbdb-f7c49af71423</id>
+      <name>sendDataLedgerSync</name>
+      <revision>4</revision>
+      <lastModified>
+        <time>1794900858844</time>
+        <timezone>America/New_York</timezone>
+      </lastModified>
+      <contextSet>
+        <delegate class="sorted-set">
+          <contextType>GLOBAL_DEPLOY</contextType>
+          <contextType>GLOBAL_UNDEPLOY</contextType>
+          <contextType>GLOBAL_PREPROCESSOR</contextType>
+          <contextType>GLOBAL_POSTPROCESSOR</contextType>
+          <contextType>CHANNEL_DEPLOY</contextType>
+          <contextType>CHANNEL_UNDEPLOY</contextType>
+          <contextType>CHANNEL_PREPROCESSOR</contextType>
+          <contextType>CHANNEL_POSTPROCESSOR</contextType>
+          <contextType>CHANNEL_ATTACHMENT</contextType>
+          <contextType>CHANNEL_BATCH</contextType>
+          <contextType>SOURCE_RECEIVER</contextType>
+          <contextType>SOURCE_FILTER_TRANSFORMER</contextType>
+          <contextType>DESTINATION_FILTER_TRANSFORMER</contextType>
+          <contextType>DESTINATION_DISPATCHER</contextType>
+          <contextType>DESTINATION_RESPONSE_TRANSFORMER</contextType>
+        </delegate>
+      </contextSet>
+      <properties class="com.mirth.connect.model.codetemplates.BasicCodeTemplateProperties">
+        <type>FUNCTION</type>
+        <code>/**
+	Modify the description here. Modify the function name and parameters as needed. One function per
+	template is recommended; create a new code template for each new function.
+
+	@param {String} arg1 - arg1 description
+	@return {String} return description
+*/
+function sendDataLedgerSync(payload, interactionId) {
+
+    var apiUrl = globalChannelMap.get(&quot;DATA_LEDGER_API_URL&quot;);
+    var dataLedgerApiKey = globalChannelMap.get(&quot;TECHBD_NYEC_DATALEDGER_API_KEY&quot;);
+    var httpClient = globalChannelMap.get(&quot;HTTP_CLIENT&quot;);   // shared, created in deploy script
+
+    if (apiUrl == null) {
+        throw new Error(&quot;Environment variable DATA_LEDGER_API_URL is not set.&quot;);
+    }
+    if (dataLedgerApiKey == null) {
+        throw new Error(&quot;Environment variable &apos;TECHBD_NYEC_DATALEDGER_API_KEY&apos; is not set.&quot;);
+    }
+    if (httpClient == null) {
+        throw new Error(&quot;HTTP_CLIENT is not initialized. Check the channel deploy script.&quot;);
+    }
+    if (payload == null || String(payload).trim() === &quot;&quot;) {
+        throw new Error(&quot;Data Ledger payload is empty.&quot;);
+    }
+
+    var HttpPost = org.apache.http.client.methods.HttpPost;
+    var StringEntity = org.apache.http.entity.StringEntity;
+    var EntityUtils = org.apache.http.util.EntityUtils;
+
+    var response = null;
+    try {
+        var httpPost = new HttpPost(apiUrl);
+        httpPost.setHeader(&quot;Content-Type&quot;, &quot;application/json&quot;);
+        httpPost.setHeader(&quot;Accept&quot;, &quot;application/json&quot;);
+        httpPost.setHeader(&quot;x-api-key&quot;, dataLedgerApiKey);
+        httpPost.setEntity(new StringEntity(payload, &quot;UTF-8&quot;));
+
+        response = httpClient.execute(httpPost);
+        var statusCode = response.getStatusLine().getStatusCode();
+        logger.info(&quot;[CHANNEL: 1115 TECHBD &quot; + channelName + &quot;][INTERACTION ID: &quot; + interactionId + &quot; ]: sendDataLedgerSync response status: &quot; + statusCode);
+
+        var entity = response.getEntity();
+        var responseBody = entity != null ? String(EntityUtils.toString(entity, &quot;UTF-8&quot;)) : &quot;&quot;;
+
+        if (statusCode &gt;= 200 &amp;&amp; statusCode &lt; 300) {
+            logger.info(&quot;[CHANNEL: 1115 TECHBD &quot; + channelName + &quot;][INTERACTION ID: &quot; + interactionId + &quot; ]: Data Ledger API Response: &quot; + responseBody);
+            return { statusCode: statusCode, body: responseBody };
+        }
+        logger.error(&quot;[CHANNEL: 1115 TECHBD &quot; + channelName + &quot;][INTERACTION ID: &quot; + interactionId + &quot; ]: Data Ledger API Error. Status: &quot; + statusCode + &quot;, Response: &quot; + responseBody);
+        throw new Error(&quot;Request failed with status &quot; + statusCode);
+    } catch (error) {
+        logger.error(&quot;[CHANNEL: 1115 TECHBD &quot; + channelName + &quot;][INTERACTION ID: &quot; + interactionId + &quot; ]: Data Ledger API Request Failed: &quot; + error.message);
+        throw error;
+    } finally {
+        // release the connection back to the pool; do NOT close httpClient
+        try { if (response != null) { EntityUtils.consumeQuietly(response.getEntity()); response.close(); } } catch (ignore) {}
+    }
+}</code>
+      </properties>
+    </codeTemplate>
+    <codeTemplate version="26.9.0">
+      <id>44037b8e-9399-4514-8677-1605114eb404</id>
+      <name>toJsonb</name>
+      <revision>3</revision>
+      <lastModified>
+        <time>1794829663994</time>
+        <timezone>America/New_York</timezone>
+      </lastModified>
+      <contextSet>
+        <delegate class="sorted-set">
+          <contextType>GLOBAL_DEPLOY</contextType>
+          <contextType>GLOBAL_UNDEPLOY</contextType>
+          <contextType>GLOBAL_PREPROCESSOR</contextType>
+          <contextType>GLOBAL_POSTPROCESSOR</contextType>
+          <contextType>CHANNEL_DEPLOY</contextType>
+          <contextType>CHANNEL_UNDEPLOY</contextType>
+          <contextType>CHANNEL_PREPROCESSOR</contextType>
+          <contextType>CHANNEL_POSTPROCESSOR</contextType>
+          <contextType>CHANNEL_ATTACHMENT</contextType>
+          <contextType>CHANNEL_BATCH</contextType>
+          <contextType>SOURCE_RECEIVER</contextType>
+          <contextType>SOURCE_FILTER_TRANSFORMER</contextType>
+          <contextType>DESTINATION_FILTER_TRANSFORMER</contextType>
+          <contextType>DESTINATION_DISPATCHER</contextType>
+          <contextType>DESTINATION_RESPONSE_TRANSFORMER</contextType>
+        </delegate>
+      </contextSet>
+      <properties class="com.mirth.connect.model.codetemplates.BasicCodeTemplateProperties">
+        <type>FUNCTION</type>
+        <code>/**
+	Modify the description here. Modify the function name and parameters as needed. One function per
+	template is recommended; create a new code template for each new function.
+
+	@param {Any} value - 
+	@return {String} return description
+*/
+function toJsonb(value) {
+	
+	var PGobject = Packages.org.postgresql.util.PGobject;&#xd;
+    var jsonbObj = new PGobject();&#xd;
+    jsonbObj.setType(&quot;jsonb&quot;);&#xd;
+&#xd;
+	if (typeof value === &quot;object&quot;) {&#xd;
+        value = JSON.stringify(value);&#xd;
+    }&#xd;
+    &#xd;
+    jsonbObj.setValue(value);&#xd;
+    return jsonbObj;&#xd;
+}</code>
+      </properties>
+    </codeTemplate>
+  </codeTemplates>
+</codeTemplateLibrary>
