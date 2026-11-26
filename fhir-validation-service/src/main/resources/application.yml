@@ -49,6 +49,17 @@ org:
           sdoh: ig-packages/fhir-v4/sdoh-clinicalcare/stu-2.3.0
           uv-sdc: ig-packages/fhir-v4/uv-sdc/stu-3.0.0
           extensions: ig-packages/fhir-v4/uv-extensions/5.2.0
+    # Validators built on demand for an IG version requested in the header that is not configured
+    # above. Each holds ~0.7-0.8 GB of heap; they are built and used one request at a time.
+    dynamic-validators:
+      max-cached: ${TECHBD_DYNAMIC_VALIDATORS_MAX_CACHED:1}       # 0 = ignore header IG versions that are not configured
+      idle-ttl: ${TECHBD_DYNAMIC_VALIDATORS_IDLE_TTL:30m}         # evict a dynamic validator after this long unused
+      acquire-timeout: ${TECHBD_DYNAMIC_VALIDATORS_ACQUIRE_TIMEOUT:2m}  # max wait for a turn before the request fails
+    # Bundle validations allowed to run at once (all IG versions). Each one in flight can allocate
+    # hundreds of MB while HAPI expands large terminology ValueSets; raise only with the heap.
+    validation-concurrency:
+      max-concurrent: ${TECHBD_VALIDATION_MAX_CONCURRENT:2}
+      acquire-timeout: ${TECHBD_VALIDATION_ACQUIRE_TIMEOUT:5m}
     baseFHIRURL: ${TECHBD_BASE_FHIR_URL} #This is the default FHIR url used in generating FHIR from CSV
     validation-severity-level: error  # Possible values: fatal, error, warning, information
     structureDefinitionsUrls:

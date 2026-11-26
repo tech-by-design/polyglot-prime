@@ -69,7 +69,7 @@ public abstract class BaseIgValidationTest {
         basePackages.put("us-core", "ig-packages/fhir-v4/us-core/stu-7.0.0");
         basePackages.put("sdoh", "ig-packages/fhir-v4/sdoh-clinicalcare/stu-2.3.0");
         basePackages.put("uv-sdc", "ig-packages/fhir-v4/uv-sdc/stu-3.0.0");
-        basePackages.put("uv-sdc", "ig-packages/fhir-v4/uv-extensions/5.2.0");
+        basePackages.put("uv-extensions", "ig-packages/fhir-v4/uv-extensions/5.2.0");
         // SHIN-NY Packages
         Map<String, ShinnyPackageConfig> shinnyPackages = new HashMap<>();
         // SHIN-NY version 1.9.4
