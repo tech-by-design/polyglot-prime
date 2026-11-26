@@ -20,6 +20,8 @@ import java.util.Optional;
 import java.util.TreeMap;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.Semaphore;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.stream.Collectors;
@@ -45,8 +47,10 @@ import org.techbd.corelib.util.AppLogger;
 import org.techbd.corelib.util.JsonText.JsonTextSerializer;
 import org.techbd.corelib.util.TemplateLogger;
 import org.techbd.fhir.config.AppConfig;
+import org.techbd.fhir.config.AppConfig.DynamicValidatorConfig;
 import org.techbd.fhir.config.AppConfig.FhirV4Config;
 import org.techbd.fhir.config.AppConfig.ShinnyPackageConfig;
+import org.techbd.fhir.config.AppConfig.ValidationConcurrencyConfig;
 import org.techbd.fhir.exceptions.ErrorCode;
 import org.techbd.fhir.exceptions.JsonValidationException;
 import org.techbd.fhir.service.validation.FhirBundleValidator;
@@ -61,6 +65,8 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 import com.github.benmanes.caffeine.cache.Cache;
 import com.github.benmanes.caffeine.cache.Caffeine;
+import com.github.benmanes.caffeine.cache.RemovalCause;
+import com.github.benmanes.caffeine.cache.Scheduler;
 
 import ca.uhn.fhir.context.FhirContext;
 import ca.uhn.fhir.context.support.DefaultProfileValidationSupport;
@@ -211,6 +217,8 @@ public class OrchestrationEngine {
                             .withTracer(tracer)
                             .withAppLogger(appLogger)
                             .withTemplateLogger(LOG)
+                            .withDynamicValidatorConfig(appConfig.getDynamicValidators())
+                            .withValidationConcurrencyConfig(appConfig.getValidationConcurrency())
                             .build();
                 case HL7_EMBEDDED:
                     return new Hl7ValidationEngineEmbedded.Builder().build();
@@ -290,8 +298,6 @@ public class OrchestrationEngine {
 
     @Getter
     public static class HapiValidationEngine implements OrchestrationEngine.ValidationEngine {
-        private static final int MAX_DYNAMIC_FHIR_BUNDLE_VALIDATORS = 32;
-
         private final Observability observability;
         private final Instant engineInitAt = Instant.now();
         private final Instant engineConstructedAt;
@@ -304,7 +310,30 @@ public class OrchestrationEngine {
         private final TemplateLogger LOG;
         private final String interactionId;
         private final List<ValidatorCacheKey> configuredValidatorKeys = new ArrayList<>();
-        private final Cache<ValidatorCacheKey, CachedFhirBundleValidator> fhirBundleValidators;
+        /** Validators for the configured IG packages: built at startup and never evicted. */
+        private final Map<ValidatorCacheKey, CachedFhirBundleValidator> configuredValidators =
+                new ConcurrentHashMap<>();
+        /**
+         * Validators built for a header-requested IG version that is not configured. Small and
+         * idle-expiring; {@code null} when dynamic validators are disabled ({@code max-cached: 0}).
+         */
+        private final Cache<ValidatorCacheKey, CachedFhirBundleValidator> dynamicValidators;
+        private final int maxCachedDynamicValidators;
+        private final Duration dynamicValidatorAcquireTimeout;
+        /**
+         * Only one request at a time may build or use a dynamic validator. Without this, concurrent
+         * requests for different IG versions each build a ~0.8 GB validator at once and exhaust the
+         * heap, whatever the cache size. With it, at most {@code max-cached} dynamic validators are
+         * alive, the one being built included.
+         */
+        private final Semaphore dynamicValidatorPermit = new Semaphore(1, true);
+        /**
+         * Bounds validations in flight across all validators: each can allocate hundreds of MB
+         * while HAPI expands large terminology ValueSets.
+         */
+        private final Semaphore validationPermits;
+        private final int maxConcurrentValidations;
+        private final Duration validationAcquireTimeout;
         private final AtomicLong validatorInitializationCount = new AtomicLong();
         private final AtomicInteger activeValidations = new AtomicInteger();
 
@@ -322,19 +351,39 @@ public class OrchestrationEngine {
             this.appLogger = builder.appLogger;
             this.LOG = builder.LOG;
             this.interactionId = builder.interactionId;
-            final int configuredValidatorCount = configuredPackageCount(igPackages);
-            this.fhirBundleValidators = Caffeine.newBuilder()
-                    .maximumSize((long) configuredValidatorCount + MAX_DYNAMIC_FHIR_BUNDLE_VALIDATORS)
-                    .recordStats()
-                    .build();
+            final DynamicValidatorConfig dynamicConfig = builder.dynamicValidatorConfig != null
+                    ? builder.dynamicValidatorConfig
+                    : new DynamicValidatorConfig();
+            this.maxCachedDynamicValidators = Math.max(0, dynamicConfig.getMaxCached());
+            this.dynamicValidatorAcquireTimeout = dynamicConfig.getAcquireTimeout();
+            this.dynamicValidators = maxCachedDynamicValidators == 0 ? null
+                    : Caffeine.newBuilder()
+                            .maximumSize(maxCachedDynamicValidators)
+                            .expireAfterAccess(dynamicConfig.getIdleTtl())
+                            // Without a scheduler, expired entries are only removed on the next
+                            // cache access, so an idle service would keep them forever.
+                            .scheduler(Scheduler.systemScheduler())
+                            .removalListener((ValidatorCacheKey key, CachedFhirBundleValidator value,
+                                    RemovalCause cause) -> LOG.info(
+                                            "Evicted dynamic FHIR validator: package={}, IG version={}, "
+                                                    + "profileBaseUrl={}, cause={}",
+                                            key == null ? null : key.packageIdentity(),
+                                            key == null ? null : key.igVersion(),
+                                            key == null ? null : key.profileBaseUrl(),
+                                            cause))
+                            .recordStats()
+                            .build();
+            LOG.info("Dynamic FHIR validators: maxCached={}, idleTtl={}, acquireTimeout={}",
+                    maxCachedDynamicValidators, dynamicConfig.getIdleTtl(), dynamicValidatorAcquireTimeout);
+            final ValidationConcurrencyConfig concurrencyConfig = builder.validationConcurrencyConfig != null
+                    ? builder.validationConcurrencyConfig
+                    : new ValidationConcurrencyConfig();
+            this.maxConcurrentValidations = Math.max(1, concurrencyConfig.getMaxConcurrent());
+            this.validationAcquireTimeout = concurrencyConfig.getAcquireTimeout();
+            this.validationPermits = new Semaphore(maxConcurrentValidations, true);
+            LOG.info("FHIR validation concurrency: maxConcurrent={}, acquireTimeout={}",
+                    maxConcurrentValidations, validationAcquireTimeout);
             initializeFhirBundleValidators();
-        }
-
-        private static int configuredPackageCount(Map<String, FhirV4Config> igPackages) {
-            final FhirV4Config fhirV4Config = igPackages == null ? null : igPackages.get("fhir-v4");
-            final Map<String, ShinnyPackageConfig> shinNyPackages =
-                    fhirV4Config == null ? null : fhirV4Config.getShinnyPackages();
-            return shinNyPackages == null ? 0 : shinNyPackages.size();
         }
 
         private void initializeFhirBundleValidators() {
@@ -373,7 +422,7 @@ public class OrchestrationEngine {
                                 if (!configuredValidatorKeys.contains(cacheKey)) {
                                     configuredValidatorKeys.add(cacheKey);
                                 }
-                                getOrCreateFhirBundleValidator(cacheKey);
+                                configuredValidators.computeIfAbsent(cacheKey, this::buildValidator);
                                 LOG.info("Creating validator: package={}, igVersion={}, basePackages={}",
                                         packagePath,
                                         igVersion,
@@ -389,40 +438,92 @@ public class OrchestrationEngine {
             }
         }
 
-        private FhirBundleValidator getOrCreateFhirBundleValidator(ValidatorCacheKey cacheKey) {
-            final CachedFhirBundleValidator cachedValidator = fhirBundleValidators.get(cacheKey, key -> {
-                final FhirBundleValidator validator = FhirBundleValidator.builder()
-                        .fhirContext(FhirContext.forR4())
-                        .fhirValidator(initializeFhirValidator(
-                                key.packageIdentity(),
-                                key.basePackageConfiguration(),
-                                key.profileBaseUrl(),
-                                key.igVersion()))
-                        .baseFHIRUrl(key.profileBaseUrl())
-                        .packagePath(key.packageIdentity())
-                        .igVersion(key.igVersion())
-                        .build();
-                final long initializationNumber = validatorInitializationCount.incrementAndGet();
-                LOG.info(
-                        "Initialized FHIR validator: package={}, IG version={}, profileBaseUrl={}, "
-                                + "initializationCount={}, activeValidations={}",
-                        key.packageIdentity(),
-                        key.igVersion(),
-                        key.profileBaseUrl(),
-                        initializationNumber,
-                        activeValidations.get());
-                return new CachedFhirBundleValidator(key, validator, initializationNumber);
-            });
-            final var cacheStats = fhirBundleValidators.stats();
+        private CachedFhirBundleValidator buildValidator(ValidatorCacheKey key) {
+            final FhirBundleValidator validator = FhirBundleValidator.builder()
+                    .fhirContext(FhirContext.forR4())
+                    .fhirValidator(initializeFhirValidator(
+                            key.packageIdentity(),
+                            key.basePackageConfiguration(),
+                            key.profileBaseUrl(),
+                            key.igVersion()))
+                    .baseFHIRUrl(key.profileBaseUrl())
+                    .packagePath(key.packageIdentity())
+                    .igVersion(key.igVersion())
+                    .build();
+            final long initializationNumber = validatorInitializationCount.incrementAndGet();
+            LOG.info(
+                    "Initialized FHIR validator: package={}, IG version={}, profileBaseUrl={}, "
+                            + "initializationCount={}, activeValidations={}",
+                    key.packageIdentity(),
+                    key.igVersion(),
+                    key.profileBaseUrl(),
+                    initializationNumber,
+                    activeValidations.get());
+            return new CachedFhirBundleValidator(key, validator, initializationNumber);
+        }
+
+        /** Caller must hold {@link #dynamicValidatorPermit}. */
+        private FhirBundleValidator getOrCreateDynamicValidator(ValidatorCacheKey cacheKey) {
+            CachedFhirBundleValidator cachedValidator = dynamicValidators.getIfPresent(cacheKey);
+            if (cachedValidator == null) {
+                // Evict before building, not after: otherwise the old and the new validator are
+                // both in the heap while the new one is built.
+                dynamicValidators.policy().eviction().ifPresent(eviction -> {
+                    final long excess = dynamicValidators.estimatedSize() - maxCachedDynamicValidators + 1;
+                    if (excess > 0) {
+                        dynamicValidators.invalidateAll(eviction.coldest((int) excess).keySet());
+                    }
+                });
+                cachedValidator = dynamicValidators.get(cacheKey, this::buildValidator);
+            }
+            final var cacheStats = dynamicValidators.stats();
             LOG.debug(
-                    "FHIR validator cache lookup: hitCount={}, missCount={}, initializationCount={}, "
+                    "Dynamic FHIR validator cache lookup: hitCount={}, missCount={}, initializationCount={}, "
                             + "cacheSize={}, activeValidations={}",
                     cacheStats.hitCount(),
                     cacheStats.missCount(),
                     validatorInitializationCount.get(),
-                    fhirBundleValidators.estimatedSize(),
+                    dynamicValidators.estimatedSize(),
                     activeValidations.get());
             return cachedValidator.validator();
+        }
+
+        private void acquireValidationPermit(String interactionId) {
+            final int queued = validationPermits.getQueueLength();
+            if (validationPermits.availablePermits() == 0 || queued > 0) {
+                LOG.info("Waiting for a validation slot: maxConcurrent={}, queuedRequests={} for interactionId :{}",
+                        maxConcurrentValidations, queued, interactionId);
+            }
+            final boolean acquired;
+            try {
+                acquired = validationPermits.tryAcquire(validationAcquireTimeout.toMillis(), TimeUnit.MILLISECONDS);
+            } catch (InterruptedException e) {
+                Thread.currentThread().interrupt();
+                throw new IllegalStateException("Interrupted while waiting for a validation slot", e);
+            }
+            if (!acquired) {
+                throw new IllegalStateException(("Timed out after %s waiting for a validation slot "
+                        + "(at most %d validations run at once). Retry later.")
+                        .formatted(validationAcquireTimeout, maxConcurrentValidations));
+            }
+        }
+
+        private void acquireDynamicValidatorPermit(String requestedIgVersion, String interactionId) {
+            LOG.info("Waiting for dynamic FHIR validator (IG version {}): queuedRequests={} for interactionId :{}",
+                    requestedIgVersion, dynamicValidatorPermit.getQueueLength(), interactionId);
+            final boolean acquired;
+            try {
+                acquired = dynamicValidatorPermit.tryAcquire(
+                        dynamicValidatorAcquireTimeout.toMillis(), TimeUnit.MILLISECONDS);
+            } catch (InterruptedException e) {
+                Thread.currentThread().interrupt();
+                throw new IllegalStateException("Interrupted while waiting for a dynamic FHIR validator", e);
+            }
+            if (!acquired) {
+                throw new IllegalStateException(("Timed out after %s waiting to validate against IG version %s, "
+                        + "which is not one of the configured IG versions and is validated one request at a time. "
+                        + "Retry later.").formatted(dynamicValidatorAcquireTimeout, requestedIgVersion));
+            }
         }
 
         private record ValidatorCacheKey(
@@ -573,15 +674,20 @@ public class OrchestrationEngine {
 
         public FhirBundleValidator findFhirBundleValidator(String profileUrl) {
             for (final ValidatorCacheKey cacheKey : configuredValidatorKeys) {
+                LOG.info("Checking configured validator: package={}, IG version={}, profileBaseUrl={} for interactionId :{}",
+                        cacheKey.packageIdentity(), cacheKey.igVersion(), cacheKey.profileBaseUrl(), interactionId);
                 if (Objects.equals(FHIRUtil.getProfileUrl(cacheKey.profileBaseUrl(), FHIRUtil.BUNDLE), profileUrl)) {
-                    return getOrCreateFhirBundleValidator(cacheKey);
+                    return configuredValidators.computeIfAbsent(cacheKey, this::buildValidator).validator();
                 }
             }
+            return null;
+        }
 
+        /** Caller must hold {@link #dynamicValidatorPermit}. */
+        private FhirBundleValidator findDynamicFhirBundleValidator(String profileUrl) {
             CachedFhirBundleValidator firstMatchingValidator = null;
-            for (final CachedFhirBundleValidator cachedValidator : fhirBundleValidators.asMap().values()) {
-                if (!configuredValidatorKeys.contains(cachedValidator.key())
-                        && Objects.equals(cachedValidator.validator().getFhirProfileUrl(), profileUrl)
+            for (final CachedFhirBundleValidator cachedValidator : dynamicValidators.asMap().values()) {
+                if (Objects.equals(cachedValidator.validator().getFhirProfileUrl(), profileUrl)
                         && (firstMatchingValidator == null
                                 || cachedValidator.initializationOrder() < firstMatchingValidator.initializationOrder())) {
                     firstMatchingValidator = cachedValidator;
@@ -628,6 +734,7 @@ public class OrchestrationEngine {
             Span span = tracer.spanBuilder("OrchestrationEngine.validate").startSpan();
             String resolvedProfileUrl = null;
             String resolvedIgVersion = null;
+            boolean dynamicPermitHeld = false;
             try {
                 try {
                     LOG.info("VALIDATOR -BEGIN initiated At : {} for interactionid:{}", initiatedAt, interactionId);
@@ -689,9 +796,27 @@ public class OrchestrationEngine {
                         }
                         final ValidatorCacheKey cacheKey = ValidatorCacheKey.create(
                                 shinNyPackagePath, headerIgVersion, profileBaseUrl, basePackages);
-                        bundleValidator = getOrCreateFhirBundleValidator(cacheKey);
+                        final CachedFhirBundleValidator configuredValidator = configuredValidators.get(cacheKey);
+                        if (configuredValidator != null) {
+                            bundleValidator = configuredValidator.validator();
+                        } else if (dynamicValidators == null) {
+                            LOG.warn("Dynamic validators are disabled (dynamic-validators.max-cached=0); ignoring "
+                                    + "requested IG version {} and validating by profile URL for interactionId :{}",
+                                    headerIgVersion, interactionId);
+                            bundleValidator = findFhirBundleValidator(profileUrl);
+                        } else {
+                            acquireDynamicValidatorPermit(headerIgVersion, interactionId);
+                            dynamicPermitHeld = true;
+                            bundleValidator = getOrCreateDynamicValidator(cacheKey);
+                        }
                     } else {
                         bundleValidator = findFhirBundleValidator(profileUrl);
+                        if (bundleValidator == null && dynamicValidators != null
+                                && dynamicValidators.estimatedSize() > 0) {
+                            acquireDynamicValidatorPermit(null, interactionId);
+                            dynamicPermitHeld = true;
+                            bundleValidator = findDynamicFhirBundleValidator(profileUrl);
+                        }
                     }
                     if (bundleValidator == null) {
                         LOG.warn("No matching FhirBundleValidator found for profile URL: {} for interactionId :{}",
@@ -706,6 +831,7 @@ public class OrchestrationEngine {
                     resolvedIgVersion = bundleValidator.getIgVersion();
                     fhirContext.setParserErrorHandler(new LenientErrorHandler());
 
+                    acquireValidationPermit(interactionId);
                     activeValidations.incrementAndGet();
                     LOG.debug("FHIR validation started: interactionId={}, activeValidations={}",
                             interactionId, activeValidations.get());
@@ -713,6 +839,7 @@ public class OrchestrationEngine {
                     try {
                         hapiVR = validateAsRawPayload(payload, fhirContext, bundleValidator, interactionId);
                     } finally {
+                        validationPermits.release();
                         activeValidations.decrementAndGet();
                         LOG.debug("FHIR validation finished: interactionId={}, activeValidations={}",
                                 interactionId, activeValidations.get());
@@ -813,6 +940,10 @@ public class OrchestrationEngine {
                             return completedAt;
                         }
                     };
+                } finally {
+                    if (dynamicPermitHeld) {
+                        dynamicValidatorPermit.release();
+                    }
                 }
             } finally {
                 span.end();
@@ -828,6 +959,13 @@ public class OrchestrationEngine {
             private Tracer tracer;
             private AppLogger appLogger;
             private TemplateLogger LOG;
+            private DynamicValidatorConfig dynamicValidatorConfig;
+            private ValidationConcurrencyConfig validationConcurrencyConfig;
+
+            public Builder withValidationConcurrencyConfig(final ValidationConcurrencyConfig config) {
+                this.validationConcurrencyConfig = config;
+                return this;
+            }
 
             public Builder withInteractionId(@NotNull final String interactionId) {
                 this.interactionId = interactionId;
@@ -836,6 +974,11 @@ public class OrchestrationEngine {
 
             public Builder withFhirProfileUrl(@NotNull final String fhirProfileUrl) {
                 this.fhirProfileUrl = fhirProfileUrl;
+                return this;
+            }
+
+            public Builder withDynamicValidatorConfig(final DynamicValidatorConfig dynamicValidatorConfig) {
+                this.dynamicValidatorConfig = dynamicValidatorConfig;
                 return this;
             }
 
